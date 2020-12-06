@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gresources>
+  <gresource prefix="/org/PTZ-Memory">
+    <file>images/icon.png</file>
+    <file>images/pad.png</file>
+    <file>images/up.png</file>
+    <file>images/down.png</file>
+    <file>images/logo.png</file>
+    <file>images/grille_1.png</file>
+    <file>images/grille_2.png</file>
+  </gresource>
+</gresources>
+
