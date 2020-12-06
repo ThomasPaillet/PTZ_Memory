@@ -1,0 +1,305 @@
+/*
+ * copyright (c) 2020 Thomas Paillet <thomas.paillet@net-c.fr
+
+ * This file is part of PTZ-Memory.
+
+ * PTZ-Memory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+
+ * PTZ-Memory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+
+ * You should have received a copy of the GNU General Public License
+ * along with PTZ-Memory.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+#include "ptz.h"
+
+
+typedef struct {
+	guint16 total_byte_count;
+	guint8 minor_version_number;
+	guint8 flags;
+	guint16 screen;
+
+	guint16 index;
+	guint16 control;
+	guint16 length;
+	char text[2038];
+} tsl_umd_v5_packet_t;
+
+
+gboolean send_ip_tally = FALSE;
+
+struct sockaddr_in tsl_umd_v5_adresse;
+SOCKET tsl_umd_v5_socket;
+
+GThread *tsl_umd_v5_thread = NULL;
+
+char font[17] = { 'C','o','u','r','i','e','r',' ','B','o','l','d',' ','1','0','0','\0' };
+
+
+gboolean g_source_ptz_tally_queue_draw (ptz_t *ptz)
+{
+	if (ptz->control_window.is_on_screen) {
+		gtk_widget_queue_draw (ptz->control_window.name_drawing_area);
+		gtk_widget_queue_draw (ptz->control_window.tally[0]);
+		gtk_widget_queue_draw (ptz->control_window.tally[1]);
+		gtk_widget_queue_draw (ptz->control_window.tally[2]);
+		gtk_widget_queue_draw (ptz->control_window.tally[3]);
+	}
+
+	gtk_widget_queue_draw (ptz->name_drawing_area);
+	gtk_widget_queue_draw (ptz->tally[0]);
+	gtk_widget_queue_draw (ptz->tally[1]);
+	gtk_widget_queue_draw (ptz->tally[2]);
+	gtk_widget_queue_draw (ptz->tally[3]);
+	gtk_widget_queue_draw (ptz->tally[4]);
+	gtk_widget_queue_draw (ptz->tally[5]);
+
+	return G_SOURCE_REMOVE;
+}
+
+gboolean tally_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
+{
+	if (ptz->tally_data & 0x30) {
+		if ((ptz->tally_data & 0x10) && !(ptz->tally_data & 0x20)) cairo_set_source_rgb (cr, ptz->tally_brightness, 0.0, 0.0);
+		else if ((ptz->tally_data & 0x20) && !(ptz->tally_data & 0x10)) cairo_set_source_rgb (cr, 0.0, ptz->tally_brightness, 0.0);
+		else cairo_set_source_rgb (cr, 0.941176471 * ptz->tally_brightness, 0.764705882 * ptz->tally_brightness, 0.0);
+	} else if (ptz->tally_data & 0x03) {
+		if (!ptz->tally_1_is_on) {
+			if ((ptz->tally_data & 0x01) && !(ptz->tally_data & 0x02)) cairo_set_source_rgb (cr, ptz->tally_brightness, 0.0, 0.0);
+			else if ((ptz->tally_data & 0x02) && !(ptz->tally_data & 0x01)) cairo_set_source_rgb (cr, 0.0, ptz->tally_brightness, 0.0);
+			else cairo_set_source_rgb (cr, 0.941176471 * ptz->tally_brightness, 0.764705882 * ptz->tally_brightness, 0.0);
+		}
+	} else {
+		if (!gtk_widget_is_sensitive (widget) || (GTK_STATE_FLAG_BACKDROP & gtk_widget_get_state_flags (widget))) cairo_set_source_rgb (cr, 0.2, 0.223529412, 0.231372549);
+		else cairo_set_source_rgb (cr, 0.176470588, 0.196078431, 0.203921569);
+	}
+
+	cairo_paint (cr);
+
+	return GDK_EVENT_PROPAGATE;
+}
+
+gboolean ghost_tally_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
+{
+	if (ptz->tally_data & 0x30) {
+		if ((ptz->tally_data & 0x10) && !(ptz->tally_data & 0x20)) cairo_set_source_rgb (cr, ptz->tally_brightness, 0.0, 0.0);
+		else if ((ptz->tally_data & 0x20) && !(ptz->tally_data & 0x10)) cairo_set_source_rgb (cr, 0.0, ptz->tally_brightness, 0.0);
+		else cairo_set_source_rgb (cr, 0.941176471 * ptz->tally_brightness, 0.764705882 * ptz->tally_brightness, 0.0);
+	} else if (ptz->tally_data & 0x03) {
+		if (!ptz->tally_1_is_on) {
+			if ((ptz->tally_data & 0x01) && !(ptz->tally_data & 0x02)) cairo_set_source_rgb (cr, ptz->tally_brightness, 0.0, 0.0);
+			else if ((ptz->tally_data & 0x02) && !(ptz->tally_data & 0x01)) cairo_set_source_rgb (cr, 0.0, ptz->tally_brightness, 0.0);
+			else cairo_set_source_rgb (cr, 0.941176471 * ptz->tally_brightness, 0.764705882 * ptz->tally_brightness, 0.0);
+		}
+	} else cairo_set_source_rgb (cr, 0.2, 0.223529412, 0.231372549);
+
+	cairo_paint (cr);
+
+	return GDK_EVENT_PROPAGATE;
+}
+
+gboolean control_window_tally_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
+{
+	if (ptz->tally_data & 0x30) {
+		if ((ptz->tally_data & 0x10) && !(ptz->tally_data & 0x20)) cairo_set_source_rgb (cr, ptz->tally_brightness, 0.0, 0.0);
+		else if ((ptz->tally_data & 0x20) && !(ptz->tally_data & 0x10)) cairo_set_source_rgb (cr, 0.0, ptz->tally_brightness, 0.0);
+		else cairo_set_source_rgb (cr, 0.941176471 * ptz->tally_brightness, 0.764705882 * ptz->tally_brightness, 0.0);
+	} else if (ptz->tally_data & 0x03) {
+		if (!ptz->tally_1_is_on) {
+			if ((ptz->tally_data & 0x01) && !(ptz->tally_data & 0x02)) cairo_set_source_rgb (cr, ptz->tally_brightness, 0.0, 0.0);
+			else if ((ptz->tally_data & 0x02) && !(ptz->tally_data & 0x01)) cairo_set_source_rgb (cr, 0.0, ptz->tally_brightness, 0.0);
+			else cairo_set_source_rgb (cr, 0.941176471 * ptz->tally_brightness, 0.764705882 * ptz->tally_brightness, 0.0);
+		}
+//	} else cairo_set_source_rgb (cr, 0.2, 0.223529412, 0.231372549);
+	} else cairo_set_source_rgb (cr, 0.176470588, 0.196078431, 0.203921569);
+
+	cairo_paint (cr);
+
+	return GDK_EVENT_PROPAGATE;
+}
+
+gboolean name_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
+{
+	PangoLayout *pl;
+	PangoFontDescription *desc;
+
+	if ((gtk_widget_is_sensitive (widget)) && !(GTK_STATE_FLAG_BACKDROP & gtk_widget_get_state_flags (widget))) {
+		if (ptz->enter_notify_name_drawing_area) cairo_set_source_rgb (cr, 0.2, 0.223529412, 0.231372549);
+		else cairo_set_source_rgb (cr, 0.176470588, 0.196078431, 0.203921569);
+	} else cairo_set_source_rgb (cr, 0.2, 0.223529412, 0.231372549);
+
+	cairo_paint (cr);
+
+	if (ptz->tally_data & 0x30) {
+		if ((ptz->tally_data & 0x10) && !(ptz->tally_data & 0x20)) cairo_set_source_rgb (cr, ptz->tally_brightness, 0.0, 0.0);
+		else if ((ptz->tally_data & 0x20) && !(ptz->tally_data & 0x10)) cairo_set_source_rgb (cr, 0.0, ptz->tally_brightness, 0.0);
+		else cairo_set_source_rgb (cr, 0.941176471 * ptz->tally_brightness, 0.764705882 * ptz->tally_brightness, 0.0);
+	} else if (ptz->tally_data & 0x03) {
+		if (!ptz->tally_1_is_on) {
+			if ((ptz->tally_data & 0x01) && !(ptz->tally_data & 0x02)) cairo_set_source_rgb (cr, ptz->tally_brightness, 0.0, 0.0);
+			else if ((ptz->tally_data & 0x02) && !(ptz->tally_data & 0x01)) cairo_set_source_rgb (cr, 0.0, ptz->tally_brightness, 0.0);
+			else cairo_set_source_rgb (cr, 0.941176471 * ptz->tally_brightness, 0.764705882 * ptz->tally_brightness, 0.0);
+		}
+	} else if (gtk_widget_is_sensitive (widget)) cairo_set_source_rgb (cr, 0.933333333, 0.933333333, 0.925490196);
+	else cairo_set_source_rgb (cr, 0.568627451, 0.580392157, 0.580392157);
+
+	pl = pango_cairo_create_layout (cr);
+
+	if (ptz->name[1] == '\0') cairo_translate (cr, 50 * thumbnail_size, 20 * thumbnail_size);
+	else cairo_translate (cr, 10 * thumbnail_size, 20 * thumbnail_size);
+
+	sprintf (font + 13, "%d", (int)(100.0 * thumbnail_size));
+
+	pango_layout_set_text (pl, ptz->name, -1);
+	desc = pango_font_description_from_string (font);
+	pango_layout_set_font_description (pl, desc);
+	pango_font_description_free (desc);
+
+	pango_cairo_show_layout (cr, pl);
+
+	g_object_unref(pl);
+
+	return GDK_EVENT_PROPAGATE;
+}
+
+gboolean ghost_name_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
+{
+	PangoLayout *pl;
+	PangoFontDescription *desc;
+
+	cairo_set_source_rgb (cr, 0.2, 0.223529412, 0.231372549);
+
+	cairo_paint (cr);
+
+	if (ptz->tally_data & 0x30) {
+		if ((ptz->tally_data & 0x10) && !(ptz->tally_data & 0x20)) cairo_set_source_rgb (cr, ptz->tally_brightness, 0.0, 0.0);
+		else if ((ptz->tally_data & 0x20) && !(ptz->tally_data & 0x10)) cairo_set_source_rgb (cr, 0.0, ptz->tally_brightness, 0.0);
+		else cairo_set_source_rgb (cr, 0.941176471 * ptz->tally_brightness, 0.764705882 * ptz->tally_brightness, 0.0);
+	} else if (ptz->tally_data & 0x03) {
+		if (!ptz->tally_1_is_on) {
+			if ((ptz->tally_data & 0x01) && !(ptz->tally_data & 0x02)) cairo_set_source_rgb (cr, ptz->tally_brightness, 0.0, 0.0);
+			else if ((ptz->tally_data & 0x02) && !(ptz->tally_data & 0x01)) cairo_set_source_rgb (cr, 0.0, ptz->tally_brightness, 0.0);
+			else cairo_set_source_rgb (cr, 0.941176471 * ptz->tally_brightness, 0.764705882 * ptz->tally_brightness, 0.0);
+		}
+	} else cairo_set_source_rgb (cr, 0.933333333, 0.933333333, 0.925490196);
+
+	pl = pango_cairo_create_layout (cr);
+
+	if (ptz->name[1] == '\0') cairo_translate (cr, 60 * thumbnail_size, -10 * thumbnail_size);
+	else cairo_translate (cr, 30 * thumbnail_size, -10 * thumbnail_size);
+
+	sprintf (font + 13, "%d", (int)(80.0 * thumbnail_size));
+
+	pango_layout_set_text (pl, ptz->name, -1);
+	desc = pango_font_description_from_string (font);
+	pango_layout_set_font_description (pl, desc);
+	pango_font_description_free (desc);
+
+	pango_cairo_show_layout (cr, pl);
+
+	g_object_unref(pl);
+
+	return GDK_EVENT_PROPAGATE;
+}
+
+gboolean control_window_name_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
+{
+	PangoLayout *pl;
+	PangoFontDescription *desc;
+
+	cairo_set_source_rgb (cr, 0.2, 0.223529412, 0.231372549);
+
+	cairo_paint (cr);
+
+	if (ptz->tally_data & 0x30) {
+		if ((ptz->tally_data & 0x10) && !(ptz->tally_data & 0x20)) cairo_set_source_rgb (cr, ptz->tally_brightness, 0.0, 0.0);
+		else if ((ptz->tally_data & 0x20) && !(ptz->tally_data & 0x10)) cairo_set_source_rgb (cr, 0.0, ptz->tally_brightness, 0.0);
+		else cairo_set_source_rgb (cr, 0.941176471 * ptz->tally_brightness, 0.764705882 * ptz->tally_brightness, 0.0);
+	} else if (ptz->tally_data & 0x03) {
+		if (!ptz->tally_1_is_on) {
+			if ((ptz->tally_data & 0x01) && !(ptz->tally_data & 0x02)) cairo_set_source_rgb (cr, ptz->tally_brightness, 0.0, 0.0);
+			else if ((ptz->tally_data & 0x02) && !(ptz->tally_data & 0x01)) cairo_set_source_rgb (cr, 0.0, ptz->tally_brightness, 0.0);
+			else cairo_set_source_rgb (cr, 0.941176471 * ptz->tally_brightness, 0.764705882 * ptz->tally_brightness, 0.0);
+		}
+	} else cairo_set_source_rgb (cr, 0.933333333, 0.933333333, 0.925490196);
+
+	pl = pango_cairo_create_layout (cr);
+
+	if (ptz->name[1] == '\0') cairo_translate (cr, 18, 0);
+	else cairo_translate (cr, 5, 0);
+
+	pango_layout_set_text (pl, ptz->name, -1);
+	desc = pango_font_description_from_string ("Courier Bold 30");
+	pango_layout_set_font_description (pl, desc);
+	pango_font_description_free (desc);
+
+	pango_cairo_show_layout (cr, pl);
+
+	g_object_unref(pl);
+
+	return GDK_EVENT_PROPAGATE;
+}
+
+void init_tally (void)
+{
+	memset (&tsl_umd_v5_adresse, 0, sizeof (struct sockaddr_in));
+	tsl_umd_v5_adresse.sin_family = AF_INET;
+	tsl_umd_v5_adresse.sin_port = htons (TSL_UMD_V5_UDP_PORT);
+	tsl_umd_v5_adresse.sin_addr.s_addr = inet_addr (my_ip_adresse);
+}
+
+gpointer receive_tsl_umd_v5_msg (gpointer data)
+{
+	int msg_len;
+	tsl_umd_v5_packet_t packet;
+	ptz_t *ptz;
+
+	while ((msg_len = recv (tsl_umd_v5_socket, (char*)&packet, 2048, 0)) > 1) {
+		if (current_camera_set != NULL) {
+			if (packet.index < current_camera_set->number_of_cameras) {
+				ptz = current_camera_set->ptz_ptr_array[packet.index];
+				ptz->tally_data = packet.control;
+
+				if ((packet.control & 0x80) && (packet.control & 0x40)) ptz->tally_brightness = 1.0;
+				else if (packet.control & 0x80) ptz->tally_brightness = 0.8;
+				else if (packet.control & 0x40) ptz->tally_brightness = 0.6;
+				else ptz->tally_brightness = 0.4;
+
+				if (packet.control & 0x30) {
+					if (send_ip_tally && !ptz->tally_1_is_on && ptz->ip_adresse_is_valid && (ptz->error_code != 0x30)) send_ptz_control_command (ptz, "#DA1", TRUE);
+					ptz->tally_1_is_on = TRUE;
+				} else {
+					if (send_ip_tally && ptz->tally_1_is_on && ptz->ip_adresse_is_valid && (ptz->error_code != 0x30)) send_ptz_control_command (ptz, "#DA0", TRUE);
+					ptz->tally_1_is_on = FALSE;
+				}
+
+				g_idle_add ((GSourceFunc)g_source_ptz_tally_queue_draw, ptz);
+			}
+		}
+	}
+
+	return NULL;
+}
+
+void start_tally (void)
+{
+	tsl_umd_v5_socket = socket (AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+	bind (tsl_umd_v5_socket, (struct sockaddr *)&tsl_umd_v5_adresse, sizeof (struct sockaddr_in));
+	tsl_umd_v5_thread = g_thread_new (NULL, receive_tsl_umd_v5_msg, NULL);
+}
+
+void stop_tally (void)
+{
+	closesocket (tsl_umd_v5_socket);
+
+//	if (tsl_umd_v5_thread != NULL) g_thread_join (tsl_umd_v5_thread);
+	tsl_umd_v5_thread = NULL;
+}
+
