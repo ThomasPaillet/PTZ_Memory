@@ -2036,7 +2036,7 @@ button:hover {
 
 button:checked {
   -gtk-icon-shadow: none;
-  background-image: image(rgb(27,31,32));
+  background-image: image(rgb(37,41,43));
   border-bottom-color: rgb(27,31,32);
   border-left-color: rgb(27,31,32);
   border-right-color: rgb(27,31,32);
