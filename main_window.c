@@ -42,8 +42,6 @@ const char *application_name_txt = "Mémoires Pan Tilt Zoom pour caméras Panaso
 const char *warning_txt = "Attention !";
 const char *about_txt = "A propos";
 
-GtkCssProvider *main_css_provider;
-
 GtkWidget *main_window, *main_window_notebook;
 GtkWidget *thumbnail_size_scale;
 GtkWidget *store_toggle_button, *delete_toggle_button, *link_toggle_button;
@@ -431,8 +429,20 @@ gboolean main_window_scroll (GtkWidget *widget, GdkEventScroll *event)
 
 void create_main_window (void)
 {
+	GtkCssProvider *css_provider_button, *css_provider_toggle_button;
+	GFile *file;
 	GtkWidget *box1, *box2, *box3, *box4;
 	GtkWidget *widget;
+
+	css_provider_button = gtk_css_provider_new ();
+	file = g_file_new_for_path ("resources" G_DIR_SEPARATOR_S "Button.css");
+	gtk_css_provider_load_from_file (css_provider_button, file, NULL);
+	g_object_unref (file);
+
+	css_provider_toggle_button = gtk_css_provider_new ();
+	file = g_file_new_for_path ("resources" G_DIR_SEPARATOR_S "ToggleButton.css");
+	gtk_css_provider_load_from_file (css_provider_toggle_button, file, NULL);
+	g_object_unref (file);
 
 	main_window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_title (GTK_WINDOW (main_window), application_name_txt);
@@ -457,6 +467,7 @@ void create_main_window (void)
 
 		box2 = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
 			widget = gtk_button_new_with_label (settings_txt);
+			gtk_style_context_add_provider (gtk_widget_get_style_context (widget), GTK_STYLE_PROVIDER (css_provider_button), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION + 1);
 			gtk_button_set_use_underline (GTK_BUTTON (widget), TRUE);
 			g_signal_connect (G_OBJECT (widget), "clicked", G_CALLBACK (create_settings_window), NULL);
 		gtk_box_pack_start (GTK_BOX (box2), widget, FALSE, FALSE, 0);
@@ -481,31 +492,37 @@ void create_main_window (void)
 
 			box3 = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
 				store_toggle_button = gtk_toggle_button_new_with_label ("_Enregister");
+				gtk_style_context_add_provider (gtk_widget_get_style_context (store_toggle_button), GTK_STYLE_PROVIDER (css_provider_toggle_button), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION + 1);
 				gtk_button_set_use_underline (GTK_BUTTON (store_toggle_button), TRUE);
 				g_signal_connect (G_OBJECT (store_toggle_button), "toggled", G_CALLBACK (store_toggle_button_clicked), NULL);
 			gtk_box_pack_start (GTK_BOX (box3), store_toggle_button, FALSE, FALSE, 0);
 
 				delete_toggle_button = gtk_toggle_button_new_with_label ("_Supprimer");
+				gtk_style_context_add_provider (gtk_widget_get_style_context (delete_toggle_button), GTK_STYLE_PROVIDER (css_provider_toggle_button), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION + 1);
 				gtk_button_set_use_underline (GTK_BUTTON (delete_toggle_button), TRUE);
 				g_signal_connect (G_OBJECT (delete_toggle_button), "toggled", G_CALLBACK (delete_toggle_button_clicked), NULL);
 			gtk_box_pack_start (GTK_BOX (box3), delete_toggle_button, FALSE, FALSE, 0);
 
 				link_toggle_button = gtk_toggle_button_new_with_label ("_Lier");
+				gtk_style_context_add_provider (gtk_widget_get_style_context (link_toggle_button), GTK_STYLE_PROVIDER (css_provider_toggle_button), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION + 1);
 				gtk_button_set_use_underline (GTK_BUTTON (link_toggle_button), TRUE);
 			gtk_box_pack_start (GTK_BOX (box3), link_toggle_button, FALSE, FALSE, 0);
 		gtk_box_set_center_widget (GTK_BOX (box2), box3);
 
 			widget = gtk_button_new_with_label (about_txt);
+			gtk_style_context_add_provider (gtk_widget_get_style_context (widget), GTK_STYLE_PROVIDER (css_provider_button), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION + 1);
 			g_signal_connect (G_OBJECT (widget), "clicked", G_CALLBACK (show_about_window), NULL);
 		gtk_box_pack_end (GTK_BOX (box2), widget, FALSE, FALSE, 0);
 
 			box3 = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
 				box4 = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
 					switch_cameras_on_button = gtk_button_new_with_label ("Tout allumer");
+					gtk_style_context_add_provider (gtk_widget_get_style_context (switch_cameras_on_button), GTK_STYLE_PROVIDER (css_provider_button), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION + 1);
 					g_signal_connect (G_OBJECT (switch_cameras_on_button), "clicked", G_CALLBACK (switch_cameras_on), NULL);
 				gtk_box_pack_start (GTK_BOX (box4), switch_cameras_on_button, FALSE, FALSE, 0);
 
 					switch_cameras_off_button = gtk_button_new_with_label ("Tout éteindre");
+					gtk_style_context_add_provider (gtk_widget_get_style_context (switch_cameras_off_button), GTK_STYLE_PROVIDER (css_provider_button), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION + 1);
 					g_signal_connect (G_OBJECT (switch_cameras_off_button), "clicked", G_CALLBACK (switch_cameras_off), NULL);
 				gtk_box_pack_start (GTK_BOX (box4), switch_cameras_off_button, FALSE, FALSE, 0);
 			gtk_box_set_center_widget (GTK_BOX (box3), box4);
@@ -540,6 +557,7 @@ int WINAPI WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 int main (int argc, char** argv)
 #endif
 {
+	GtkCssProvider *main_css_provider;
 	GFile *file;
 	GdkScreen *screen;
 	GList *pointing_devices, *glist;
@@ -658,4 +676,3 @@ int main (int argc, char** argv)
 
 	return 0;
 }
-
