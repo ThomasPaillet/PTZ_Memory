@@ -65,6 +65,9 @@ gpointer controller_switch_ptz (ptz_thread_t *ptz_thread)
 
 void init_controller (void)
 {
+	memset (&controller_adresse, 0, sizeof (struct sockaddr_in));
+	controller_adresse.sin_family = AF_INET;
+	controller_adresse.sin_port = htons (80);
+
 	controller_cmd_size = sprintf (controller_cmd, "%sXPT:00%s%s%s%s%s%s", http_cam_cmd, http_cam_ptz_header, http_header_1, my_ip_adresse, http_header_2, my_ip_adresse, http_header_3);
 }
-
