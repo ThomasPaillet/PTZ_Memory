@@ -366,7 +366,7 @@ void create_settings_window (void)
 						for (l = 1; controller_ip_adresse[l] != '.'; l++) {}
 						controller_ip_entry_buffer[0] = gtk_entry_buffer_new (controller_ip_adresse, l);
 						k = l + 1;
-					} else controller_ip_entry_buffer[0] = gtk_entry_buffer_new ("10", 2);
+					} else controller_ip_entry_buffer[0] = gtk_entry_buffer_new (NULL, -1);
 
 					widget = gtk_entry_new_with_buffer (controller_ip_entry_buffer[0]);
 					gtk_entry_set_input_purpose (GTK_ENTRY (widget), GTK_INPUT_PURPOSE_DIGITS);
@@ -385,7 +385,7 @@ void create_settings_window (void)
 						for (l = 1; controller_ip_adresse[k + l] != '.'; l++) {}
 						controller_ip_entry_buffer[1] = gtk_entry_buffer_new (controller_ip_adresse + k, l);
 						k += l + 1;
-					} else controller_ip_entry_buffer[1] = gtk_entry_buffer_new (NULL, 2);
+					} else controller_ip_entry_buffer[1] = gtk_entry_buffer_new (NULL, -1);
 
 					widget = gtk_entry_new_with_buffer (controller_ip_entry_buffer[1]);
 					gtk_entry_set_input_purpose (GTK_ENTRY (widget), GTK_INPUT_PURPOSE_DIGITS);
@@ -404,7 +404,7 @@ void create_settings_window (void)
 						for (l = 1; controller_ip_adresse[k + l] != '.'; l++) {}
 						controller_ip_entry_buffer[2] = gtk_entry_buffer_new (controller_ip_adresse + k, l);
 						k += l + 1;
-					} else controller_ip_entry_buffer[2] = gtk_entry_buffer_new (NULL, 2);
+					} else controller_ip_entry_buffer[2] = gtk_entry_buffer_new (NULL, -1);
 
 					widget = gtk_entry_new_with_buffer (controller_ip_entry_buffer[2]);
 					gtk_entry_set_input_purpose (GTK_ENTRY (widget), GTK_INPUT_PURPOSE_DIGITS);
@@ -423,7 +423,7 @@ void create_settings_window (void)
 						for (l = 1; controller_ip_adresse[k + l] != '.'; l++) {}
 						controller_ip_entry_buffer[3] = gtk_entry_buffer_new (controller_ip_adresse + k, l);
 						k += l + 1;
-					} else controller_ip_entry_buffer[3] = gtk_entry_buffer_new (NULL, 2);
+					} else controller_ip_entry_buffer[3] = gtk_entry_buffer_new (NULL, -1);
 
 					widget = gtk_entry_new_with_buffer (controller_ip_entry_buffer[3]);
 					gtk_entry_set_input_purpose (GTK_ENTRY (widget), GTK_INPUT_PURPOSE_DIGITS);
