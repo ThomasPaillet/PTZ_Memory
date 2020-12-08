@@ -1,0 +1,12 @@
+button {
+	font-size: larger;
+}
+
+button:checked {
+	background-image: image(rgb(37,41,200));
+}
+
+button:active {
+	background-image: image(rgb(37,41,200));
+}
+
