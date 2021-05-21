@@ -1,5 +1,5 @@
 /*
- * copyright (c) 2020 Thomas Paillet <thomas.paillet@net-c.fr
+ * copyright (c) 2020 2021 Thomas Paillet <thomas.paillet@net-c.fr>
 
  * This file is part of PTZ-Memory.
 
@@ -14,7 +14,7 @@
  * GNU General Public License for more details.
 
  * You should have received a copy of the GNU General Public License
- * along with PTZ-Memory.  If not, see <https://www.gnu.org/licenses/>.
+ * along with PTZ-Memory. If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include "ptz.h"
@@ -25,10 +25,12 @@ void init_ptz (ptz_t *ptz)
 	int i;
 
 	ptz->active = TRUE;
-	ptz->ip_adresse[0] = '\0';
-	ptz->ip_adresse_is_valid = FALSE;
+	ptz->ip_address[0] = '\0';
+	ptz->ip_address_is_valid = FALSE;
 
 	init_ptz_cmd (ptz);
+
+	ptz->model = AW_UE150;
 
 	for (i = 0; i < MAX_MEMORIES; i++) {
 		ptz->memories[i].ptz = ptz;
@@ -98,7 +100,11 @@ gboolean ptz_is_off (ptz_t *ptz)
 		gtk_widget_hide (ptz->control_window.window);
 	}
 
-	if ((ptz->error_code != 0x30) && (ptz->error_code != 0x00)) clear_ptz_error (ptz);
+	if ((ptz->error_code != 0x30) && (ptz->error_code != 0x00)) {
+		ptz->error_code = 0x00;
+		gtk_widget_queue_draw (ptz->error_drawing_area);
+		gtk_widget_set_tooltip_text (ptz->error_drawing_area, NULL);
+	}
 
 	gtk_widget_set_sensitive (ptz->name_grid, FALSE);
 	gtk_widget_set_sensitive (ptz->memories_grid, FALSE);
@@ -125,6 +131,9 @@ gpointer start_ptz (ptz_thread_t *ptz_thread)
 	if (ptz->error_code != 0x30) send_ptz_request_command (ptz, "#O", &response);
 
 	if (response == 1) {
+		send_cam_request_command_string (ptz, "QID", buffer);
+		if (memcmp (buffer, "AW-HE130", 8) == 0) ptz->model = AW_HE130;
+
 		send_cam_request_command (ptz, "QAF", &response);
 		if (response == 1) ptz->auto_focus = TRUE;
 		else ptz->auto_focus = FALSE;
@@ -210,7 +219,8 @@ gpointer save_memory (ptz_thread_t *ptz_thread)
 	ptz_t *ptz = memory->ptz;
 	char response[16];
 
-	send_thumbnail_request_cmd (memory);
+	if (ptz->model == AW_HE130) send_thumbnail_320_request_cmd (memory);
+	else send_thumbnail_640_request_cmd (memory);
 
 	if (thumbnail_width != 320) {
 		if (!memory->empty) g_object_unref (G_OBJECT (memory->scaled_pixbuf));
@@ -258,7 +268,7 @@ gpointer load_memory (ptz_thread_t *ptz_thread)
 
 	send_ptz_control_command (ptz, memory->pan_tilt_position_cmd, TRUE);
 
-	if (controller_is_used && controller_ip_adresse_is_valid) {
+	if (controller_is_used && controller_ip_address_is_valid) {
 		controller_thread = g_malloc (sizeof (ptz_thread_t));
 		controller_thread->pointer = ptz;
 		controller_thread->thread = g_thread_new (NULL, (GThreadFunc)controller_switch_ptz, controller_thread);
@@ -356,7 +366,7 @@ gboolean memory_button_button_press_event (GtkButton *button, GdkEventButton *ev
 			for (i = 0; i < current_camera_set->number_of_cameras; i++) {
 				ptz = current_camera_set->ptz_ptr_array[i];
 
-				if (ptz->ip_adresse_is_valid && (ptz->error_code != 0x30) && !ptz->memories[memory->index].empty) {
+				if (ptz->ip_address_is_valid && (ptz->error_code != 0x30) && !ptz->memories[memory->index].empty) {
 					if (ptz->memories + memory->index == memory) {
 						g_signal_handler_block (memory->button, memory->button_handler_id);
 
@@ -398,7 +408,7 @@ gboolean name_drawing_area_button_press_event (GtkButton *widget, GdkEventButton
 
 		ask_to_connect_ptz_to_ctrl_opv (ptz);
 
-		if (controller_is_used && controller_ip_adresse_is_valid) {
+		if (controller_is_used && controller_ip_address_is_valid) {
 			controller_thread = g_malloc (sizeof (ptz_thread_t));
 			controller_thread->pointer = ptz;
 			controller_thread->thread = g_thread_new (NULL, (GThreadFunc)controller_switch_ptz, controller_thread);
@@ -424,6 +434,13 @@ gboolean name_drawing_area_leave_notify_event (GtkWidget *widget, GdkEvent *even
 	gtk_widget_queue_draw (ptz->error_drawing_area);
 
 	return GDK_EVENT_PROPAGATE;
+}
+
+gboolean ghost_name_drawing_area_button_press_event (GtkButton *widget, GdkEventButton *event, ptz_t *ptz)
+{
+	if (event->button == GDK_BUTTON_PRIMARY) ask_to_connect_ptz_to_ctrl_opv (ptz);
+
+	return GDK_EVENT_STOP;
 }
 
 void create_ptz_widgets (ptz_t *ptz)
@@ -516,6 +533,7 @@ void create_ghost_ptz_widgets (ptz_t *ptz)
 		ptz->name_drawing_area = gtk_drawing_area_new ();
 		gtk_widget_set_size_request (ptz->name_drawing_area, thumbnail_height + 8, thumbnail_height / 2);
 		g_signal_connect (G_OBJECT (ptz->name_drawing_area), "draw", G_CALLBACK (ghost_name_draw), ptz);
+		g_signal_connect (G_OBJECT (ptz->name_drawing_area), "button-press-event", G_CALLBACK (ghost_name_drawing_area_button_press_event), ptz);
 	gtk_grid_attach (GTK_GRID (ptz->name_grid), ptz->name_drawing_area, 1, 1, 1, 1);
 
 		ptz->tally[2] = gtk_drawing_area_new ();

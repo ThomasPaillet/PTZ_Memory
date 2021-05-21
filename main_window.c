@@ -1,5 +1,5 @@
 /*
- * copyright (c) 2020 Thomas Paillet <thomas.paillet@net-c.fr
+ * copyright (c) 2020 2021 Thomas Paillet <thomas.paillet@net-c.fr>
 
  * This file is part of PTZ-Memory.
 
@@ -14,18 +14,10 @@
  * GNU General Public License for more details.
 
  * You should have received a copy of the GNU General Public License
- * along with PTZ-Memory.  If not, see <https://www.gnu.org/licenses/>.
+ * along with PTZ-Memory. If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include "ptz.h"
-
-
-#ifdef DEBUG_PTZ
-	GMutex debug_mutex;
-#ifdef _WIN32
-	FILE *debug_file;
-#endif
-#endif
 
 
 #ifdef _WIN32
@@ -38,7 +30,7 @@ void load_pixbufs (void);
 #endif
 
 
-const char *application_name_txt = "Mémoires Pan Tilt Zoom pour caméras Panasonic AW-HE130";
+const char *application_name_txt = "Mémoires Pan Tilt Zoom pour caméras PTZ Panasonic";
 const char *warning_txt = "Attention !";
 const char *about_txt = "A propos";
 
@@ -191,7 +183,7 @@ void switch_cameras_on (void)
 	ptz_thread_t *ptz_thread;
 
 	for (i = 0; i < current_camera_set->number_of_cameras; i++) {
-		if (current_camera_set->ptz_ptr_array[i]->ip_adresse_is_valid) {
+		if (current_camera_set->ptz_ptr_array[i]->ip_address_is_valid) {
 			ptz_thread = g_malloc (sizeof (ptz_thread_t));
 			ptz_thread->pointer = current_camera_set->ptz_ptr_array[i];
 			ptz_thread->thread = g_thread_new (NULL, (GThreadFunc)switch_ptz_on, ptz_thread);
@@ -205,7 +197,7 @@ void switch_cameras_off (void)
 	ptz_thread_t *ptz_thread;
 
 	for (i = 0; i < current_camera_set->number_of_cameras; i++) {
-		if (current_camera_set->ptz_ptr_array[i]->ip_adresse_is_valid) {
+		if (current_camera_set->ptz_ptr_array[i]->ip_address_is_valid) {
 			ptz_thread = g_malloc (sizeof (ptz_thread_t));
 			ptz_thread->pointer = current_camera_set->ptz_ptr_array[i];
 			ptz_thread->thread = g_thread_new (NULL, (GThreadFunc)switch_ptz_off, ptz_thread);
@@ -232,10 +224,7 @@ gboolean about_window_key_press (GtkWidget *window, GdkEventKey *event)
 void show_about_window (void)
 {
 	GtkWidget *about_window, *box, *widget;
-	struct timeval current_time;
 	char gtk_version[64];
-
-	gettimeofday (&current_time, NULL);
 
 	about_window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_type_hint (GTK_WINDOW (about_window), GDK_WINDOW_TYPE_HINT_DIALOG);
@@ -249,10 +238,11 @@ void show_about_window (void)
 
 	box = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
 	gtk_container_set_border_width (GTK_CONTAINER (box), MARGIN_VALUE);
-		widget = gtk_label_new (application_name_txt);
+		widget = gtk_label_new (NULL);
+		gtk_label_set_markup (GTK_LABEL (widget), "<b>Mémoires Pan Tilt Zoom pour caméras PTZ Panasonic</b>");
 		gtk_box_pack_start (GTK_BOX (box), widget, FALSE, FALSE, 0);
 
-		widget = gtk_label_new ("Version 1.0");
+		widget = gtk_label_new ("Version 1.1");
 		gtk_box_pack_start (GTK_BOX (box), widget, FALSE, FALSE, 0);
 #ifdef _WIN32
 		widget = gtk_image_new_from_pixbuf (pixbuf_logo);
@@ -285,7 +275,7 @@ void show_about_window (void)
 		widget = gtk_separator_new (GTK_ORIENTATION_HORIZONTAL);
 		gtk_box_pack_start (GTK_BOX (box), widget, FALSE, FALSE, 0);
 
-		widget = gtk_label_new ("Copyright (c) 2020 Thomas Paillet");
+		widget = gtk_label_new ("Copyright (c) 2020 2021 Thomas Paillet");
 		gtk_box_pack_start (GTK_BOX (box), widget, FALSE, FALSE, 0);
 
 		widget = gtk_label_new ("GNU General Public License version 3");
@@ -339,14 +329,14 @@ gboolean main_window_key_press (GtkWidget *widget, GdkEventKey *event)
 
 					if (trackball != NULL) gdk_device_get_position_double (mouse, NULL, &ptz->control_window.x, &ptz->control_window.y);
 
-					ask_to_connect_ptz_to_ctrl_opv (ptz);
-
-					if (controller_is_used && controller_ip_adresse_is_valid) {
+					if (controller_is_used && controller_ip_address_is_valid) {
 						controller_thread = g_malloc (sizeof (ptz_thread_t));
 						controller_thread->pointer = ptz;
 						controller_thread->thread = g_thread_new (NULL, (GThreadFunc)controller_switch_ptz, controller_thread);
 					}
 				}
+
+				ask_to_connect_ptz_to_ctrl_opv (ptz);
 			}
 		}
 		return GDK_EVENT_STOP;
@@ -429,7 +419,7 @@ gboolean main_window_scroll (GtkWidget *widget, GdkEventScroll *event)
 
 void create_main_window (void)
 {
-	GtkCssProvider *css_provider_button, *css_provider_toggle_button;
+	GtkCssProvider *css_provider_button, *css_provider_toggle_button_red, *css_provider_toggle_button_blue;
 	GFile *file;
 	GtkWidget *box1, *box2, *box3, *box4;
 	GtkWidget *widget;
@@ -530,7 +520,7 @@ void create_main_window (void)
 				gtk_box_pack_start (GTK_BOX (box4), switch_cameras_on_button, FALSE, FALSE, 0);
 
 					switch_cameras_off_button = gtk_button_new_with_label ("Tout éteindre");
-					gtk_widget_set_margin_start (switch_cameras_on_button, 3);
+					gtk_widget_set_margin_start (switch_cameras_off_button, 3);
 					gtk_style_context_add_provider (gtk_widget_get_style_context (switch_cameras_off_button), GTK_STYLE_PROVIDER (css_provider_button), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION + 1);
 					g_signal_connect (G_OBJECT (switch_cameras_off_button), "clicked", G_CALLBACK (switch_cameras_off), NULL);
 				gtk_box_pack_start (GTK_BOX (box4), switch_cameras_off_button, FALSE, FALSE, 0);
@@ -654,7 +644,7 @@ int main (int argc, char** argv)
 			if (cameras_set_itr->ptz_ptr_array[i]->active) {
 				ptz_is_off (cameras_set_itr->ptz_ptr_array[i]);
 
-				if (cameras_set_itr->ptz_ptr_array[i]->ip_adresse_is_valid) {
+				if (cameras_set_itr->ptz_ptr_array[i]->ip_address_is_valid) {
 					ptz_thread = g_malloc (sizeof (ptz_thread_t));
 					ptz_thread->pointer = cameras_set_itr->ptz_ptr_array[i];
 					ptz_thread->thread = g_thread_new (NULL, (GThreadFunc)start_ptz, ptz_thread);
@@ -685,3 +675,4 @@ int main (int argc, char** argv)
 
 	return 0;
 }
+

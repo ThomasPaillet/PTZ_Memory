@@ -1,5 +1,5 @@
 /*
- * copyright (c) 2020 Thomas Paillet <thomas.paillet@net-c.fr
+ * copyright (c) 2020 2021 Thomas Paillet <thomas.paillet@net-c.fr>
 
  * This file is part of PTZ-Memory.
 
@@ -14,7 +14,7 @@
  * GNU General Public License for more details.
 
  * You should have received a copy of the GNU General Public License
- * along with PTZ-Memory.  If not, see <https://www.gnu.org/licenses/>.
+ * along with PTZ-Memory. If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include "ptz.h"
@@ -23,8 +23,8 @@
 
 
 #ifdef _WIN32
-GdkPixbuf *pixbuf_grille_1;
-GdkPixbuf *pixbuf_grille_2;
+extern GdkPixbuf *pixbuf_grille_1;
+extern GdkPixbuf *pixbuf_grille_2;
 #endif
 
 
@@ -44,7 +44,7 @@ char full_sw_p_08_buffer[14] = {DLE, ACK, DLE, STX, 0x04, 0x00, 0x00, 0x00, 0x00
 char *sw_p_08_buffer = &full_sw_p_08_buffer[2];
 int sw_p_08_buffer_len = 11;
 
-struct sockaddr_in sw_p_08_adresse;
+struct sockaddr_in sw_p_08_address;
 SOCKET sw_p_08_socket;
 
 GThread *sw_p_08_thread = NULL;
@@ -175,7 +175,7 @@ void show_matrix_window (void)
 
 		box = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
 		gtk_widget_set_halign (box, GTK_ALIGN_CENTER);
-			sprintf (label, "Liaison TCP/IP : %s:%d", my_ip_adresse, ntohs (sw_p_08_adresse.sin_port));
+			sprintf (label, "Liaison TCP/IP : %s:%d", my_ip_address, ntohs (sw_p_08_address.sin_port));
 			widget = gtk_label_new (label);
 			gtk_widget_set_margin_top (widget, MARGIN_VALUE);
 			gtk_widget_set_margin_bottom (widget, MARGIN_VALUE);
@@ -531,10 +531,10 @@ void init_sw_p_08 (void)
 {
 	g_mutex_init (&sw_p_08_mutex);
 
-	memset (&sw_p_08_adresse, 0, sizeof (struct sockaddr_in));
-	sw_p_08_adresse.sin_family = AF_INET;
-	sw_p_08_adresse.sin_port = htons (SW_P_08_TCP_PORT);
-	sw_p_08_adresse.sin_addr.s_addr = inet_addr (my_ip_adresse);
+	memset (&sw_p_08_address, 0, sizeof (struct sockaddr_in));
+	sw_p_08_address.sin_family = AF_INET;
+	sw_p_08_address.sin_port = htons (SW_P_08_TCP_PORT);
+	sw_p_08_address.sin_addr.s_addr = inet_addr (my_ip_address);
 
 	remote_devices[0].src_socket = INVALID_SOCKET;
 	remote_devices[0].connected_label = NULL;
@@ -549,7 +549,7 @@ void start_sw_p_08 (void)
 {
 	sw_p_08_socket = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
-	if (bind (sw_p_08_socket, (struct sockaddr *)&sw_p_08_adresse, sizeof (struct sockaddr_in)) == 0) {
+	if (bind (sw_p_08_socket, (struct sockaddr *)&sw_p_08_address, sizeof (struct sockaddr_in)) == 0) {
 		if (listen (sw_p_08_socket, 2) == 0) sw_p_08_thread = g_thread_new (NULL, (GThreadFunc)sw_p_08_server, NULL);
 	}
 }
@@ -559,20 +559,23 @@ void stop_sw_p_08 (void)
 	sw_p_08_server_started = FALSE;
 
 	if (remote_devices[0].src_socket != INVALID_SOCKET) {
+		shutdown (remote_devices[0].src_socket, SHUT_RD);
 		closesocket (remote_devices[0].src_socket);
 		remote_devices[0].src_socket = INVALID_SOCKET;
 	}
 
 	if (remote_devices[1].src_socket != INVALID_SOCKET) {
+		shutdown (remote_devices[1].src_socket, SHUT_RD);
 		closesocket (remote_devices[1].src_socket);
 		remote_devices[1].src_socket = INVALID_SOCKET;
 	}
 
+	shutdown (sw_p_08_socket, SHUT_RD);
 	closesocket (sw_p_08_socket);
 
 	tally_opv = 0;
 
-/*	if (remote_devices[0].thread != NULL) {
+	if (remote_devices[0].thread != NULL) {
 		g_thread_join (remote_devices[0].thread);
 		remote_devices[0].thread = NULL;
 	}
@@ -580,9 +583,9 @@ void stop_sw_p_08 (void)
 	if (remote_devices[1].thread != NULL) {
 		g_thread_join (remote_devices[1].thread);
 		remote_devices[1].thread = NULL;
-	}*/
+	}
 
-//	if (sw_p_08_thread != NULL) g_thread_join (sw_p_08_thread);
+	if (sw_p_08_thread != NULL) g_thread_join (sw_p_08_thread);
 	sw_p_08_thread = NULL;
 }
 

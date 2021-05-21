@@ -1,5 +1,6 @@
 CC = cc
 CFLAGS = -c -Wall -D_REENTRANT `pkg-config --cflags gtk+-3.0`
+#CFLAGS = -c -mwin32 -Wall -D_REENTRANT `pkg-config --cflags gtk+-3.0`
 LDFLAGS = -lm `pkg-config --libs gtk+-3.0` -ljpeg
 
 PROG = PTZ-Memory

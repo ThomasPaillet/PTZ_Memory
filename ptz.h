@@ -1,5 +1,5 @@
 /*
- * copyright (c) 2020 Thomas Paillet <thomas.paillet@net-c.fr
+ * copyright (c) 2020 2021 Thomas Paillet <thomas.paillet@net-c.fr>
 
  * This file is part of PTZ-Memory.
 
@@ -14,7 +14,7 @@
  * GNU General Public License for more details.
 
  * You should have received a copy of the GNU General Public License
- * along with PTZ-Memory.  If not, see <https://www.gnu.org/licenses/>.
+ * along with PTZ-Memory. If not, see <https://www.gnu.org/licenses/>.
 */
 
 #ifndef __PTZ_H
@@ -23,6 +23,8 @@
 
 #ifdef _WIN32
 	#include <winsock2.h>
+
+	#define SHUT_RD SD_RECEIVE
 
 	void WSAInit (void);
 
@@ -47,6 +49,9 @@
 
 
 #define MAX_MEMORIES 20
+
+#define AW_HE130 0
+#define AW_UE150 1
 
 
 typedef struct {
@@ -108,13 +113,15 @@ typedef struct {
 	char name[3];
 	int index;
 	gboolean active;
-	char ip_adresse[16];
-	char new_ip_adresse[16];
-	gboolean ip_adresse_is_valid;
+	char ip_address[16];
+	char new_ip_address[16];
+	gboolean ip_address_is_valid;
 
 	int matrix_source_number;
 
-	struct sockaddr_in adresse;
+	struct sockaddr_in address;
+
+	int model;
 
 	int jpeg_page;
 	char cmd_buffer[272];
@@ -275,7 +282,7 @@ void save_config_file (void);
 
 
 //protocol.h
-extern char my_ip_adresse[16];
+extern char my_ip_address[16];
 
 void init_protocol (void);
 
@@ -293,9 +300,13 @@ void send_ptz_control_command (ptz_t *ptz, char* cmd, gboolean wait);
 
 void send_cam_request_command (ptz_t *ptz, char* cmd, int *response);
 
+void send_cam_request_command_string (ptz_t *ptz, char* cmd, char *response);
+
 void send_cam_control_command (ptz_t *ptz, char* cmd);
 
-void send_thumbnail_request_cmd (memory_t *memory);
+void send_thumbnail_320_request_cmd (memory_t *memory);
+
+void send_thumbnail_640_request_cmd (memory_t *memory);
 
 void send_jpeg_image_request_cmd (ptz_t *ptz);
 
@@ -303,10 +314,10 @@ void send_jpeg_image_request_cmd (ptz_t *ptz);
 //controller.h
 extern gboolean controller_is_used;
 
-extern char controller_ip_adresse[16];
-extern gboolean controller_ip_adresse_is_valid;
+extern char controller_ip_address[16];
+extern gboolean controller_ip_address_is_valid;
 
-extern struct sockaddr_in controller_adresse;
+extern struct sockaddr_in controller_address;
 
 
 gpointer controller_switch_ptz (ptz_thread_t *ptz_thread);
@@ -318,7 +329,7 @@ void init_controller (void);
 #define UPDATE_NOTIFICATION_TCP_PORT 31004
 
 
-extern struct sockaddr_in update_notification_adresse;
+extern struct sockaddr_in update_notification_address;
 
 
 void init_update_notification (void);
@@ -332,7 +343,7 @@ void stop_update_notification (void);
 #define SW_P_08_TCP_PORT 8000
 
 
-extern struct sockaddr_in sw_p_08_adresse;
+extern struct sockaddr_in sw_p_08_address;
 
 extern gboolean sw_p_08_server_started;
 
@@ -360,7 +371,7 @@ void stop_sw_p_08 (void);
 
 extern gboolean send_ip_tally;
 
-extern struct sockaddr_in tsl_umd_v5_adresse;
+extern struct sockaddr_in tsl_umd_v5_address;
 
 
 gboolean tally_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz);
@@ -383,29 +394,50 @@ void stop_tally (void);
 
 
 //error.h
-gboolean clear_ptz_error (ptz_t *ptz);
+gboolean clear_ptz_error (struct in_addr *src_in_addr);
 
-gboolean Motor_Driver_Error (ptz_t *ptz);
-gboolean Pan_Sensor_Error (ptz_t *ptz);
-gboolean Tilt_Sensor_Error (ptz_t *ptz);
-gboolean Controller_RX_Over_run_Error (ptz_t *ptz);
-gboolean Controller_RX_Framing_Error (ptz_t *ptz);
-gboolean Network_RX_Over_run_Error (ptz_t *ptz);
-gboolean Network_RX_Framing_Error (ptz_t *ptz);
-gboolean Controller_RX_Command_Buffer_Overflow (ptz_t *ptz);
-gboolean Network_RX_Command_Buffer_Overflow (ptz_t *ptz);
-gboolean System_Error (ptz_t *ptz);
-gboolean Spec_Limit_Over (ptz_t *ptz);
-gboolean Network_communication_Error (ptz_t *ptz);
-gboolean CAMERA_communication_Error (ptz_t *ptz);
-gboolean CAMERA_RX_Over_run_Error (ptz_t *ptz);
-gboolean CAMERA_RX_Framing_Error (ptz_t *ptz);
-gboolean CAMERA_RX_Command_Buffer_Overflow (ptz_t *ptz);
+gboolean Motor_Driver_Error (struct in_addr *src_in_addr);
+gboolean Pan_Sensor_Error (struct in_addr *src_in_addr);
+gboolean Tilt_Sensor_Error (struct in_addr *src_in_addr);
+gboolean Controller_RX_Over_run_Error (struct in_addr *src_in_addr);
+gboolean Controller_RX_Framing_Error (struct in_addr *src_in_addr);
+gboolean Network_RX_Over_run_Error (struct in_addr *src_in_addr);
+gboolean Network_RX_Framing_Error (struct in_addr *src_in_addr);
+gboolean Controller_RX_Command_Buffer_Overflow (struct in_addr *src_in_addr);
+gboolean Network_RX_Command_Buffer_Overflow (struct in_addr *src_in_addr);
+gboolean System_Error (struct in_addr *src_in_addr);
+gboolean Spec_Limit_Over (struct in_addr *src_in_addr);
+gboolean ABB_execution_failed (struct in_addr *src_in_addr);
+gboolean ABB_execution_failed_busy_status (struct in_addr *src_in_addr);
+
+gboolean Network_communication_Error_AW_HE130 (struct in_addr *src_in_addr);
+gboolean CAMERA_communication_Error_AW_HE130 (struct in_addr *src_in_addr);
+gboolean CAMERA_RX_Over_run_Error_AW_HE130 (struct in_addr *src_in_addr);
+gboolean CAMERA_RX_Framing_Error_AW_HE130 (struct in_addr *src_in_addr);
+gboolean CAMERA_RX_Command_Buffer_Overflow_AW_HE130 (struct in_addr *src_in_addr);
+
+gboolean FPGA_Config_Error_AW_UE150 (struct in_addr *src_in_addr);
+gboolean NET_Life_monitoring_Error_AW_UE150 (struct in_addr *src_in_addr);
+gboolean BE_Life_monitoring_Error_AW_UE150 (struct in_addr *src_in_addr);
+gboolean IF_BE_UART_Buffer_Overflow_AW_UE150 (struct in_addr *src_in_addr);
+gboolean IF_BE_UART_Framing_Error_AW_UE150 (struct in_addr *src_in_addr);
+gboolean IF_BE_UART_Buffer_Overflow_2_AW_UE150 (struct in_addr *src_in_addr);
+gboolean CAM_Life_monitoring_Error_AW_UE150 (struct in_addr *src_in_addr);
+gboolean Fan1_error_AW_UE150 (struct in_addr *src_in_addr);
+gboolean Fan2_error_AW_UE150 (struct in_addr *src_in_addr);
+gboolean High_Temp_AW_UE150 (struct in_addr *src_in_addr);
+gboolean Low_Temp_AW_UE150 (struct in_addr *src_in_addr);
+gboolean Temp_Sensor_Error_AW_UE150 (struct in_addr *src_in_addr);
+gboolean Lens_Initialize_Error_AW_UE150 (struct in_addr *src_in_addr);
+gboolean PT_Initialize_Error_AW_UE150 (struct in_addr *src_in_addr);
+gboolean MR_Level_Error_AW_UE150 (struct in_addr *src_in_addr);
+gboolean MR_Offset_Error_AW_UE150 (struct in_addr *src_in_addr);
+gboolean Origin_Offset_Error_AW_UE150 (struct in_addr *src_in_addr);
+gboolean Angle_MR_Sensor_Error_AW_UE150 (struct in_addr *src_in_addr);
+gboolean PT_Gear_Error_AW_UE150 (struct in_addr *src_in_addr);
+gboolean Motor_Disconnect_Error_AW_UE150 (struct in_addr *src_in_addr);
 
 gboolean camera_is_unreachable (ptz_t *ptz);
-
-gboolean ABB_execution_failed (ptz_t *ptz);
-gboolean ABB_execution_failed_busy_status (ptz_t *ptz);
 
 gboolean error_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz);
 

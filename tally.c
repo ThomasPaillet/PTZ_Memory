@@ -1,5 +1,5 @@
 /*
- * copyright (c) 2020 Thomas Paillet <thomas.paillet@net-c.fr
+ * copyright (c) 2020 2021 Thomas Paillet <thomas.paillet@net-c.fr>
 
  * This file is part of PTZ-Memory.
 
@@ -14,7 +14,7 @@
  * GNU General Public License for more details.
 
  * You should have received a copy of the GNU General Public License
- * along with PTZ-Memory.  If not, see <https://www.gnu.org/licenses/>.
+ * along with PTZ-Memory. If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include "ptz.h"
@@ -35,7 +35,7 @@ typedef struct {
 
 gboolean send_ip_tally = FALSE;
 
-struct sockaddr_in tsl_umd_v5_adresse;
+struct sockaddr_in tsl_umd_v5_address;
 SOCKET tsl_umd_v5_socket;
 
 GThread *tsl_umd_v5_thread = NULL;
@@ -249,10 +249,10 @@ gboolean control_window_name_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 
 void init_tally (void)
 {
-	memset (&tsl_umd_v5_adresse, 0, sizeof (struct sockaddr_in));
-	tsl_umd_v5_adresse.sin_family = AF_INET;
-	tsl_umd_v5_adresse.sin_port = htons (TSL_UMD_V5_UDP_PORT);
-	tsl_umd_v5_adresse.sin_addr.s_addr = inet_addr (my_ip_adresse);
+	memset (&tsl_umd_v5_address, 0, sizeof (struct sockaddr_in));
+	tsl_umd_v5_address.sin_family = AF_INET;
+	tsl_umd_v5_address.sin_port = htons (TSL_UMD_V5_UDP_PORT);
+	tsl_umd_v5_address.sin_addr.s_addr = inet_addr (my_ip_address);
 }
 
 gpointer receive_tsl_umd_v5_msg (gpointer data)
@@ -273,10 +273,10 @@ gpointer receive_tsl_umd_v5_msg (gpointer data)
 				else ptz->tally_brightness = 0.4;
 
 				if (packet.control & 0x30) {
-					if (send_ip_tally && !ptz->tally_1_is_on && ptz->ip_adresse_is_valid && (ptz->error_code != 0x30)) send_ptz_control_command (ptz, "#DA1", TRUE);
+					if (send_ip_tally && !ptz->tally_1_is_on && ptz->ip_address_is_valid && (ptz->error_code != 0x30)) send_ptz_control_command (ptz, "#DA1", TRUE);
 					ptz->tally_1_is_on = TRUE;
 				} else {
-					if (send_ip_tally && ptz->tally_1_is_on && ptz->ip_adresse_is_valid && (ptz->error_code != 0x30)) send_ptz_control_command (ptz, "#DA0", TRUE);
+					if (send_ip_tally && ptz->tally_1_is_on && ptz->ip_address_is_valid && (ptz->error_code != 0x30)) send_ptz_control_command (ptz, "#DA0", TRUE);
 					ptz->tally_1_is_on = FALSE;
 				}
 
@@ -291,15 +291,18 @@ gpointer receive_tsl_umd_v5_msg (gpointer data)
 void start_tally (void)
 {
 	tsl_umd_v5_socket = socket (AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-	bind (tsl_umd_v5_socket, (struct sockaddr *)&tsl_umd_v5_adresse, sizeof (struct sockaddr_in));
+	bind (tsl_umd_v5_socket, (struct sockaddr *)&tsl_umd_v5_address, sizeof (struct sockaddr_in));
 	tsl_umd_v5_thread = g_thread_new (NULL, receive_tsl_umd_v5_msg, NULL);
 }
 
 void stop_tally (void)
 {
+	shutdown (tsl_umd_v5_socket, SHUT_RD);
 	closesocket (tsl_umd_v5_socket);
 
-//	if (tsl_umd_v5_thread != NULL) g_thread_join (tsl_umd_v5_thread);
-	tsl_umd_v5_thread = NULL;
+	if (tsl_umd_v5_thread != NULL) {
+		g_thread_join (tsl_umd_v5_thread);
+		tsl_umd_v5_thread = NULL;
+	}
 }
 

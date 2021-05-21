@@ -1,5 +1,5 @@
 /*
- * copyright (c) 2020 Thomas Paillet <thomas.paillet@net-c.fr
+ * copyright (c) 2020 2021 Thomas Paillet <thomas.paillet@net-c.fr>
 
  * This file is part of PTZ-Memory.
 
@@ -14,7 +14,7 @@
  * GNU General Public License for more details.
 
  * You should have received a copy of the GNU General Public License
- * along with PTZ-Memory.  If not, see <https://www.gnu.org/licenses/>.
+ * along with PTZ-Memory. If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include "ptz.h"
@@ -22,10 +22,10 @@
 
 gboolean controller_is_used = FALSE;
 
-char controller_ip_adresse[16] = {'\0'};
-gboolean controller_ip_adresse_is_valid = FALSE;
+char controller_ip_address[16] = {'\0'};
+gboolean controller_ip_address_is_valid = FALSE;
 
-struct sockaddr_in controller_adresse;
+struct sockaddr_in controller_address;
 
 extern char *http_cam_cmd, *http_cam_ptz_header;
 extern char *http_header_1, *http_header_2, *http_header_3;
@@ -54,7 +54,7 @@ gpointer controller_switch_ptz (ptz_thread_t *ptz_thread)
 
 	sock = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
-	if (connect (sock, (struct sockaddr *) &controller_adresse, sizeof (struct sockaddr_in)) == 0) send (sock, controller_cmd, controller_cmd_size, 0);
+	if (connect (sock, (struct sockaddr *) &controller_address, sizeof (struct sockaddr_in)) == 0) send (sock, controller_cmd, controller_cmd_size, 0);
 
 	closesocket (sock);
 
@@ -65,9 +65,10 @@ gpointer controller_switch_ptz (ptz_thread_t *ptz_thread)
 
 void init_controller (void)
 {
-	memset (&controller_adresse, 0, sizeof (struct sockaddr_in));
-	controller_adresse.sin_family = AF_INET;
-	controller_adresse.sin_port = htons (80);
+	memset (&controller_address, 0, sizeof (struct sockaddr_in));
+	controller_address.sin_family = AF_INET;
+	controller_address.sin_port = htons (80);
 
-	controller_cmd_size = sprintf (controller_cmd, "%sXPT:00%s%s%s%s%s%s", http_cam_cmd, http_cam_ptz_header, http_header_1, my_ip_adresse, http_header_2, my_ip_adresse, http_header_3);
+	controller_cmd_size = sprintf (controller_cmd, "%sXPT:00%s%s%s%s%s%s", http_cam_cmd, http_cam_ptz_header, http_header_1, my_ip_address, http_header_2, my_ip_address, http_header_3);
 }
+

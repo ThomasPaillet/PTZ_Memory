@@ -1,5 +1,5 @@
 /*
- * copyright (c) 2020 Thomas Paillet <thomas.paillet@net-c.fr
+ * copyright (c) 2020 2021 Thomas Paillet <thomas.paillet@net-c.fr>
 
  * This file is part of PTZ-Memory.
 
@@ -14,7 +14,7 @@
  * GNU General Public License for more details.
 
  * You should have received a copy of the GNU General Public License
- * along with PTZ-Memory.  If not, see <https://www.gnu.org/licenses/>.
+ * along with PTZ-Memory. If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include "ptz.h"
@@ -121,7 +121,7 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 	GtkWidget *widget, *settings_list_box_row;
 	cameras_set_t *cameras_set_itr;
 	gboolean camera_is_active;
-	GSList *ip_adresses_list, *gslist_itr;
+	GSList *ip_addresss_list, *gslist_itr;
 	ptz_thread_t *ptz_thread;
 
 	entry_buffer_text = gtk_entry_buffer_get_text (cameras_set_configuration_name_entry_buffer);
@@ -174,12 +174,12 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 		for (i = new_number_of_cameras; i < cameras_set->number_of_cameras; i++) {
 			ptz = cameras_set->ptz_ptr_array[i];
 
-			if ((ptz->ip_adresse_is_valid) && (ptz->error_code != 0x30)) {
+			if ((ptz->ip_address_is_valid) && (ptz->error_code != 0x30)) {
 				for (cameras_set_itr = cameras_sets; cameras_set_itr != NULL; cameras_set_itr = cameras_set_itr->next) {
 					if (cameras_set == cameras_set_itr) continue;
 
 					for (j = 0; j < cameras_set_itr->number_of_cameras; j++) {
-						if (strcmp (cameras_set_itr->ptz_ptr_array[j]->ip_adresse, ptz->ip_adresse) == 0) break;
+						if (strcmp (cameras_set_itr->ptz_ptr_array[j]->ip_address, ptz->ip_address) == 0) break;
 					}
 					if (j < cameras_set_itr->number_of_cameras) break;
 				}
@@ -254,7 +254,7 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 
 	if (new_cameras_set != NULL) add_cameras_set_to_main_window_notebook (cameras_set);
 
-	ip_adresses_list = NULL;
+	ip_addresss_list = NULL;
 
 	for (i = 0; i < new_number_of_cameras; i++) {
 		ptz = cameras_set->ptz_ptr_array[i];
@@ -276,12 +276,12 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 				ptz->active = FALSE;
 				cameras_set->number_of_ghost_cameras++;
 
-				if ((ptz->ip_adresse_is_valid) && (ptz->error_code != 0x30)) {
+				if ((ptz->ip_address_is_valid) && (ptz->error_code != 0x30)) {
 					for (cameras_set_itr = cameras_sets; cameras_set_itr != NULL; cameras_set_itr = cameras_set_itr->next) {
 						if (cameras_set == cameras_set_itr) continue;
 
 						for (j = 0; j < cameras_set_itr->number_of_cameras; j++) {
-							if (strcmp (cameras_set_itr->ptz_ptr_array[j]->ip_adresse, ptz->ip_adresse) == 0) break;
+							if (strcmp (cameras_set_itr->ptz_ptr_array[j]->ip_address, ptz->ip_address) == 0) break;
 						}
 						if (j < cameras_set_itr->number_of_cameras) break;
 					}
@@ -291,8 +291,8 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 					}
 				}
 
-				ptz->ip_adresse[0] = '\0';
-				ptz->ip_adresse_is_valid = FALSE;
+				ptz->ip_address[0] = '\0';
+				ptz->ip_address_is_valid = FALSE;
 
 				if (ptz->name_grid != NULL) {
 					gtk_widget_destroy (ptz->name_grid);
@@ -334,23 +334,23 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 		}
 
 		if (j == 4) {
-			sprintf (ptz->new_ip_adresse, "%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
+			sprintf (ptz->new_ip_address, "%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
 
-			for (gslist_itr = ip_adresses_list; gslist_itr != NULL; gslist_itr = gslist_itr->next)
-				if (strcmp ((char*)(gslist_itr->data), ptz->new_ip_adresse) == 0) break;
+			for (gslist_itr = ip_addresss_list; gslist_itr != NULL; gslist_itr = gslist_itr->next)
+				if (strcmp ((char*)(gslist_itr->data), ptz->new_ip_address) == 0) break;
 
 			if (gslist_itr != NULL) {
-				ptz->ip_adresse_is_valid = FALSE;
-				ptz->ip_adresse[0] = '\0';
+				ptz->ip_address_is_valid = FALSE;
+				ptz->ip_address[0] = '\0';
 				ptz_is_off (ptz);
-			} else if (strcmp (ptz->new_ip_adresse, ptz->ip_adresse) != 0) {
+			} else if (strcmp (ptz->new_ip_address, ptz->ip_address) != 0) {
 				if (new_cameras_set == NULL) {
-					if ((ptz->ip_adresse_is_valid) && (ptz->error_code != 0x30)) {
+					if ((ptz->ip_address_is_valid) && (ptz->error_code != 0x30)) {
 						for (cameras_set_itr = cameras_sets; cameras_set_itr != NULL; cameras_set_itr = cameras_set_itr->next) {
 							if (cameras_set == cameras_set_itr) continue;
 
 							for (k = 0; k < cameras_set_itr->number_of_cameras; k++) {
-								if (strcmp (cameras_set_itr->ptz_ptr_array[k]->ip_adresse, ptz->ip_adresse) == 0) break;
+								if (strcmp (cameras_set_itr->ptz_ptr_array[k]->ip_address, ptz->ip_address) == 0) break;
 							}
 							if (k < cameras_set_itr->number_of_cameras) break;
 						}
@@ -361,11 +361,11 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 					}
 				}
 
-				ip_adresses_list = g_slist_prepend (ip_adresses_list, ptz->new_ip_adresse);
+				ip_addresss_list = g_slist_prepend (ip_addresss_list, ptz->new_ip_address);
 
-				ptz->ip_adresse_is_valid = TRUE;
-				ptz->adresse.sin_addr.s_addr = inet_addr (ptz->new_ip_adresse);
-				strcpy (ptz->ip_adresse, ptz->new_ip_adresse);
+				ptz->ip_address_is_valid = TRUE;
+				ptz->address.sin_addr.s_addr = inet_addr (ptz->new_ip_address);
+				strcpy (ptz->ip_address, ptz->new_ip_address);
 
 				g_idle_add ((GSourceFunc)ptz_is_off, ptz);
 
@@ -374,13 +374,13 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 				ptz_thread->thread = g_thread_new (NULL, (GThreadFunc)start_ptz, ptz_thread);
 			}
 		} else {
-			ptz->ip_adresse_is_valid = FALSE;
-			ptz->ip_adresse[0] = '\0';
+			ptz->ip_address_is_valid = FALSE;
+			ptz->ip_address[0] = '\0';
 			ptz_is_off (ptz);
 		}
 	}
 
-	g_slist_free (ip_adresses_list);
+	g_slist_free (ip_addresss_list);
 
 	gtk_widget_destroy (cameras_set_configuration_window);
 
@@ -499,7 +499,7 @@ void show_cameras_set_configuration_window (void)
 		gtk_widget_set_margin_bottom (widget, MARGIN_VALUE);
 		gtk_grid_attach (GTK_GRID (cameras_set_configuration_window_grid), widget, 1, 0, 1, 1);
 
-		widget = gtk_label_new ("Adresse IP :");
+		widget = gtk_label_new ("address IP :");
 		gtk_widget_set_margin_bottom (widget, MARGIN_VALUE);
 		gtk_grid_attach (GTK_GRID (cameras_set_configuration_window_grid), widget, 2, 0, 7, 1);
 
@@ -527,9 +527,9 @@ void show_cameras_set_configuration_window (void)
 			gtk_widget_set_margin_bottom (cameras_configuration_widgets[i].name_entry, MARGIN_VALUE);
 			gtk_grid_attach (GTK_GRID (cameras_set_configuration_window_grid), cameras_configuration_widgets[i].name_entry, 1, j, 1, 1);
 
-			if (ptz->ip_adresse_is_valid) {
-				for (l = 1; ptz->ip_adresse[l] != '.'; l++) {}
-				cameras_configuration_widgets[i].ip_entry_buffer[0] = gtk_entry_buffer_new (ptz->ip_adresse, l);
+			if (ptz->ip_address_is_valid) {
+				for (l = 1; ptz->ip_address[l] != '.'; l++) {}
+				cameras_configuration_widgets[i].ip_entry_buffer[0] = gtk_entry_buffer_new (ptz->ip_address, l);
 				k = l + 1;
 			} else cameras_configuration_widgets[i].ip_entry_buffer[0] = gtk_entry_buffer_new (NULL, -1);
 
@@ -550,9 +550,9 @@ void show_cameras_set_configuration_window (void)
 			gtk_grid_attach (GTK_GRID (cameras_set_configuration_window_grid), cameras_configuration_widgets[i].dot[0], 3, j, 1, 1);
 			if (!ptz->active) gtk_widget_set_sensitive (cameras_configuration_widgets[i].dot[0], FALSE);
 
-			if (ptz->ip_adresse_is_valid) {
-				for (l = 1; ptz->ip_adresse[k+l] != '.'; l++) {}
-				cameras_configuration_widgets[i].ip_entry_buffer[1] = gtk_entry_buffer_new (ptz->ip_adresse + k, l);
+			if (ptz->ip_address_is_valid) {
+				for (l = 1; ptz->ip_address[k+l] != '.'; l++) {}
+				cameras_configuration_widgets[i].ip_entry_buffer[1] = gtk_entry_buffer_new (ptz->ip_address + k, l);
 				k = k + l + 1;
 			} else cameras_configuration_widgets[i].ip_entry_buffer[1] = gtk_entry_buffer_new (NULL, -1);
 
@@ -573,9 +573,9 @@ void show_cameras_set_configuration_window (void)
 			gtk_grid_attach (GTK_GRID (cameras_set_configuration_window_grid), cameras_configuration_widgets[i].dot[1], 5, j, 1, 1);
 			if (!ptz->active) gtk_widget_set_sensitive (cameras_configuration_widgets[i].dot[1], FALSE);
 
-			if (ptz->ip_adresse_is_valid) {
-				for (l = 1; ptz->ip_adresse[k+l] != '.'; l++) {}
-				cameras_configuration_widgets[i].ip_entry_buffer[2] = gtk_entry_buffer_new (ptz->ip_adresse + k, l);
+			if (ptz->ip_address_is_valid) {
+				for (l = 1; ptz->ip_address[k+l] != '.'; l++) {}
+				cameras_configuration_widgets[i].ip_entry_buffer[2] = gtk_entry_buffer_new (ptz->ip_address + k, l);
 				k = k + l + 1;
 			} else cameras_configuration_widgets[i].ip_entry_buffer[2] = gtk_entry_buffer_new (NULL, -1);
 
@@ -596,9 +596,9 @@ void show_cameras_set_configuration_window (void)
 			gtk_grid_attach (GTK_GRID (cameras_set_configuration_window_grid), cameras_configuration_widgets[i].dot[2], 7, j, 1, 1);
 			if (!ptz->active) gtk_widget_set_sensitive (cameras_configuration_widgets[i].dot[2], FALSE);
 
-			if (ptz->ip_adresse_is_valid) {
-				for (l = 1; ptz->ip_adresse[k+l] != '\0'; l++) {}
-				cameras_configuration_widgets[i].ip_entry_buffer[3] = gtk_entry_buffer_new (ptz->ip_adresse + k, l);
+			if (ptz->ip_address_is_valid) {
+				for (l = 1; ptz->ip_address[k+l] != '\0'; l++) {}
+				cameras_configuration_widgets[i].ip_entry_buffer[3] = gtk_entry_buffer_new (ptz->ip_address + k, l);
 			} else cameras_configuration_widgets[i].ip_entry_buffer[3] = gtk_entry_buffer_new (NULL, -1);
 
 			cameras_configuration_widgets[i].ip_entry[3] = gtk_entry_new_with_buffer (cameras_configuration_widgets[i].ip_entry_buffer[3]);
@@ -760,12 +760,12 @@ void delete_cameras_set (void)
 		for (i = 0; i < cameras_set_itr->number_of_cameras; i++) {
 			ptz = cameras_set_itr->ptz_ptr_array[i];
 
-			if ((ptz->ip_adresse_is_valid) && (ptz->error_code != 0x30)) {
+			if ((ptz->ip_address_is_valid) && (ptz->error_code != 0x30)) {
 				for (other_cameras_set = cameras_sets; other_cameras_set != NULL; other_cameras_set = other_cameras_set->next) {
 					if (other_cameras_set == cameras_set_itr) continue;
 
 					for (j = 0; j < other_cameras_set->number_of_cameras; j++) {
-						if (strcmp (other_cameras_set->ptz_ptr_array[j]->ip_adresse, ptz->ip_adresse) == 0) break;
+						if (strcmp (other_cameras_set->ptz_ptr_array[j]->ip_address, ptz->ip_address) == 0) break;
 					}
 					if (j < other_cameras_set->number_of_cameras) break;
 				}

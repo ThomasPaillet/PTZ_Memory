@@ -1,5 +1,5 @@
 /*
- * copyright (c) 2020 Thomas Paillet <thomas.paillet@net-c.fr
+ * copyright (c) 2020 2021 Thomas Paillet <thomas.paillet@net-c.fr>
 
  * This file is part of PTZ-Memory.
 
@@ -14,7 +14,7 @@
  * GNU General Public License for more details.
 
  * You should have received a copy of the GNU General Public License
- * along with PTZ-Memory.  If not, see <https://www.gnu.org/licenses/>.
+ * along with PTZ-Memory. If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include "ptz.h"
@@ -151,7 +151,7 @@ gboolean control_window_key_press (GtkWidget *window, GdkEventKey *event, ptz_t 
 
 					ask_to_connect_ptz_to_ctrl_opv (new_ptz);
 
-					if (controller_is_used && controller_ip_adresse_is_valid) {
+					if (controller_is_used && controller_ip_address_is_valid) {
 						controller_thread = g_malloc (sizeof (ptz_thread_t));
 						controller_thread->pointer = new_ptz;
 						controller_thread->thread = g_thread_new (NULL, (GThreadFunc)controller_switch_ptz, controller_thread);
@@ -227,6 +227,12 @@ gboolean pan_tilt_speed_cmd_delayed (ptz_t *ptz)
 	pan_tilt_speed_cmd[6] = '0' + (ptz->control_window.tilt_speed / 10);
 	pan_tilt_speed_cmd[7] = '0' + (ptz->control_window.tilt_speed % 10);
 
+	ptz->last_time.tv_usec += 130000;
+	if (ptz->last_time.tv_usec >= 1000000) {
+		ptz->last_time.tv_sec++;
+		ptz->last_time.tv_usec -= 1000000;
+	}
+
 	send_ptz_control_command (ptz, pan_tilt_speed_cmd, FALSE);
 
 	ptz->control_window.pan_tilt_timeout_id = 0;
@@ -273,6 +279,7 @@ gboolean control_window_motion_notify (GtkWidget *window, GdkEventMotion *event,
 				pan_tilt_speed_cmd[6] = '0' + (tilt_speed / 10);
 				pan_tilt_speed_cmd[7] = '0' + (tilt_speed % 10);
 
+				ptz->last_time = current_time;
 				send_ptz_control_command (ptz, pan_tilt_speed_cmd, FALSE);
 			} else {
 				ptz->control_window.pan_speed = pan_speed;
@@ -339,6 +346,12 @@ gboolean one_touch_auto_focus_button_pressed (GtkButton *button, GdkEventButton 
 
 gboolean pts_focus_far_delayed (ptz_t *ptz)
 {
+	ptz->last_time.tv_usec += 130000;
+	if (ptz->last_time.tv_usec >= 1000000) {
+		ptz->last_time.tv_sec++;
+		ptz->last_time.tv_usec -= 1000000;
+	}
+
 	send_ptz_control_command (ptz, focus_far_speed_cmd, FALSE);
 
 	ptz->control_window.focus_timeout_id = 0;
@@ -348,6 +361,12 @@ gboolean pts_focus_far_delayed (ptz_t *ptz)
 
 gboolean pts_focus_near_delayed (ptz_t *ptz)
 {
+	ptz->last_time.tv_usec += 130000;
+	if (ptz->last_time.tv_usec >= 1000000) {
+		ptz->last_time.tv_sec++;
+		ptz->last_time.tv_usec -= 1000000;
+	}
+
 	send_ptz_control_command (ptz, focus_near_speed_cmd, FALSE);
 
 	ptz->control_window.focus_timeout_id = 0;
@@ -359,13 +378,13 @@ gboolean focus_far_button_pressed (GtkButton *button, GdkEventButton *event, ptz
 {
 	struct timeval current_time, elapsed_time;
 
-	gettimeofday (&current_time, NULL);
-	timersub (&current_time, &ptz->last_time, &elapsed_time);
-
 	if (ptz->control_window.focus_timeout_id != 0) {
 		g_source_remove (ptz->control_window.focus_timeout_id);
 		ptz->control_window.focus_timeout_id = 0;
 	}
+
+	gettimeofday (&current_time, NULL);
+	timersub (&current_time, &ptz->last_time, &elapsed_time);
 
 	if (event->button == GDK_BUTTON_SECONDARY) {
 		gtk_widget_set_state_flags (GTK_WIDGET (button), GTK_STATE_FLAG_ACTIVE, FALSE);
@@ -375,8 +394,10 @@ gboolean focus_far_button_pressed (GtkButton *button, GdkEventButton *event, ptz
 				ptz->control_window.focus_timeout_id = g_timeout_add ((130000 - elapsed_time.tv_usec) / 1000, (GSourceFunc)pts_focus_near_delayed, ptz);
 			else ptz->control_window.focus_timeout_id = g_timeout_add ((260000 - elapsed_time.tv_usec) / 1000, (GSourceFunc)pts_focus_near_delayed, ptz);
 		} else {
-			if (ptz->control_window.pan_tilt_timeout_id == 0) send_ptz_control_command (ptz, focus_near_speed_cmd, FALSE);
-			else ptz->control_window.focus_timeout_id = g_timeout_add (130, (GSourceFunc)pts_focus_near_delayed, ptz);
+			if (ptz->control_window.pan_tilt_timeout_id == 0) {
+				ptz->last_time = current_time;
+				send_ptz_control_command (ptz, focus_near_speed_cmd, FALSE);
+			} else ptz->control_window.focus_timeout_id = g_timeout_add (130, (GSourceFunc)pts_focus_near_delayed, ptz);
 		}
 	} else {
 		if ((elapsed_time.tv_sec == 0) && (elapsed_time.tv_usec < 130000)) {
@@ -384,8 +405,10 @@ gboolean focus_far_button_pressed (GtkButton *button, GdkEventButton *event, ptz
 				ptz->control_window.focus_timeout_id = g_timeout_add ((130000 - elapsed_time.tv_usec) / 1000, (GSourceFunc)pts_focus_far_delayed, ptz);
 			else ptz->control_window.focus_timeout_id = g_timeout_add ((260000 - elapsed_time.tv_usec) / 1000, (GSourceFunc)pts_focus_far_delayed, ptz);
 		} else {
-			if (ptz->control_window.pan_tilt_timeout_id == 0) send_ptz_control_command (ptz, focus_far_speed_cmd, FALSE);
-			else ptz->control_window.focus_timeout_id = g_timeout_add (130, (GSourceFunc)pts_focus_far_delayed, ptz);
+			if (ptz->control_window.pan_tilt_timeout_id == 0) {
+				ptz->last_time = current_time;
+				send_ptz_control_command (ptz, focus_far_speed_cmd, FALSE);
+			} else ptz->control_window.focus_timeout_id = g_timeout_add (130, (GSourceFunc)pts_focus_far_delayed, ptz);
 		}
 	}
 
@@ -396,13 +419,13 @@ gboolean focus_near_button_pressed (GtkButton *button, GdkEventButton *event, pt
 {
 	struct timeval current_time, elapsed_time;
 
-	gettimeofday (&current_time, NULL);
-	timersub (&current_time, &ptz->last_time, &elapsed_time);
-
 	if (ptz->control_window.focus_timeout_id != 0) {
 		g_source_remove (ptz->control_window.focus_timeout_id);
 		ptz->control_window.focus_timeout_id = 0;
 	}
+
+	gettimeofday (&current_time, NULL);
+	timersub (&current_time, &ptz->last_time, &elapsed_time);
 
 	if (event->button == GDK_BUTTON_SECONDARY) {
 		gtk_widget_set_state_flags (GTK_WIDGET (button), GTK_STATE_FLAG_ACTIVE, FALSE);
@@ -412,8 +435,10 @@ gboolean focus_near_button_pressed (GtkButton *button, GdkEventButton *event, pt
 				ptz->control_window.focus_timeout_id = g_timeout_add ((130000 - elapsed_time.tv_usec) / 1000, (GSourceFunc)pts_focus_far_delayed, ptz);
 			else ptz->control_window.focus_timeout_id = g_timeout_add ((260000 - elapsed_time.tv_usec) / 1000, (GSourceFunc)pts_focus_far_delayed, ptz);
 		} else {
-			if (ptz->control_window.pan_tilt_timeout_id == 0) send_ptz_control_command (ptz, focus_far_speed_cmd, FALSE);
-			else ptz->control_window.focus_timeout_id = g_timeout_add (130, (GSourceFunc)pts_focus_far_delayed, ptz);
+			if (ptz->control_window.pan_tilt_timeout_id == 0) {
+				ptz->last_time = current_time;
+				send_ptz_control_command (ptz, focus_far_speed_cmd, FALSE);
+			} else ptz->control_window.focus_timeout_id = g_timeout_add (130, (GSourceFunc)pts_focus_far_delayed, ptz);
 		}
 	} else {
 		if ((elapsed_time.tv_sec == 0) && (elapsed_time.tv_usec < 130000)) {
@@ -421,8 +446,10 @@ gboolean focus_near_button_pressed (GtkButton *button, GdkEventButton *event, pt
 				ptz->control_window.focus_timeout_id = g_timeout_add ((130000 - elapsed_time.tv_usec) / 1000, (GSourceFunc)pts_focus_near_delayed, ptz);
 			else ptz->control_window.focus_timeout_id = g_timeout_add ((260000 - elapsed_time.tv_usec) / 1000, (GSourceFunc)pts_focus_near_delayed, ptz);
 		} else {
-			if (ptz->control_window.pan_tilt_timeout_id == 0) send_ptz_control_command (ptz, focus_near_speed_cmd, FALSE);
-			else ptz->control_window.focus_timeout_id = g_timeout_add (130, (GSourceFunc)pts_focus_near_delayed, ptz);
+			if (ptz->control_window.pan_tilt_timeout_id == 0) {
+				ptz->last_time = current_time;
+				send_ptz_control_command (ptz, focus_near_speed_cmd, FALSE);
+			} else ptz->control_window.focus_timeout_id = g_timeout_add (130, (GSourceFunc)pts_focus_near_delayed, ptz);
 		}
 	}
 
@@ -431,6 +458,12 @@ gboolean focus_near_button_pressed (GtkButton *button, GdkEventButton *event, pt
 
 gboolean pts_focus_stop_delayed (ptz_t *ptz)
 {
+	ptz->last_time.tv_usec += 130000;
+	if (ptz->last_time.tv_usec >= 1000000) {
+		ptz->last_time.tv_sec++;
+		ptz->last_time.tv_usec -= 1000000;
+	}
+
 	send_ptz_control_command (ptz, focus_stop_cmd, FALSE);
 
 	ptz->control_window.focus_timeout_id = 0;
@@ -444,21 +477,23 @@ gboolean focus_speed_button_released (GtkButton *button, GdkEventButton *event, 
 
 	gtk_widget_unset_state_flags (GTK_WIDGET (button), GTK_STATE_FLAG_ACTIVE);
 
-	gettimeofday (&current_time, NULL);
-	timersub (&current_time, &ptz->last_time, &elapsed_time);
-
 	if (ptz->control_window.focus_timeout_id != 0) {
 		g_source_remove (ptz->control_window.focus_timeout_id);
 		ptz->control_window.focus_timeout_id = 0;
 	}
+
+	gettimeofday (&current_time, NULL);
+	timersub (&current_time, &ptz->last_time, &elapsed_time);
 
 	if ((elapsed_time.tv_sec == 0) && (elapsed_time.tv_usec < 130000)) {
 		if (ptz->control_window.pan_tilt_timeout_id == 0)
 			ptz->control_window.focus_timeout_id = g_timeout_add ((130000 - elapsed_time.tv_usec) / 1000, (GSourceFunc)pts_focus_stop_delayed, ptz);
 		else ptz->control_window.focus_timeout_id = g_timeout_add ((260000 - elapsed_time.tv_usec) / 1000, (GSourceFunc)pts_focus_stop_delayed, ptz);
 	} else {
-		if (ptz->control_window.pan_tilt_timeout_id == 0) send_ptz_control_command (ptz, focus_stop_cmd, FALSE);
-		else ptz->control_window.focus_timeout_id = g_timeout_add (130, (GSourceFunc)pts_focus_stop_delayed, ptz);
+		if (ptz->control_window.pan_tilt_timeout_id == 0) {
+			ptz->last_time = current_time;
+			send_ptz_control_command (ptz, focus_stop_cmd, FALSE);
+		} else ptz->control_window.focus_timeout_id = g_timeout_add (130, (GSourceFunc)pts_focus_stop_delayed, ptz);
 	}
 
 	return FALSE;
@@ -475,7 +510,7 @@ gboolean focus_level_bar_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 		cairo_set_source_rgb (cr, 0.125490196, 0.215686275, 0.298039216);	//(32, 55, 76)
 		cairo_fill (cr);
 		cairo_rectangle (cr, 1, 0, 1, 2);
-		cairo_set_source_rgb (cr, 0.066666667, 0.188235294, 0.31372549);		//(17, 48, 80)
+		cairo_set_source_rgb (cr, 0.066666667, 0.188235294, 0.31372549);	//(17, 48, 80)
 		cairo_fill (cr);
 		cairo_rectangle (cr, 3, 0, 1, 1);
 		cairo_set_source_rgb (cr, 0.203921569, 0.294117647, 0.376470588);	//(52, 75, 96)
@@ -501,7 +536,7 @@ gboolean focus_level_bar_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 		cairo_set_source_rgb (cr, 0.125490196, 0.215686275, 0.298039216);	//(32, 55, 76)
 		cairo_fill (cr);
 		cairo_rectangle (cr, 1, 272, 1, 2);
-		cairo_set_source_rgb (cr, 0.066666667, 0.188235294, 0.31372549);		//(17, 48, 80)
+		cairo_set_source_rgb (cr, 0.066666667, 0.188235294, 0.31372549);	//(17, 48, 80)
 		cairo_fill (cr);
 		cairo_rectangle (cr, 3, 272, 1, 1);
 		cairo_set_source_rgb (cr, 0.203921569, 0.294117647, 0.376470588);	//(52, 75, 96)
@@ -523,7 +558,7 @@ gboolean focus_level_bar_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 		cairo_set_source_rgb (cr, 0.290196078, 0.305882353, 0.309803922);	//(74, 78, 79)
 		cairo_fill (cr);
 		cairo_rectangle (cr, 4, 0, 1, 1);
-		cairo_set_source_rgb (cr, 0.31372549, 0.333333333, 0.341176471);		//(80, 85, 87)
+		cairo_set_source_rgb (cr, 0.31372549, 0.333333333, 0.341176471);	//(80, 85, 87)
 		cairo_fill (cr);
 
 		cairo_rectangle (cr, 0, 1, 1, 271);
@@ -543,7 +578,7 @@ gboolean focus_level_bar_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 		cairo_set_source_rgb (cr, 0.125490196, 0.215686275, 0.298039216);	//(32, 55, 76)
 		cairo_fill (cr);
 		cairo_rectangle (cr, 1, 272, 1, 2);
-		cairo_set_source_rgb (cr, 0.066666667, 0.188235294, 0.31372549);		//(17, 48, 80)
+		cairo_set_source_rgb (cr, 0.066666667, 0.188235294, 0.31372549);	//(17, 48, 80)
 		cairo_fill (cr);
 		cairo_rectangle (cr, 3, 272, 1, 1);
 		cairo_set_source_rgb (cr, 0.203921569, 0.294117647, 0.376470588);	//(52, 75, 96)
@@ -565,7 +600,7 @@ gboolean focus_level_bar_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 		cairo_set_source_rgb (cr, 0.290196078, 0.305882353, 0.309803922);	//(74, 78, 79)
 		cairo_fill (cr);
 		cairo_rectangle (cr, 4, 0, 1, 1);
-		cairo_set_source_rgb (cr, 0.31372549, 0.333333333, 0.341176471);		//(80, 85, 87)
+		cairo_set_source_rgb (cr, 0.31372549, 0.333333333, 0.341176471);	//(80, 85, 87)
 		cairo_fill (cr);
 
 		cairo_rectangle (cr, 0, 1, 1, 271);
@@ -575,7 +610,7 @@ gboolean focus_level_bar_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 		cairo_set_source_rgb (cr, 0.137254902, 0.156862745, 0.160784314);	//(35, 40, 41)
 		cairo_fill (cr);
 		cairo_rectangle (cr, 2, 1, 1, 271);
-		cairo_set_source_rgb (cr, 0.152941176, 0.17254902, 0.176470588);		//(39, 44, 45)
+		cairo_set_source_rgb (cr, 0.152941176, 0.17254902, 0.176470588);	//(39, 44, 45)
 		cairo_fill (cr);
 		cairo_rectangle (cr, 3, 1, 1, 271);
 		cairo_set_source_rgb (cr, 0.105882353, 0.121568627, 0.125490196);	//(27, 31, 32)
@@ -585,7 +620,7 @@ gboolean focus_level_bar_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 		cairo_set_source_rgb (cr, 0.125490196, 0.215686275, 0.298039216);	//(32, 55, 76)
 		cairo_fill (cr);
 		cairo_rectangle (cr, 1, 272, 1, 2);
-		cairo_set_source_rgb (cr, 0.066666667, 0.188235294, 0.31372549);		//(17, 48, 80)
+		cairo_set_source_rgb (cr, 0.066666667, 0.188235294, 0.31372549);	//(17, 48, 80)
 		cairo_fill (cr);
 		cairo_rectangle (cr, 3, 272, 1, 1);
 		cairo_set_source_rgb (cr, 0.203921569, 0.294117647, 0.376470588);	//(52, 75, 96)
@@ -607,7 +642,7 @@ gboolean focus_level_bar_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 		cairo_set_source_rgb (cr, 0.290196078, 0.305882353, 0.309803922);	//(74, 78, 79)
 		cairo_fill (cr);
 		cairo_rectangle (cr, 4, 0, 1, 1);
-		cairo_set_source_rgb (cr, 0.31372549, 0.333333333, 0.341176471);		//(80, 85, 87)
+		cairo_set_source_rgb (cr, 0.31372549, 0.333333333, 0.341176471);	//(80, 85, 87)
 		cairo_fill (cr);
 
 		cairo_rectangle (cr, 0, 1, 1, 271);
@@ -617,7 +652,7 @@ gboolean focus_level_bar_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 		cairo_set_source_rgb (cr, 0.137254902, 0.156862745, 0.160784314);	//(35, 40, 41)
 		cairo_fill (cr);
 		cairo_rectangle (cr, 2, 1, 1, 271);
-		cairo_set_source_rgb (cr, 0.152941176, 0.17254902, 0.176470588);		//(39, 44, 45)
+		cairo_set_source_rgb (cr, 0.152941176, 0.17254902, 0.176470588);	//(39, 44, 45)
 		cairo_fill (cr);
 		cairo_rectangle (cr, 3, 1, 1, 271);
 		cairo_set_source_rgb (cr, 0.105882353, 0.121568627, 0.125490196);	//(27, 31, 32)
@@ -636,7 +671,7 @@ gboolean focus_level_bar_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 		cairo_set_source_rgb (cr, 0.290196078, 0.305882353, 0.309803922);	//(74, 78, 79)
 		cairo_fill (cr);
 		cairo_rectangle (cr, 4, 272, 1, 1);
-		cairo_set_source_rgb (cr, 0.31372549, 0.333333333, 0.341176471);		//(80, 85, 87)
+		cairo_set_source_rgb (cr, 0.31372549, 0.333333333, 0.341176471);	//(80, 85, 87)
 		cairo_fill (cr);
 	} else {
 		cairo_rectangle (cr, 0, 0, 1, 1);
@@ -652,7 +687,7 @@ gboolean focus_level_bar_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 		cairo_set_source_rgb (cr, 0.290196078, 0.305882353, 0.309803922);	//(74, 78, 79)
 		cairo_fill (cr);
 		cairo_rectangle (cr, 4, 0, 1, 1);
-		cairo_set_source_rgb (cr, 0.31372549, 0.333333333, 0.341176471);		//(80, 85, 87)
+		cairo_set_source_rgb (cr, 0.31372549, 0.333333333, 0.341176471);	//(80, 85, 87)
 		cairo_fill (cr);
 
 		cairo_rectangle (cr, 0, 1, 1, value - 1);
@@ -662,7 +697,7 @@ gboolean focus_level_bar_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 		cairo_set_source_rgb (cr, 0.137254902, 0.156862745, 0.160784314);	//(35, 40, 41)
 		cairo_fill (cr);
 		cairo_rectangle (cr, 2, 1, 1, value - 1);
-		cairo_set_source_rgb (cr, 0.152941176, 0.17254902, 0.176470588);		//(39, 44, 45)
+		cairo_set_source_rgb (cr, 0.152941176, 0.17254902, 0.176470588);	//(39, 44, 45)
 		cairo_fill (cr);
 		cairo_rectangle (cr, 3, 1, 1, value - 1);
 		cairo_set_source_rgb (cr, 0.105882353, 0.121568627, 0.125490196);	//(27, 31, 32)
@@ -685,7 +720,7 @@ gboolean focus_level_bar_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 		cairo_set_source_rgb (cr, 0.125490196, 0.215686275, 0.298039216);	//(32, 55, 76)
 		cairo_fill (cr);
 		cairo_rectangle (cr, 1, 272, 1, 2);
-		cairo_set_source_rgb (cr, 0.066666667, 0.188235294, 0.31372549);		//(17, 48, 80)
+		cairo_set_source_rgb (cr, 0.066666667, 0.188235294, 0.31372549);	//(17, 48, 80)
 		cairo_fill (cr);
 		cairo_rectangle (cr, 3, 272, 1, 1);
 		cairo_set_source_rgb (cr, 0.203921569, 0.294117647, 0.376470588);	//(52, 75, 96)
@@ -751,6 +786,7 @@ gboolean ptz_pad_motion_notify (GtkWidget *widget, GdkEventMotion *event, ptz_t 
 				pan_tilt_speed_cmd[6] = '0' + (tilt_speed / 10);
 				pan_tilt_speed_cmd[7] = '0' + (tilt_speed % 10);
 
+				ptz->last_time = current_time;
 				send_ptz_control_command (ptz, pan_tilt_speed_cmd, FALSE);
 			} else {
 				ptz->control_window.pan_speed = pan_speed;
@@ -795,7 +831,7 @@ gboolean zoom_level_bar_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 		cairo_set_source_rgb (cr, 0.125490196, 0.215686275, 0.298039216);	//(32, 55, 76)
 		cairo_fill (cr);
 		cairo_rectangle (cr, 1, 0, 1, 2);
-		cairo_set_source_rgb (cr, 0.066666667, 0.188235294, 0.31372549);		//(17, 48, 80)
+		cairo_set_source_rgb (cr, 0.066666667, 0.188235294, 0.31372549);	//(17, 48, 80)
 		cairo_fill (cr);
 		cairo_rectangle (cr, 3, 0, 1, 1);
 		cairo_set_source_rgb (cr, 0.203921569, 0.294117647, 0.376470588);	//(52, 75, 96)
@@ -821,7 +857,7 @@ gboolean zoom_level_bar_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 		cairo_set_source_rgb (cr, 0.125490196, 0.215686275, 0.298039216);	//(32, 55, 76)
 		cairo_fill (cr);
 		cairo_rectangle (cr, 1, 272, 1, 2);
-		cairo_set_source_rgb (cr, 0.066666667, 0.188235294, 0.31372549);		//(17, 48, 80)
+		cairo_set_source_rgb (cr, 0.066666667, 0.188235294, 0.31372549);	//(17, 48, 80)
 		cairo_fill (cr);
 		cairo_rectangle (cr, 3, 272, 1, 1);
 		cairo_set_source_rgb (cr, 0.203921569, 0.294117647, 0.376470588);	//(52, 75, 96)
@@ -843,7 +879,7 @@ gboolean zoom_level_bar_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 		cairo_set_source_rgb (cr, 0.290196078, 0.305882353, 0.309803922);	//(74, 78, 79)
 		cairo_fill (cr);
 		cairo_rectangle (cr, 4, 0, 1, 1);
-		cairo_set_source_rgb (cr, 0.31372549, 0.333333333, 0.341176471);		//(80, 85, 87)
+		cairo_set_source_rgb (cr, 0.31372549, 0.333333333, 0.341176471);	//(80, 85, 87)
 		cairo_fill (cr);
 
 		cairo_rectangle (cr, 0, 1, 1, 271);
@@ -863,7 +899,7 @@ gboolean zoom_level_bar_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 		cairo_set_source_rgb (cr, 0.125490196, 0.215686275, 0.298039216);	//(32, 55, 76)
 		cairo_fill (cr);
 		cairo_rectangle (cr, 1, 272, 1, 2);
-		cairo_set_source_rgb (cr, 0.066666667, 0.188235294, 0.31372549);		//(17, 48, 80)
+		cairo_set_source_rgb (cr, 0.066666667, 0.188235294, 0.31372549);	//(17, 48, 80)
 		cairo_fill (cr);
 		cairo_rectangle (cr, 3, 272, 1, 1);
 		cairo_set_source_rgb (cr, 0.203921569, 0.294117647, 0.376470588);	//(52, 75, 96)
@@ -885,7 +921,7 @@ gboolean zoom_level_bar_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 		cairo_set_source_rgb (cr, 0.290196078, 0.305882353, 0.309803922);	//(74, 78, 79)
 		cairo_fill (cr);
 		cairo_rectangle (cr, 4, 0, 1, 1);
-		cairo_set_source_rgb (cr, 0.31372549, 0.333333333, 0.341176471);		//(80, 85, 87)
+		cairo_set_source_rgb (cr, 0.31372549, 0.333333333, 0.341176471);	//(80, 85, 87)
 		cairo_fill (cr);
 
 		cairo_rectangle (cr, 0, 1, 1, 271);
@@ -895,7 +931,7 @@ gboolean zoom_level_bar_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 		cairo_set_source_rgb (cr, 0.137254902, 0.156862745, 0.160784314);	//(35, 40, 41)
 		cairo_fill (cr);
 		cairo_rectangle (cr, 2, 1, 1, 271);
-		cairo_set_source_rgb (cr, 0.152941176, 0.17254902, 0.176470588);		//(39, 44, 45)
+		cairo_set_source_rgb (cr, 0.152941176, 0.17254902, 0.176470588);	//(39, 44, 45)
 		cairo_fill (cr);
 		cairo_rectangle (cr, 3, 1, 1, 271);
 		cairo_set_source_rgb (cr, 0.105882353, 0.121568627, 0.125490196);	//(27, 31, 32)
@@ -905,7 +941,7 @@ gboolean zoom_level_bar_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 		cairo_set_source_rgb (cr, 0.125490196, 0.215686275, 0.298039216);	//(32, 55, 76)
 		cairo_fill (cr);
 		cairo_rectangle (cr, 1, 272, 1, 2);
-		cairo_set_source_rgb (cr, 0.066666667, 0.188235294, 0.31372549);		//(17, 48, 80)
+		cairo_set_source_rgb (cr, 0.066666667, 0.188235294, 0.31372549);	//(17, 48, 80)
 		cairo_fill (cr);
 		cairo_rectangle (cr, 3, 272, 1, 1);
 		cairo_set_source_rgb (cr, 0.203921569, 0.294117647, 0.376470588);	//(52, 75, 96)
@@ -927,7 +963,7 @@ gboolean zoom_level_bar_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 		cairo_set_source_rgb (cr, 0.290196078, 0.305882353, 0.309803922);	//(74, 78, 79)
 		cairo_fill (cr);
 		cairo_rectangle (cr, 4, 0, 1, 1);
-		cairo_set_source_rgb (cr, 0.31372549, 0.333333333, 0.341176471);		//(80, 85, 87)
+		cairo_set_source_rgb (cr, 0.31372549, 0.333333333, 0.341176471);	//(80, 85, 87)
 		cairo_fill (cr);
 
 		cairo_rectangle (cr, 0, 1, 1, 271);
@@ -937,7 +973,7 @@ gboolean zoom_level_bar_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 		cairo_set_source_rgb (cr, 0.137254902, 0.156862745, 0.160784314);	//(35, 40, 41)
 		cairo_fill (cr);
 		cairo_rectangle (cr, 2, 1, 1, 271);
-		cairo_set_source_rgb (cr, 0.152941176, 0.17254902, 0.176470588);		//(39, 44, 45)
+		cairo_set_source_rgb (cr, 0.152941176, 0.17254902, 0.176470588);	//(39, 44, 45)
 		cairo_fill (cr);
 		cairo_rectangle (cr, 3, 1, 1, 271);
 		cairo_set_source_rgb (cr, 0.105882353, 0.121568627, 0.125490196);	//(27, 31, 32)
@@ -956,7 +992,7 @@ gboolean zoom_level_bar_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 		cairo_set_source_rgb (cr, 0.290196078, 0.305882353, 0.309803922);	//(74, 78, 79)
 		cairo_fill (cr);
 		cairo_rectangle (cr, 4, 272, 1, 1);
-		cairo_set_source_rgb (cr, 0.31372549, 0.333333333, 0.341176471);		//(80, 85, 87)
+		cairo_set_source_rgb (cr, 0.31372549, 0.333333333, 0.341176471);	//(80, 85, 87)
 		cairo_fill (cr);
 	} else {
 		cairo_rectangle (cr, 0, 0, 1, 1);
@@ -972,7 +1008,7 @@ gboolean zoom_level_bar_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 		cairo_set_source_rgb (cr, 0.290196078, 0.305882353, 0.309803922);	//(74, 78, 79)
 		cairo_fill (cr);
 		cairo_rectangle (cr, 4, 0, 1, 1);
-		cairo_set_source_rgb (cr, 0.31372549, 0.333333333, 0.341176471);		//(80, 85, 87)
+		cairo_set_source_rgb (cr, 0.31372549, 0.333333333, 0.341176471);	//(80, 85, 87)
 		cairo_fill (cr);
 
 		cairo_rectangle (cr, 0, 1, 1, value - 1);
@@ -982,7 +1018,7 @@ gboolean zoom_level_bar_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 		cairo_set_source_rgb (cr, 0.137254902, 0.156862745, 0.160784314);	//(35, 40, 41)
 		cairo_fill (cr);
 		cairo_rectangle (cr, 2, 1, 1, value - 1);
-		cairo_set_source_rgb (cr, 0.152941176, 0.17254902, 0.176470588);		//(39, 44, 45)
+		cairo_set_source_rgb (cr, 0.152941176, 0.17254902, 0.176470588);	//(39, 44, 45)
 		cairo_fill (cr);
 		cairo_rectangle (cr, 3, 1, 1, value - 1);
 		cairo_set_source_rgb (cr, 0.105882353, 0.121568627, 0.125490196);	//(27, 31, 32)
@@ -1005,7 +1041,7 @@ gboolean zoom_level_bar_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 		cairo_set_source_rgb (cr, 0.125490196, 0.215686275, 0.298039216);	//(32, 55, 76)
 		cairo_fill (cr);
 		cairo_rectangle (cr, 1, 272, 1, 2);
-		cairo_set_source_rgb (cr, 0.066666667, 0.188235294, 0.31372549);		//(17, 48, 80)
+		cairo_set_source_rgb (cr, 0.066666667, 0.188235294, 0.31372549);	//(17, 48, 80)
 		cairo_fill (cr);
 		cairo_rectangle (cr, 3, 272, 1, 1);
 		cairo_set_source_rgb (cr, 0.203921569, 0.294117647, 0.376470588);	//(52, 75, 96)
@@ -1024,6 +1060,12 @@ gboolean zoom_level_bar_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 
 gboolean pts_zoom_tele_delayed (ptz_t *ptz)
 {
+	ptz->last_time.tv_usec += 130000;
+	if (ptz->last_time.tv_usec >= 1000000) {
+		ptz->last_time.tv_sec++;
+		ptz->last_time.tv_usec -= 1000000;
+	}
+
 	send_ptz_control_command (ptz, zoom_tele_speed_cmd, FALSE);
 
 	ptz->control_window.zoom_timeout_id = 0;
@@ -1033,6 +1075,12 @@ gboolean pts_zoom_tele_delayed (ptz_t *ptz)
 
 gboolean pts_zoom_wide_delayed (ptz_t *ptz)
 {
+	ptz->last_time.tv_usec += 130000;
+	if (ptz->last_time.tv_usec >= 1000000) {
+		ptz->last_time.tv_sec++;
+		ptz->last_time.tv_usec -= 1000000;
+	}
+
 	send_ptz_control_command (ptz, zoom_wide_speed_cmd, FALSE);
 
 	ptz->control_window.zoom_timeout_id = 0;
@@ -1044,13 +1092,13 @@ gboolean zoom_tele_button_pressed (GtkButton *button, GdkEventButton *event, ptz
 {
 	struct timeval current_time, elapsed_time;
 
-	gettimeofday (&current_time, NULL);
-	timersub (&current_time, &ptz->last_time, &elapsed_time);
-
 	if (ptz->control_window.zoom_timeout_id != 0) {
 		g_source_remove (ptz->control_window.zoom_timeout_id);
 		ptz->control_window.zoom_timeout_id = 0;
 	}
+
+	gettimeofday (&current_time, NULL);
+	timersub (&current_time, &ptz->last_time, &elapsed_time);
 
 	if (event->button == GDK_BUTTON_SECONDARY) {
 		gtk_widget_set_state_flags (GTK_WIDGET (button), GTK_STATE_FLAG_ACTIVE, FALSE);
@@ -1060,8 +1108,10 @@ gboolean zoom_tele_button_pressed (GtkButton *button, GdkEventButton *event, ptz
 				ptz->control_window.zoom_timeout_id = g_timeout_add ((130000 - elapsed_time.tv_usec) / 1000, (GSourceFunc)pts_zoom_wide_delayed, ptz);
 			else ptz->control_window.zoom_timeout_id = g_timeout_add ((260000 - elapsed_time.tv_usec) / 1000, (GSourceFunc)pts_zoom_wide_delayed, ptz);
 		} else {
-			if (ptz->control_window.pan_tilt_timeout_id == 0) send_ptz_control_command (ptz, zoom_wide_speed_cmd, FALSE);
-			else ptz->control_window.zoom_timeout_id = g_timeout_add (130, (GSourceFunc)pts_zoom_wide_delayed, ptz);
+			if (ptz->control_window.pan_tilt_timeout_id == 0) {
+				ptz->last_time = current_time;
+				send_ptz_control_command (ptz, zoom_wide_speed_cmd, FALSE);
+			} else ptz->control_window.zoom_timeout_id = g_timeout_add (130, (GSourceFunc)pts_zoom_wide_delayed, ptz);
 		}
 	} else {
 		if ((elapsed_time.tv_sec == 0) && (elapsed_time.tv_usec < 130000)) {
@@ -1069,8 +1119,10 @@ gboolean zoom_tele_button_pressed (GtkButton *button, GdkEventButton *event, ptz
 				ptz->control_window.zoom_timeout_id = g_timeout_add ((130000 - elapsed_time.tv_usec) / 1000, (GSourceFunc)pts_zoom_tele_delayed, ptz);
 			else ptz->control_window.zoom_timeout_id = g_timeout_add ((260000 - elapsed_time.tv_usec) / 1000, (GSourceFunc)pts_zoom_tele_delayed, ptz);
 		} else {
-			if (ptz->control_window.pan_tilt_timeout_id == 0) send_ptz_control_command (ptz, zoom_tele_speed_cmd, FALSE);
-			else ptz->control_window.zoom_timeout_id = g_timeout_add (130, (GSourceFunc)pts_zoom_tele_delayed, ptz);
+			if (ptz->control_window.pan_tilt_timeout_id == 0) {
+				ptz->last_time = current_time;
+				send_ptz_control_command (ptz, zoom_tele_speed_cmd, FALSE);
+			} else ptz->control_window.zoom_timeout_id = g_timeout_add (130, (GSourceFunc)pts_zoom_tele_delayed, ptz);
 		}
 	}
 
@@ -1081,13 +1133,13 @@ gboolean zoom_wide_button_pressed (GtkButton *button, GdkEventButton *event, ptz
 {
 	struct timeval current_time, elapsed_time;
 
-	gettimeofday (&current_time, NULL);
-	timersub (&current_time, &ptz->last_time, &elapsed_time);
-
 	if (ptz->control_window.zoom_timeout_id != 0) {
 		g_source_remove (ptz->control_window.zoom_timeout_id);
 		ptz->control_window.zoom_timeout_id = 0;
 	}
+
+	gettimeofday (&current_time, NULL);
+	timersub (&current_time, &ptz->last_time, &elapsed_time);
 
 	if (event->button == GDK_BUTTON_SECONDARY) {
 		gtk_widget_set_state_flags (GTK_WIDGET (button), GTK_STATE_FLAG_ACTIVE, FALSE);
@@ -1097,8 +1149,10 @@ gboolean zoom_wide_button_pressed (GtkButton *button, GdkEventButton *event, ptz
 				ptz->control_window.zoom_timeout_id = g_timeout_add ((130000 - elapsed_time.tv_usec) / 1000, (GSourceFunc)pts_zoom_tele_delayed, ptz);
 			else ptz->control_window.zoom_timeout_id = g_timeout_add ((260000 - elapsed_time.tv_usec) / 1000, (GSourceFunc)pts_zoom_tele_delayed, ptz);
 		} else {
-			if (ptz->control_window.pan_tilt_timeout_id == 0) send_ptz_control_command (ptz, zoom_tele_speed_cmd, FALSE);
-			else ptz->control_window.zoom_timeout_id = g_timeout_add (130, (GSourceFunc)pts_zoom_tele_delayed, ptz);
+			if (ptz->control_window.pan_tilt_timeout_id == 0) {
+				ptz->last_time = current_time;
+				send_ptz_control_command (ptz, zoom_tele_speed_cmd, FALSE);
+			} else ptz->control_window.zoom_timeout_id = g_timeout_add (130, (GSourceFunc)pts_zoom_tele_delayed, ptz);
 		}
 	} else {
 		if ((elapsed_time.tv_sec == 0) && (elapsed_time.tv_usec < 130000)) {
@@ -1106,8 +1160,10 @@ gboolean zoom_wide_button_pressed (GtkButton *button, GdkEventButton *event, ptz
 				ptz->control_window.zoom_timeout_id = g_timeout_add ((130000 - elapsed_time.tv_usec) / 1000, (GSourceFunc)pts_zoom_wide_delayed, ptz);
 			else ptz->control_window.zoom_timeout_id = g_timeout_add ((260000 - elapsed_time.tv_usec) / 1000, (GSourceFunc)pts_zoom_wide_delayed, ptz);
 		} else {
-			if (ptz->control_window.pan_tilt_timeout_id == 0) send_ptz_control_command (ptz, zoom_wide_speed_cmd, FALSE);
-			else ptz->control_window.zoom_timeout_id = g_timeout_add (130, (GSourceFunc)pts_zoom_wide_delayed, ptz);
+			if (ptz->control_window.pan_tilt_timeout_id == 0) {
+				ptz->last_time = current_time;
+				send_ptz_control_command (ptz, zoom_wide_speed_cmd, FALSE);
+			} else ptz->control_window.zoom_timeout_id = g_timeout_add (130, (GSourceFunc)pts_zoom_wide_delayed, ptz);
 		}
 	}
 
@@ -1116,6 +1172,12 @@ gboolean zoom_wide_button_pressed (GtkButton *button, GdkEventButton *event, ptz
 
 gboolean pts_zoom_stop_delayed (ptz_t *ptz)
 {
+	ptz->last_time.tv_usec += 130000;
+	if (ptz->last_time.tv_usec >= 1000000) {
+		ptz->last_time.tv_sec++;
+		ptz->last_time.tv_usec -= 1000000;
+	}
+
 	send_ptz_control_command (ptz, zoom_stop_cmd, FALSE);
 
 	ptz->control_window.zoom_timeout_id = 0;
@@ -1129,21 +1191,23 @@ gboolean zoom_speed_button_released (GtkButton *button, GdkEventButton *event, p
 
 	gtk_widget_unset_state_flags (GTK_WIDGET (button), GTK_STATE_FLAG_ACTIVE);
 
-	gettimeofday (&current_time, NULL);
-	timersub (&current_time, &ptz->last_time, &elapsed_time);
-
 	if (ptz->control_window.zoom_timeout_id != 0) {
 		g_source_remove (ptz->control_window.zoom_timeout_id);
 		ptz->control_window.zoom_timeout_id = 0;
 	}
+
+	gettimeofday (&current_time, NULL);
+	timersub (&current_time, &ptz->last_time, &elapsed_time);
 
 	if ((elapsed_time.tv_sec == 0) && (elapsed_time.tv_usec < 130000)) {
 		if (ptz->control_window.pan_tilt_timeout_id == 0)
 			ptz->control_window.zoom_timeout_id = g_timeout_add ((130000 - elapsed_time.tv_usec) / 1000, (GSourceFunc)pts_zoom_stop_delayed, ptz);
 		else ptz->control_window.zoom_timeout_id = g_timeout_add ((260000 - elapsed_time.tv_usec) / 1000, (GSourceFunc)pts_zoom_stop_delayed, ptz);
 	} else {
-		if (ptz->control_window.pan_tilt_timeout_id == 0) send_ptz_control_command (ptz, zoom_stop_cmd, FALSE);
-		else ptz->control_window.zoom_timeout_id = g_timeout_add (130, (GSourceFunc)pts_zoom_stop_delayed, ptz);
+		if (ptz->control_window.pan_tilt_timeout_id == 0) {
+			ptz->last_time = current_time;
+			send_ptz_control_command (ptz, zoom_stop_cmd, FALSE);
+		} else ptz->control_window.zoom_timeout_id = g_timeout_add (130, (GSourceFunc)pts_zoom_stop_delayed, ptz);
 	}
 
 	return FALSE;

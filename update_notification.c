@@ -1,5 +1,5 @@
 /*
- * copyright (c) 2020 Thomas Paillet <thomas.paillet@net-c.fr
+ * copyright (c) 2020 2021 Thomas Paillet <thomas.paillet@net-c.fr>
 
  * This file is part of PTZ-Memory.
 
@@ -14,7 +14,7 @@
  * GNU General Public License for more details.
 
  * You should have received a copy of the GNU General Public License
- * along with PTZ-Memory.  If not, see <https://www.gnu.org/licenses/>.
+ * along with PTZ-Memory. If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include "ptz.h"
@@ -22,28 +22,13 @@
 #include <unistd.h>
 
 
-struct sockaddr_in update_notification_adresse;
+struct sockaddr_in update_notification_address;
 SOCKET update_notification_socket;
 
 gboolean update_notification_started = FALSE;
 
 GThread *update_notification_thread;
 
-
-void find_ptz (struct sockaddr_in *src_addr, gboolean (*func)(ptz_t *ptz))
-{
-	cameras_set_t *cameras_set_itr;
-	int i;
-
-	for (cameras_set_itr = cameras_sets; cameras_set_itr != NULL; cameras_set_itr = cameras_set_itr->next) {
-		for (i = 0; i < cameras_set_itr->number_of_cameras; i++) {
-			if (cameras_set_itr->ptz_ptr_array[i]->adresse.sin_addr.s_addr == src_addr->sin_addr.s_addr) {
-				g_idle_add ((GSourceFunc)func, cameras_set_itr->ptz_ptr_array[i]);
-				break;
-			}
-		}
-	}
-}
 
 gpointer receive_update_notification (gpointer data)
 {
@@ -54,6 +39,7 @@ gpointer receive_update_notification (gpointer data)
 #endif
 	char buffer[556];
 	struct sockaddr_in src_addr;
+	struct in_addr *src_in_addr;
 	SOCKET src_socket;
 	cameras_set_t *cameras_set_itr;
 	int i;
@@ -69,14 +55,22 @@ gpointer receive_update_notification (gpointer data)
 		recv (src_socket, buffer, 556, 0);
 		closesocket (src_socket);
 
-		if (buffer[30] == 'p') {		//Power On/Standby
-			if (buffer[31] == '0') find_ptz (&src_addr, ptz_is_off);
-			else if (buffer[31] == '1') {
+		if (buffer[30] == 'p') {
+			if (buffer[31] == '0') {		//P0	//Power Standby
+				for (cameras_set_itr = cameras_sets; cameras_set_itr != NULL; cameras_set_itr = cameras_set_itr->next) {
+					for (i = 0; i < cameras_set_itr->number_of_cameras; i++) {
+						if (cameras_set_itr->ptz_ptr_array[i]->address.sin_addr.s_addr == src_addr.sin_addr.s_addr) {
+							g_idle_add ((GSourceFunc)ptz_is_off, cameras_set_itr->ptz_ptr_array[i]);
+							break;
+						}
+					}
+				}
+			} else if (buffer[31] == '1') {		//P1	//Power On
 				ptz = NULL;
 
 				for (cameras_set_itr = cameras_sets; cameras_set_itr != NULL; cameras_set_itr = cameras_set_itr->next) {
 					for (i = 0; i < cameras_set_itr->number_of_cameras; i++) {
-						if (cameras_set_itr->ptz_ptr_array[i]->adresse.sin_addr.s_addr == src_addr.sin_addr.s_addr) {
+						if (cameras_set_itr->ptz_ptr_array[i]->address.sin_addr.s_addr == src_addr.sin_addr.s_addr) {
 							if (ptz == NULL) {
 								ptz = cameras_set_itr->ptz_ptr_array[i];
 
@@ -130,12 +124,12 @@ gpointer receive_update_notification (gpointer data)
 					}
 				}
 			}
-		} else if ((buffer[30] == 'l') && (buffer[31] == 'P') && (buffer[32] == 'I')) { 	//Lens information
+		} else if ((buffer[30] == 'l') && (buffer[31] == 'P') && (buffer[32] == 'I')) { 	//lPI	//Lens information
 			ptz = NULL;
 
 			for (cameras_set_itr = cameras_sets; cameras_set_itr != NULL; cameras_set_itr = cameras_set_itr->next) {
 				for (i = 0; i < cameras_set_itr->number_of_cameras; i++) {
-					if (cameras_set_itr->ptz_ptr_array[i]->adresse.sin_addr.s_addr == src_addr.sin_addr.s_addr) {
+					if (cameras_set_itr->ptz_ptr_array[i]->address.sin_addr.s_addr == src_addr.sin_addr.s_addr) {
 						if (ptz == NULL) {
 							ptz = cameras_set_itr->ptz_ptr_array[i];
 
@@ -193,12 +187,12 @@ gpointer receive_update_notification (gpointer data)
 					}
 				}
 			}
-		} else if ((buffer[30] == 'O') && (buffer[31] == 'A') && (buffer[32] == 'F')) { 	//Auto focus_position
+		} else if ((buffer[30] == 'O') && (buffer[31] == 'A') && (buffer[32] == 'F')) { 	//OAF:	//Auto focus_position
 			for (cameras_set_itr = cameras_sets; cameras_set_itr != NULL; cameras_set_itr = cameras_set_itr->next) {
 				for (i = 0; i < cameras_set_itr->number_of_cameras; i++) {
 					ptz = cameras_set_itr->ptz_ptr_array[i];
 
-					if (ptz->adresse.sin_addr.s_addr == src_addr.sin_addr.s_addr) {
+					if (ptz->address.sin_addr.s_addr == src_addr.sin_addr.s_addr) {
 						if (buffer[34] == '1') {
 							ptz->auto_focus = TRUE;
 							if (ptz->control_window.is_on_screen) g_idle_add ((GSourceFunc)update_auto_focus_toggle_button, ptz);
@@ -210,35 +204,75 @@ gpointer receive_update_notification (gpointer data)
 				}
 			}
 		} else if ((buffer[30] == 'r') && (buffer[31] == 'E') && (buffer[32] == 'R')) {		//Error information
+			src_in_addr = g_malloc (sizeof (struct in_addr));
+			*src_in_addr = src_addr.sin_addr;
+
 			if (buffer[33] == '0') {
-				if (buffer[34] == '0') find_ptz (&src_addr, clear_ptz_error); 	//Normal
-				else if ((buffer[34] == '1') || (buffer[34] == '2')) find_ptz (&src_addr, clear_ptz_error);
-				else if (buffer[34] == '3') find_ptz (&src_addr, Motor_Driver_Error);
-				else if (buffer[34] == '4') find_ptz (&src_addr, Pan_Sensor_Error);
-				else if (buffer[34] == '5') find_ptz (&src_addr, Tilt_Sensor_Error);
-				else if (buffer[34] == '6') find_ptz (&src_addr, Controller_RX_Over_run_Error);
-				else if (buffer[34] == '7') find_ptz (&src_addr, Controller_RX_Framing_Error);
-				else if (buffer[34] == '8') find_ptz (&src_addr, Network_RX_Over_run_Error);
-				else if (buffer[34] == '9') find_ptz (&src_addr, Network_RX_Framing_Error);
-				else if ((buffer[34] == 'A') || (buffer[34] == 'B')) find_ptz (&src_addr, clear_ptz_error);
+				if (buffer[34] == '0') g_idle_add ((GSourceFunc)clear_ptz_error, src_in_addr); 	//Normal
+				else if ((buffer[34] == '1') || (buffer[34] == '2')) g_idle_add ((GSourceFunc)clear_ptz_error, src_in_addr);
+				else if (buffer[34] == '3') g_idle_add ((GSourceFunc)Motor_Driver_Error, src_in_addr);
+				else if (buffer[34] == '4') g_idle_add ((GSourceFunc)Pan_Sensor_Error, src_in_addr);
+				else if (buffer[34] == '5') g_idle_add ((GSourceFunc)Tilt_Sensor_Error, src_in_addr);
+				else if (buffer[34] == '6') g_idle_add ((GSourceFunc)Controller_RX_Over_run_Error, src_in_addr);
+				else if (buffer[34] == '7') g_idle_add ((GSourceFunc)Controller_RX_Framing_Error, src_in_addr);
+				else if (buffer[34] == '8') g_idle_add ((GSourceFunc)Network_RX_Over_run_Error, src_in_addr);
+				else if (buffer[34] == '9') g_idle_add ((GSourceFunc)Network_RX_Framing_Error, src_in_addr);
+				else if ((buffer[34] == 'A') || (buffer[34] == 'B')) g_idle_add ((GSourceFunc)clear_ptz_error, src_in_addr);
+				else g_free (src_in_addr);
 			} else if (buffer[33] == '1') {
-				if (buffer[34] == '7') find_ptz (&src_addr, Controller_RX_Command_Buffer_Overflow);
-				else if (buffer[34] == '9') find_ptz (&src_addr, Network_RX_Command_Buffer_Overflow);
+				if (buffer[34] == '7') g_idle_add ((GSourceFunc)Controller_RX_Command_Buffer_Overflow, src_in_addr);
+				else if (buffer[34] == '9') g_idle_add ((GSourceFunc)Network_RX_Command_Buffer_Overflow, src_in_addr);
+				else g_free (src_in_addr);
 			} else if (buffer[33] == '2') {
-				if (buffer[34] == '1') find_ptz (&src_addr, System_Error);
-				else if (buffer[34] == '2') find_ptz (&src_addr, Spec_Limit_Over);
-				else if (buffer[34] == '4') find_ptz (&src_addr, Network_communication_Error);
-				else if (buffer[34] == '5') find_ptz (&src_addr, CAMERA_communication_Error);
-				else if (buffer[34] == '6') find_ptz (&src_addr, CAMERA_RX_Over_run_Error);
-				else if (buffer[34] == '7') find_ptz (&src_addr, CAMERA_RX_Framing_Error);
-				else if (buffer[34] == '8') find_ptz (&src_addr, CAMERA_RX_Command_Buffer_Overflow);
-			}
+				if (buffer[34] == '1') g_idle_add ((GSourceFunc)System_Error, src_in_addr);
+				else if (buffer[34] == '2') g_idle_add ((GSourceFunc)Spec_Limit_Over, src_in_addr);
+				else if (buffer[34] == '3') g_idle_add ((GSourceFunc)FPGA_Config_Error_AW_UE150, src_in_addr);
+				else if (buffer[34] == '4') {
+					if (ptz->model == AW_UE150) g_idle_add ((GSourceFunc)NET_Life_monitoring_Error_AW_UE150, src_in_addr);
+					else g_idle_add ((GSourceFunc)Network_communication_Error_AW_HE130, src_in_addr);
+				} else if (buffer[34] == '5') {
+					if (ptz->model == AW_UE150) g_idle_add ((GSourceFunc)BE_Life_monitoring_Error_AW_UE150, src_in_addr);
+					else g_idle_add ((GSourceFunc)CAMERA_communication_Error_AW_HE130, src_in_addr);
+				} else if (buffer[34] == '6') {
+					if (ptz->model == AW_UE150) g_idle_add ((GSourceFunc)IF_BE_UART_Buffer_Overflow_AW_UE150, src_in_addr);
+					else g_idle_add ((GSourceFunc)CAMERA_RX_Over_run_Error_AW_HE130, src_in_addr);
+				} else if (buffer[34] == '7') {
+					if (ptz->model == AW_UE150) g_idle_add ((GSourceFunc)IF_BE_UART_Framing_Error_AW_UE150, src_in_addr);
+					else g_idle_add ((GSourceFunc)CAMERA_RX_Framing_Error_AW_HE130, src_in_addr);
+				} else if (buffer[34] == '8') {
+					if (ptz->model == AW_UE150) g_idle_add ((GSourceFunc)IF_BE_UART_Buffer_Overflow_2_AW_UE150, src_in_addr);
+					else g_idle_add ((GSourceFunc)CAMERA_RX_Command_Buffer_Overflow_AW_HE130, src_in_addr);
+				} else if (buffer[34] == '9') g_idle_add ((GSourceFunc)CAM_Life_monitoring_Error_AW_UE150, src_in_addr);
+				else g_free (src_in_addr);
+			} else if (buffer[33] == '3') {
+				if (buffer[34] == '1') g_idle_add ((GSourceFunc)Fan1_error_AW_UE150, src_in_addr);
+				else if (buffer[34] == '2') g_idle_add ((GSourceFunc)Fan2_error_AW_UE150, src_in_addr);
+				else if (buffer[34] == '3') g_idle_add ((GSourceFunc)High_Temp_AW_UE150, src_in_addr);
+				else if (buffer[34] == '6') g_idle_add ((GSourceFunc)Low_Temp_AW_UE150, src_in_addr);
+				else g_free (src_in_addr);
+			} else if (buffer[33] == '4') {
+				if (buffer[34] == '0') g_idle_add ((GSourceFunc)Temp_Sensor_Error_AW_UE150, src_in_addr);
+				else if (buffer[34] == '1') g_idle_add ((GSourceFunc)Lens_Initialize_Error_AW_UE150, src_in_addr);
+				else if (buffer[34] == '2') g_idle_add ((GSourceFunc)PT_Initialize_Error_AW_UE150, src_in_addr);
+				else g_free (src_in_addr);
+			} else if (buffer[33] == '5') {
+				if (buffer[34] == '0') g_idle_add ((GSourceFunc)MR_Level_Error_AW_UE150, src_in_addr);
+				else if (buffer[34] == '2') g_idle_add ((GSourceFunc)MR_Offset_Error_AW_UE150, src_in_addr);
+				else if (buffer[34] == '3') g_idle_add ((GSourceFunc)Origin_Offset_Error_AW_UE150, src_in_addr);
+				else if (buffer[34] == '4') g_idle_add ((GSourceFunc)Angle_MR_Sensor_Error_AW_UE150, src_in_addr);
+				else if (buffer[34] == '5') g_idle_add ((GSourceFunc)PT_Gear_Error_AW_UE150, src_in_addr);
+				else if (buffer[34] == '6') g_idle_add ((GSourceFunc)Motor_Disconnect_Error_AW_UE150, src_in_addr);
+				else g_free (src_in_addr);
+			} else g_free (src_in_addr);
 		} else if ((buffer[30] == 'E') && (buffer[31] == 'R')) {
+			src_in_addr = g_malloc (sizeof (struct in_addr));
+			*src_in_addr = src_addr.sin_addr;
+
 			if ((buffer[32] == '3') && (buffer[33] == ':') && (buffer[34] == 'O') && (buffer[35] == 'A') && (buffer[36] == 'S')) {	//ABB execution failed
-				find_ptz (&src_addr, ABB_execution_failed);
+				g_idle_add ((GSourceFunc)ABB_execution_failed, src_in_addr);
 			} else if ((buffer[32] == '2') && (buffer[33] == ':') && (buffer[34] == 'O') && (buffer[35] == 'A') && (buffer[36] == 'S')) {	//ABB execution failed (busy status)
-				find_ptz (&src_addr, ABB_execution_failed_busy_status);
-			}
+				g_idle_add ((GSourceFunc)ABB_execution_failed_busy_status, src_in_addr);
+			} else g_free (src_in_addr);
 		}
 	}
 
@@ -247,17 +281,17 @@ gpointer receive_update_notification (gpointer data)
 
 void init_update_notification (void)
 {
-	memset (&update_notification_adresse, 0, sizeof (struct sockaddr_in));
-	update_notification_adresse.sin_family = AF_INET;
-	update_notification_adresse.sin_port = htons (UPDATE_NOTIFICATION_TCP_PORT);
-	update_notification_adresse.sin_addr.s_addr = inet_addr (my_ip_adresse);
+	memset (&update_notification_address, 0, sizeof (struct sockaddr_in));
+	update_notification_address.sin_family = AF_INET;
+	update_notification_address.sin_port = htons (UPDATE_NOTIFICATION_TCP_PORT);
+	update_notification_address.sin_addr.s_addr = inet_addr (my_ip_address);
 }
 
 void start_update_notification (void)
 {
 	update_notification_socket = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
-	if (bind (update_notification_socket, (struct sockaddr *)&update_notification_adresse, sizeof (struct sockaddr_in)) == 0) {
+	if (bind (update_notification_socket, (struct sockaddr *)&update_notification_address, sizeof (struct sockaddr_in)) == 0) {
 		if (listen (update_notification_socket, MAX_CAMERAS * MAX_CAMERAS_SET) == 0) {
 			update_notification_started = TRUE;
 			update_notification_thread = g_thread_new (NULL, receive_update_notification, NULL);
@@ -272,8 +306,8 @@ void stop_update_notification (void)
 
 	for (cameras_set_itr = cameras_sets; cameras_set_itr != NULL; cameras_set_itr = cameras_set_itr->next) {
 		for (i = 0; i < cameras_set_itr->number_of_cameras; i++) {
-			if (cameras_set_itr->ptz_ptr_array[i]->ip_adresse_is_valid && (cameras_set_itr->ptz_ptr_array[i]->error_code != 0x30)) {
-				send_ptz_control_command (cameras_set_itr->ptz_ptr_array[i], "#LPC0", TRUE);
+			if (cameras_set_itr->ptz_ptr_array[i]->ip_address_is_valid && (cameras_set_itr->ptz_ptr_array[i]->error_code != 0x30)) {
+//				send_ptz_control_command (cameras_set_itr->ptz_ptr_array[i], "#LPC0", TRUE);
 				send_update_stop_cmd (cameras_set_itr->ptz_ptr_array[i]);
 			}
 		}
@@ -281,9 +315,12 @@ void stop_update_notification (void)
 
 	update_notification_started = FALSE;
 
+	shutdown (update_notification_socket, SHUT_RD);
 	closesocket (update_notification_socket);
 
-//	if (update_notification_thread != NULL) g_thread_join (update_notification_thread);
-	update_notification_thread = NULL;
+	if (update_notification_thread != NULL) {
+		g_thread_join (update_notification_thread);
+		update_notification_thread = NULL;
+	}
 }
 
