@@ -40,7 +40,7 @@ SOCKET tsl_umd_v5_socket;
 
 GThread *tsl_umd_v5_thread = NULL;
 
-char font[17] = { 'C','o','u','r','i','e','r',' ','B','o','l','d',' ','1','0','0','\0' };
+char font[17] = "Courier Bold 100";
 
 
 gboolean g_source_ptz_tally_queue_draw (ptz_t *ptz)
@@ -117,7 +117,6 @@ gboolean control_window_tally_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 			else if ((ptz->tally_data & 0x02) && !(ptz->tally_data & 0x01)) cairo_set_source_rgb (cr, 0.0, ptz->tally_brightness, 0.0);
 			else cairo_set_source_rgb (cr, 0.941176471 * ptz->tally_brightness, 0.764705882 * ptz->tally_brightness, 0.0);
 		}
-//	} else cairo_set_source_rgb (cr, 0.2, 0.223529412, 0.231372549);
 	} else cairo_set_source_rgb (cr, 0.176470588, 0.196078431, 0.203921569);
 
 	cairo_paint (cr);
@@ -247,6 +246,36 @@ gboolean control_window_name_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 	return GDK_EVENT_PROPAGATE;
 }
 
+gboolean memory_name_draw (GtkWidget *widget, cairo_t *cr, char *name)
+{
+	PangoLayout *pl;
+	PangoFontDescription *desc;
+
+	if (name[0] != '\0') {
+		cairo_rectangle (cr, 5.0, thumbnail_height + 5.0 - (20.0 * thumbnail_size), thumbnail_width, 20.0 * thumbnail_size);
+		cairo_set_source_rgba (cr, 1.0, 1.0, 1.0, 0.5);
+		cairo_fill (cr);
+
+		cairo_set_source_rgb (cr, 0.0, 0.0, 0.0);
+		pl = pango_cairo_create_layout (cr);
+
+		cairo_translate (cr, 5.0 + 16.0 * (10 - (strlen (name) / 2)) * thumbnail_size, thumbnail_height - (19.0 * thumbnail_size) + (1.0 - thumbnail_size) * 4.0);
+
+		sprintf (font + 13, "%d", (int)(20.0 * thumbnail_size));
+
+		pango_layout_set_text (pl, name, -1);
+		desc = pango_font_description_from_string (font);
+		pango_layout_set_font_description (pl, desc);
+		pango_font_description_free (desc);
+
+		pango_cairo_show_layout (cr, pl);
+
+		g_object_unref(pl);
+	}
+
+	return GDK_EVENT_PROPAGATE;
+}
+
 void init_tally (void)
 {
 	memset (&tsl_umd_v5_address, 0, sizeof (struct sockaddr_in));
@@ -262,9 +291,9 @@ gpointer receive_tsl_umd_v5_msg (gpointer data)
 	ptz_t *ptz;
 
 	while ((msg_len = recv (tsl_umd_v5_socket, (char*)&packet, 2048, 0)) > 1) {
-		if (current_camera_set != NULL) {
-			if (packet.index < current_camera_set->number_of_cameras) {
-				ptz = current_camera_set->ptz_ptr_array[packet.index];
+		if (current_cameras_set != NULL) {
+			if (packet.index < current_cameras_set->number_of_cameras) {
+				ptz = current_cameras_set->ptz_ptr_array[packet.index];
 				ptz->tally_data = packet.control;
 
 				if ((packet.control & 0x80) && (packet.control & 0x40)) ptz->tally_brightness = 1.0;

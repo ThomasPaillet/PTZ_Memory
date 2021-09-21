@@ -24,11 +24,11 @@
 #include <unistd.h>
 
 
-char *config_file_name = "PTZ-Memory.dat";
+const char config_file_name[] = "PTZ-Memory.dat";
 
 gboolean backup_needed = FALSE;
 
-const char *settings_txt = "_Paramètres";
+const char settings_txt[] = "_Paramètres";
 
 GtkWidget *settings_window = NULL;
 
@@ -294,7 +294,7 @@ void create_settings_window (void)
 	g_signal_connect (G_OBJECT (settings_window), "key-press-event", G_CALLBACK (settings_window_key_press), NULL);
 
 	box1 = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
-		frame = gtk_frame_new (cameras_set_label);
+		frame = gtk_frame_new ("Ensembles de caméras");
 		gtk_frame_set_label_align (GTK_FRAME (frame), 0.5, 0.5);
 		gtk_container_set_border_width (GTK_CONTAINER (frame), MARGIN_VALUE);
 
@@ -533,7 +533,7 @@ void create_settings_window (void)
 					box4 = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
 					gtk_widget_set_margin_start (box4, MARGIN_VALUE);
 					gtk_widget_set_margin_end (box4, MARGIN_VALUE);
-						widget =  gtk_button_new_with_label (sw_p_08_grid_txt);
+						widget =  gtk_button_new_with_label ("Grille Snell SW-P-08");
 						g_signal_connect (G_OBJECT (widget), "clicked", G_CALLBACK (show_matrix_window), NULL);
 					gtk_box_set_center_widget (GTK_BOX (box4), widget);
 				gtk_box_pack_start (GTK_BOX (box3), box4, TRUE, TRUE, 0);
@@ -632,8 +632,6 @@ void load_config_file (void)
 			init_ptz (ptz);
 
 			fread (&ptz->active, sizeof (gboolean), 1, config_file);
-			fread (&ptz->matrix_source_number, sizeof (int), 1, config_file);
-			if (number_of_matrix_source < ptz->matrix_source_number) number_of_matrix_source = ptz->matrix_source_number;
 
 			if (ptz->active) {
 				create_ptz_widgets (ptz);
@@ -675,6 +673,9 @@ void load_config_file (void)
 						ptz->memories[index].image = gtk_image_new_from_pixbuf (ptz->memories[index].scaled_pixbuf);
 					}
 					gtk_button_set_image (GTK_BUTTON (ptz->memories[index].button), ptz->memories[index].image);
+
+					fread (ptz->memories[index].name, sizeof (char), MEMORIES_NAME_LENGTH, config_file);
+					ptz->memories[index].name[MEMORIES_NAME_LENGTH] = '\0';
 				}
 			} else {
 				cameras_set_tmp->number_of_ghost_cameras++;
@@ -694,8 +695,6 @@ void load_config_file (void)
 			gtk_label_set_text (GTK_LABEL (cameras_set_tmp->memories_labels[j]), memories_name[j]);
 		}
 	}
-
-	if (number_of_cameras_sets != 0) number_of_matrix_source++;
 
 	fread (&controller_is_used, sizeof (gboolean), 1, config_file);
 
@@ -766,7 +765,6 @@ void save_config_file (void)
 
 			fwrite (ptz->name, sizeof (char), 2, config_file);
 			fwrite (&ptz->active, sizeof (gboolean), 1, config_file);
-			fwrite (&ptz->matrix_source_number, sizeof (int), 1, config_file);
 
 			if (ptz->active) {
 				fwrite (ptz->ip_address, sizeof (char), 16, config_file);
@@ -785,6 +783,7 @@ void save_config_file (void)
 						pixbuf_byte_length = gdk_pixbuf_get_byte_length (ptz->memories[k].pixbuf);
 						fwrite (&pixbuf_byte_length, sizeof (gsize), 1, config_file);
 						fwrite (gdk_pixbuf_read_pixels (ptz->memories[k].pixbuf), sizeof (guint8), pixbuf_byte_length, config_file);
+						fwrite (ptz->memories[k].name, sizeof (char), MEMORIES_NAME_LENGTH, config_file);
 					}
 				}
 			}

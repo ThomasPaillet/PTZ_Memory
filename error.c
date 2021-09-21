@@ -96,6 +96,23 @@
 FILE *error_log_file = NULL;
 
 
+gboolean camera_is_unreachable (ptz_t *ptz)
+{
+	struct timeval current_time;
+	struct tm *time;
+
+	ptz_is_off (ptz);
+	gtk_widget_queue_draw (ptz->error_drawing_area);
+	gtk_widget_set_tooltip_text (ptz->error_drawing_area, "La caméra n'est pas connectée au réseau");
+
+	gettimeofday (&current_time, NULL);
+
+	time = localtime (&current_time.tv_sec);
+	fprintf (error_log_file, "%02dh %02dm %02ds: La caméra %s (%s) n'est pas connectée au réseau\n", time->tm_hour, time->tm_min, time->tm_sec, ptz->name, ptz->ip_address);
+
+	return G_SOURCE_REMOVE;
+}
+
 gboolean clear_ptz_error (struct in_addr *src_in_addr)
 {
 	ptz_t *ptz;
@@ -172,23 +189,6 @@ PTZ_ERROR_S(Angle_MR_Sensor_Error,0x54,"Angle MR Sensor Error",AW_UE150)
 PTZ_ERROR_S(PT_Gear_Error,0x55,"PT. Gear Error",AW_UE150)
 PTZ_ERROR_S(Motor_Disconnect_Error,0x56,"Motor Disconnect Error",AW_UE150)
 
-gboolean camera_is_unreachable (ptz_t *ptz)	//error_code = 0x30
-{
-	struct timeval current_time;
-	struct tm *time;
-
-	ptz_is_off (ptz);
-	gtk_widget_queue_draw (ptz->error_drawing_area);
-	gtk_widget_set_tooltip_text (ptz->error_drawing_area, "La caméra n'est pas connectée au réseau");
-
-	gettimeofday (&current_time, NULL);
-
-	time = localtime (&current_time.tv_sec);
-	fprintf (error_log_file, "%02dh %02dm %02ds: La caméra %s (%s) n'est pas connectée au réseau\n", time->tm_hour, time->tm_min, time->tm_sec, ptz->name, ptz->ip_address);
-
-	return G_SOURCE_REMOVE;
-}
-
 gboolean error_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 {
 	if (ptz->error_code == 0x00) {
@@ -196,7 +196,7 @@ gboolean error_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 			if (ptz->enter_notify_name_drawing_area) cairo_set_source_rgb (cr, 0.2, 0.223529412, 0.231372549);
 			else cairo_set_source_rgb (cr, 0.176470588, 0.196078431, 0.203921569);
 		} else cairo_set_source_rgb (cr, 0.2, 0.223529412, 0.231372549);
-	} else if (ptz->error_code == 0x30) cairo_set_source_rgb (cr, 0.8, 0.0, 0.0);
+	} else if (ptz->error_code == CAMERA_IS_UNREACHABLE_ERROR) cairo_set_source_rgb (cr, 0.8, 0.0, 0.0);
 	else cairo_set_source_rgb (cr, 0.960784314, 0.474509804, 0.0);
 
 	cairo_paint (cr);

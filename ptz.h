@@ -49,6 +49,7 @@
 
 
 #define MAX_MEMORIES 20
+#define MEMORIES_NAME_LENGTH 18
 
 #define AW_HE130 0
 #define AW_UE150 1
@@ -73,6 +74,10 @@ typedef struct {
 
 	int focus_position;
 	char focus_position_hexa[3];
+
+	char name[MEMORIES_NAME_LENGTH + 1];
+	GtkWidget *name_window;
+	GtkWidget *name_entry;
 } memory_t;
 
 typedef struct {
@@ -83,7 +88,7 @@ typedef struct {
 
 	GtkWidget *auto_focus_toggle_button;
 	gulong auto_focus_handler_id;
-	GtkWidget *focus_widget_box;
+	GtkWidget *focus_box;
 	GdkWindow *gdk_window;
 	gint x_root;
 	gint y_root;
@@ -116,8 +121,6 @@ typedef struct {
 	char ip_address[16];
 	char new_ip_address[16];
 	gboolean ip_address_is_valid;
-
-	int matrix_source_number;
 
 	struct sockaddr_in address;
 
@@ -191,10 +194,8 @@ void create_ghost_ptz_widgets (ptz_t *ptz);
 
 //cameras_set.h
 #define CAMERAS_SET_NAME_LENGTH 20
-#define MAX_CAMERAS_SET 15
+#define MAX_CAMERAS_SET 8
 #define MAX_CAMERAS 15
-
-#define MEMORIES_NAME_LENGTH 20
 
 
 typedef struct cameras_set_s {
@@ -225,14 +226,15 @@ typedef struct cameras_set_s {
 } cameras_set_t;
 
 
-extern const char *cameras_set_label;
-extern const char *cameras_label;
+extern const char cameras_label[];
+
+extern GMutex cameras_sets_mutex;
 
 extern int number_of_cameras_sets;
 
 extern cameras_set_t *cameras_sets;
 
-extern cameras_set_t *current_camera_set;
+extern cameras_set_t *current_cameras_set;
 
 extern cameras_set_t *new_cameras_set;
 
@@ -264,7 +266,7 @@ void create_control_window (ptz_t *ptz);
 
 
 //settings.h
-extern const char *settings_txt;
+extern const char settings_txt[];
 
 extern gboolean backup_needed;
 
@@ -283,6 +285,7 @@ void save_config_file (void);
 
 //protocol.h
 extern char my_ip_address[16];
+
 
 void init_protocol (void);
 
@@ -347,16 +350,16 @@ extern struct sockaddr_in sw_p_08_address;
 
 extern gboolean sw_p_08_server_started;
 
-extern int number_of_matrix_source;
+extern char tally_cameras_set;
 
-extern char *sw_p_08_grid_txt;
 
+void show_matrix_window (void);
+
+void tell_cameras_set_is_selected (gint page_num);
 
 void ask_to_connect_pgm_to_ctrl_opv (void);
 
 void ask_to_connect_ptz_to_ctrl_opv (ptz_t *ptz);
-
-void show_matrix_window (void);
 
 void init_sw_p_08 (void);
 
@@ -386,6 +389,8 @@ gboolean ghost_name_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz);
 
 gboolean control_window_name_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz);
 
+gboolean memory_name_draw (GtkWidget *widget, cairo_t *cr, char *name);
+
 void init_tally (void);
 
 void start_tally (void);
@@ -394,6 +399,11 @@ void stop_tally (void);
 
 
 //error.h
+#define CAMERA_IS_UNREACHABLE_ERROR 0xFFFF
+
+
+gboolean camera_is_unreachable (ptz_t *ptz);
+
 gboolean clear_ptz_error (struct in_addr *src_in_addr);
 
 gboolean Motor_Driver_Error (struct in_addr *src_in_addr);
@@ -437,8 +447,6 @@ gboolean Angle_MR_Sensor_Error_AW_UE150 (struct in_addr *src_in_addr);
 gboolean PT_Gear_Error_AW_UE150 (struct in_addr *src_in_addr);
 gboolean Motor_Disconnect_Error_AW_UE150 (struct in_addr *src_in_addr);
 
-gboolean camera_is_unreachable (ptz_t *ptz);
-
 gboolean error_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz);
 
 void start_error_log (void);
@@ -450,7 +458,7 @@ void stop_error_log (void);
 #define MARGIN_VALUE 5
 
 
-extern const char *warning_txt;
+extern const char warning_txt[];
 
 extern GtkWidget *main_window;
 extern GtkWidget *main_window_notebook;

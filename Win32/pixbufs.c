@@ -1,5 +1,5 @@
 /*
- * copyright (c) 2020 Thomas Paillet <thomas.paillet@net-c.fr
+ * copyright (c) 2020 2021 Thomas Paillet <thomas.paillet@net-c.fr
 
  * This file is part of PTZ-Memory.
 
@@ -26,6 +26,8 @@
 #include "logo.h"
 #include "grille_1.h"
 #include "grille_2.h"
+#include "grille_3.h"
+#include "grille_4.h"
 
 
 GdkPixbuf *pixbuf_icon;
@@ -35,6 +37,8 @@ GdkPixbuf *pixbuf_down;
 GdkPixbuf *pixbuf_logo;
 GdkPixbuf *pixbuf_grille_1;
 GdkPixbuf *pixbuf_grille_2;
+GdkPixbuf *pixbuf_grille_3;
+GdkPixbuf *pixbuf_grille_4;
 
 
 void load_pixbufs (void)
@@ -46,5 +50,7 @@ void load_pixbufs (void)
 	pixbuf_logo = gdk_pixbuf_new_from_inline (sizeof (pixbuf_inline_logo), pixbuf_inline_logo, FALSE, NULL);
 	pixbuf_grille_1 = gdk_pixbuf_new_from_inline (sizeof (pixbuf_inline_grille_1), pixbuf_inline_grille_1, FALSE, NULL);
 	pixbuf_grille_2 = gdk_pixbuf_new_from_inline (sizeof (pixbuf_inline_grille_2), pixbuf_inline_grille_2, FALSE, NULL);
+	pixbuf_grille_3 = gdk_pixbuf_new_from_inline (sizeof (pixbuf_inline_grille_3), pixbuf_inline_grille_3, FALSE, NULL);
+	pixbuf_grille_4 = gdk_pixbuf_new_from_inline (sizeof (pixbuf_inline_grille_4), pixbuf_inline_grille_4, FALSE, NULL);
 }
 

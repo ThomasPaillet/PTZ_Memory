@@ -44,7 +44,7 @@
 
 #define COMMAND_FUNCTION_END \
 	} else { \
-		ptz->error_code = 0x30; \
+		ptz->error_code = CAMERA_IS_UNREACHABLE_ERROR; \
 		g_idle_add ((GSourceFunc)camera_is_unreachable, ptz); \
 	} \
  \
@@ -160,7 +160,7 @@ WAIT_IF_NEEDED
 	if (connect (sock, (struct sockaddr *) &ptz->address, sizeof (struct sockaddr_in)) == 0) {
 		send (sock, buffer, size, 0);
 
-		if (ptz->error_code == 0x30) {
+		if (ptz->error_code == CAMERA_IS_UNREACHABLE_ERROR) {
 			ptz->error_code = 0x00;
 			g_idle_add ((GSourceFunc)clear_ptz_error, ptz);
 		}
@@ -238,7 +238,7 @@ WAIT_IF_NEEDED
 	} else {
 		*response = 0;
 
-		ptz->error_code = 0x30;
+		ptz->error_code = CAMERA_IS_UNREACHABLE_ERROR;
 		g_idle_add ((GSourceFunc)camera_is_unreachable, ptz);
 	}
 

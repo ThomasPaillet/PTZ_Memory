@@ -42,6 +42,7 @@ void init_ptz (ptz_t *ptz)
 		ptz->memories[i].pan_tilt_position_cmd[2] = 'P';
 		ptz->memories[i].pan_tilt_position_cmd[3] = 'C';
 		ptz->memories[i].pan_tilt_position_cmd[12] = '\0';
+		ptz->memories[i].name[0] = '\0';
 	}
 	ptz->number_of_memories = 0;
 
@@ -128,11 +129,12 @@ gpointer start_ptz (ptz_thread_t *ptz_thread)
 
 	send_update_start_cmd (ptz);
 
-	if (ptz->error_code != 0x30) send_ptz_request_command (ptz, "#O", &response);
+	if (ptz->error_code != CAMERA_IS_UNREACHABLE_ERROR) send_ptz_request_command (ptz, "#O", &response);
 
 	if (response == 1) {
 		send_cam_request_command_string (ptz, "QID", buffer);
 		if (memcmp (buffer, "AW-HE130", 8) == 0) ptz->model = AW_HE130;
+		else ptz->model = AW_UE150;
 
 		send_cam_request_command (ptz, "QAF", &response);
 		if (response == 1) ptz->auto_focus = TRUE;
@@ -175,9 +177,9 @@ gpointer switch_ptz_on (ptz_thread_t *ptz_thread)
 {
 	ptz_t *ptz = ptz_thread->pointer;
 
-	if (ptz->error_code == 0x30) send_update_start_cmd (ptz);
+	if (ptz->error_code == CAMERA_IS_UNREACHABLE_ERROR) send_update_start_cmd (ptz);
 
-	if (ptz->error_code != 0x30) send_ptz_control_command (ptz, "#O1", TRUE);
+	if (ptz->error_code != CAMERA_IS_UNREACHABLE_ERROR) send_ptz_control_command (ptz, "#O1", TRUE);
 
 	g_idle_add ((GSourceFunc)free_ptz_thread, ptz_thread);
 
@@ -188,9 +190,9 @@ gpointer switch_ptz_off (ptz_thread_t *ptz_thread)
 {
 	ptz_t *ptz = ptz_thread->pointer;
 
-	if (ptz->error_code == 0x30) send_update_start_cmd (ptz);
+	if (ptz->error_code == CAMERA_IS_UNREACHABLE_ERROR) send_update_start_cmd (ptz);
 
-	if (ptz->error_code != 0x30) send_ptz_control_command (ptz, "#O0", TRUE);
+	if (ptz->error_code != CAMERA_IS_UNREACHABLE_ERROR) send_ptz_control_command (ptz, "#O0", TRUE);
 
 	g_idle_add ((GSourceFunc)free_ptz_thread, ptz_thread);
 
@@ -340,7 +342,11 @@ gboolean memory_button_button_press_event (GtkButton *button, GdkEventButton *ev
 	int i;
 	ptz_t *ptz;
 
-	if (event->button != GDK_BUTTON_PRIMARY) return GDK_EVENT_PROPAGATE;
+	if (event->button != GDK_BUTTON_PRIMARY) {
+		gtk_widget_show_all (memory->name_window);
+
+		return GDK_EVENT_PROPAGATE;
+	}
 
 	if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (delete_toggle_button))) {
 		if (!memory->empty) {
@@ -350,6 +356,7 @@ gboolean memory_button_button_press_event (GtkButton *button, GdkEventButton *ev
 			g_object_unref (G_OBJECT (memory->pixbuf));
 			if (thumbnail_width != 320) g_object_unref (G_OBJECT (memory->scaled_pixbuf));
 			memory->image = NULL;
+			memory->name[0] = '\0';
 			backup_needed = TRUE;
 		}
 		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (delete_toggle_button), FALSE);
@@ -363,8 +370,8 @@ gboolean memory_button_button_press_event (GtkButton *button, GdkEventButton *ev
 		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (store_toggle_button), FALSE);
 	} else {
 		if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (link_toggle_button))) {
-			for (i = 0; i < current_camera_set->number_of_cameras; i++) {
-				ptz = current_camera_set->ptz_ptr_array[i];
+			for (i = 0; i < current_cameras_set->number_of_cameras; i++) {
+				ptz = current_cameras_set->ptz_ptr_array[i];
 
 				if (ptz->ip_address_is_valid && (ptz->error_code != 0x30) && !ptz->memories[memory->index].empty) {
 					if (ptz->memories + memory->index == memory) {
@@ -443,9 +450,29 @@ gboolean ghost_name_drawing_area_button_press_event (GtkButton *widget, GdkEvent
 	return GDK_EVENT_STOP;
 }
 
+gboolean memory_name_window_key_press (GtkWidget *memory_name_window, GdkEventKey *event)
+{
+	if (event->keyval == GDK_KEY_Escape) {
+		gtk_widget_hide (memory_name_window);
+
+		return GDK_EVENT_STOP;
+	} else return GDK_EVENT_PROPAGATE;
+}
+
+void memory_name_entry_activate (GtkEntry *entry, memory_t *memory)
+{
+	strcpy (memory->name, gtk_entry_get_text (entry));
+	gtk_widget_queue_draw (memory->button);
+	gtk_widget_hide (memory->name_window);
+
+	backup_needed = TRUE;
+}
+
 void create_ptz_widgets (ptz_t *ptz)
 {
 	int i;
+	GtkWidget *memory_name_window;
+	GtkWidget *memory_name_entry;
 
 	create_control_window (ptz);
 
@@ -493,7 +520,29 @@ void create_ptz_widgets (ptz_t *ptz)
 			ptz->memories[i].button = gtk_button_new ();
 			gtk_widget_set_size_request (ptz->memories[i].button, thumbnail_width + 10, thumbnail_height + 10);
 			ptz->memories[i].button_handler_id = g_signal_connect (G_OBJECT (ptz->memories[i].button), "button-press-event", G_CALLBACK (memory_button_button_press_event), ptz->memories + i);
+			g_signal_connect_after (G_OBJECT (ptz->memories[i].button), "draw", G_CALLBACK (memory_name_draw), ptz->memories[i].name);
 			gtk_grid_attach (GTK_GRID (ptz->memories_grid), ptz->memories[i].button, i, 1, 1, 1);
+
+			memory_name_window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+			gtk_window_set_type_hint (GTK_WINDOW (memory_name_window), GDK_WINDOW_TYPE_HINT_DIALOG);
+			gtk_window_set_transient_for (GTK_WINDOW (memory_name_window), GTK_WINDOW (main_window));
+			gtk_window_set_modal (GTK_WINDOW (memory_name_window), TRUE);
+			gtk_window_set_decorated (GTK_WINDOW (memory_name_window), FALSE);
+			gtk_window_set_skip_taskbar_hint (GTK_WINDOW (memory_name_window), FALSE);
+			gtk_window_set_skip_pager_hint (GTK_WINDOW (memory_name_window), FALSE);
+			gtk_window_set_position (GTK_WINDOW (memory_name_window), GTK_WIN_POS_MOUSE);
+			g_signal_connect (G_OBJECT (memory_name_window), "key-press-event", G_CALLBACK (memory_name_window_key_press), NULL);
+			g_signal_connect (G_OBJECT (memory_name_window), "focus-out-event", G_CALLBACK (gtk_widget_hide_on_delete), ptz);
+			g_signal_connect (G_OBJECT (memory_name_window), "delete-event", G_CALLBACK (gtk_widget_hide_on_delete), ptz);
+				memory_name_entry = gtk_entry_new ();
+				gtk_entry_set_max_length (GTK_ENTRY (memory_name_entry), MEMORIES_NAME_LENGTH);
+				gtk_entry_set_width_chars (GTK_ENTRY (memory_name_entry), MEMORIES_NAME_LENGTH);
+				gtk_entry_set_alignment (GTK_ENTRY (memory_name_entry), 0.5);
+				gtk_entry_set_text (GTK_ENTRY (memory_name_entry), ptz->memories[i].name);
+				g_signal_connect (G_OBJECT (memory_name_entry), "activate", G_CALLBACK (memory_name_entry_activate), ptz->memories + i);
+			gtk_container_add (GTK_CONTAINER (memory_name_window), memory_name_entry);
+			ptz->memories[i].name_entry = memory_name_entry;
+			ptz->memories[i].name_window = memory_name_window;
 		}
 
 		ptz->tally[4] = gtk_drawing_area_new ();
@@ -563,133 +612,5 @@ void create_ghost_ptz_widgets (ptz_t *ptz)
 		gtk_widget_set_size_request (ptz->tally[5], 4, 4);
 		g_signal_connect (G_OBJECT (ptz->tally[5]), "draw", G_CALLBACK (ghost_tally_draw), ptz);
 	gtk_grid_attach (GTK_GRID (ptz->memories_grid), ptz->tally[5], MAX_MEMORIES, 0, 1, 3);
-}
-
-void entry_activate (GtkEntry *entry, GtkLabel *label)
-{
-	gtk_label_set_text (label, gtk_entry_get_text (entry));
-
-	backup_needed = TRUE;
-}
-
-void entry_scrolled_window_hadjustment_value_changed (GtkAdjustment *hadjustment, cameras_set_t *cameras_set)
-{
-	gdouble value = gtk_adjustment_get_value (hadjustment);
-
-	gtk_adjustment_set_value (cameras_set->memories_scrolled_window_hadjustment, value);
-	gtk_adjustment_set_value (cameras_set->label_scrolled_window_hadjustment, value);
-}
-
-void memories_scrolled_window_hadjustment_value_changed (GtkAdjustment *hadjustment, cameras_set_t *cameras_set)
-{
-	gdouble value = gtk_adjustment_get_value (hadjustment);
-
-	gtk_adjustment_set_value (cameras_set->entry_scrolled_window_hadjustment, value);
-	gtk_adjustment_set_value (cameras_set->label_scrolled_window_hadjustment, value);
-}
-
-void label_scrolled_window_hadjustment_value_changed (GtkAdjustment *hadjustment, cameras_set_t *cameras_set)
-{
-	gdouble value = gtk_adjustment_get_value (hadjustment);
-
-	gtk_adjustment_set_value (cameras_set->memories_scrolled_window_hadjustment, value);
-	gtk_adjustment_set_value (cameras_set->entry_scrolled_window_hadjustment, value);
-}
-
-void add_cameras_set_to_main_window_notebook (cameras_set_t *cameras_set)
-{
-	int i;
-	GtkWidget *box1, *box2, *scrolled_window, *widget, *memories_scrolled_window;
-
-	cameras_set->page = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
-		box1 = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
-			cameras_set->entry_widgets_padding = gtk_drawing_area_new ();
-			gtk_widget_set_size_request (cameras_set->entry_widgets_padding, thumbnail_height + 13, 34);
-		gtk_box_pack_start (GTK_BOX (box1), cameras_set->entry_widgets_padding, FALSE, FALSE, 0);
-
-			scrolled_window = gtk_scrolled_window_new (NULL, NULL);
-			gtk_scrolled_window_set_min_content_height (GTK_SCROLLED_WINDOW (scrolled_window), 30);
-			gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scrolled_window), GTK_POLICY_EXTERNAL, GTK_POLICY_EXTERNAL);
-				box2 = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
-				for (i = 0; i < MAX_MEMORIES; i++) {
-					cameras_set->entry_widgets[i] = gtk_entry_new ();
-					gtk_widget_set_size_request (cameras_set->entry_widgets[i], thumbnail_width + 6, 34);
-					gtk_widget_set_margin_start (cameras_set->entry_widgets[i], 2);
-					gtk_widget_set_margin_end (cameras_set->entry_widgets[i], 2);
-					gtk_entry_set_max_length (GTK_ENTRY (cameras_set->entry_widgets[i]), MEMORIES_NAME_LENGTH);
-					gtk_entry_set_width_chars (GTK_ENTRY (cameras_set->entry_widgets[i]), MEMORIES_NAME_LENGTH);
-					gtk_entry_set_alignment (GTK_ENTRY (cameras_set->entry_widgets[i]), 0.5);
-					gtk_box_pack_start (GTK_BOX (box2), cameras_set->entry_widgets[i], FALSE, FALSE, 0);
-				}
-					widget = gtk_drawing_area_new ();
-					gtk_widget_set_size_request (widget, 4, 34);
-				gtk_box_pack_start (GTK_BOX (box2), widget, FALSE, FALSE, 0);
-			gtk_container_add (GTK_CONTAINER (scrolled_window), box2);
-			cameras_set->entry_scrolled_window_hadjustment = gtk_scrolled_window_get_hadjustment (GTK_SCROLLED_WINDOW (scrolled_window));
-			g_signal_connect (G_OBJECT (cameras_set->entry_scrolled_window_hadjustment), "value-changed", G_CALLBACK (entry_scrolled_window_hadjustment_value_changed), cameras_set);
-		gtk_box_pack_start (GTK_BOX (box1), scrolled_window, TRUE, TRUE, 0);
-	gtk_box_pack_start (GTK_BOX (cameras_set->page), box1, FALSE, FALSE, 0);
-
-		scrolled_window = gtk_scrolled_window_new (NULL, NULL);
-			box1 = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
-				cameras_set->name_grid_box = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
-
-				memories_scrolled_window = gtk_scrolled_window_new (NULL, NULL);
-				gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (memories_scrolled_window), GTK_POLICY_EXTERNAL, GTK_POLICY_EXTERNAL);
-					cameras_set->memories_grid_box = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
-					for (i = 0; i < cameras_set->number_of_cameras; i++) {
-						gtk_box_pack_start (GTK_BOX (cameras_set->name_grid_box), cameras_set->ptz_ptr_array[i]->name_separator, FALSE, FALSE, 0);
-						gtk_box_pack_start (GTK_BOX (cameras_set->name_grid_box), cameras_set->ptz_ptr_array[i]->name_grid, FALSE, FALSE, 0);
-						gtk_box_pack_start (GTK_BOX (cameras_set->memories_grid_box), cameras_set->ptz_ptr_array[i]->memories_separator, FALSE, FALSE, 0);
-						gtk_box_pack_start (GTK_BOX (cameras_set->memories_grid_box), cameras_set->ptz_ptr_array[i]->memories_grid, FALSE, FALSE, 0);
-					}
-				gtk_container_add (GTK_CONTAINER (memories_scrolled_window), cameras_set->memories_grid_box);
-				cameras_set->memories_scrolled_window_hadjustment = gtk_scrolled_window_get_hadjustment (GTK_SCROLLED_WINDOW (memories_scrolled_window));
-				g_signal_connect (G_OBJECT (cameras_set->memories_scrolled_window_hadjustment), "value-changed", G_CALLBACK (memories_scrolled_window_hadjustment_value_changed), cameras_set);
-			gtk_box_pack_start (GTK_BOX (box1), cameras_set->name_grid_box, FALSE, FALSE, 0);
-
-				widget = gtk_separator_new (GTK_ORIENTATION_VERTICAL);
-			gtk_box_pack_start (GTK_BOX (box1), widget, FALSE, FALSE, 0);
-
-			gtk_box_pack_start (GTK_BOX (box1), memories_scrolled_window, TRUE, TRUE, 0);
-		cameras_set->scrolled_window_vadjustment = gtk_scrolled_window_get_vadjustment (GTK_SCROLLED_WINDOW (scrolled_window));
-		gtk_container_add (GTK_CONTAINER (scrolled_window), box1);
-	gtk_box_pack_start (GTK_BOX (cameras_set->page), scrolled_window, TRUE, TRUE, 0);
-
-		widget = gtk_separator_new (GTK_ORIENTATION_HORIZONTAL);
-	gtk_box_pack_start (GTK_BOX (cameras_set->page), widget, FALSE, FALSE, 0);
-
-		box1 = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
-			cameras_set->memories_labels_padding = gtk_drawing_area_new ();
-			gtk_widget_set_size_request (cameras_set->memories_labels_padding, thumbnail_height + 13, 10);
-		gtk_box_pack_start (GTK_BOX (box1), cameras_set->memories_labels_padding, FALSE, FALSE, 0);
-
-			scrolled_window = gtk_scrolled_window_new (NULL, NULL);
-			gtk_scrolled_window_set_placement (GTK_SCROLLED_WINDOW (scrolled_window), GTK_CORNER_BOTTOM_LEFT);
-			gtk_scrolled_window_set_min_content_height (GTK_SCROLLED_WINDOW (scrolled_window), 50);
-				box2 = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
-				for (i = 0; i < MAX_MEMORIES; i++) {
-					cameras_set->memories_labels[i] = gtk_label_new (NULL);
-					gtk_widget_set_size_request (cameras_set->memories_labels[i], thumbnail_width + 6, 10);
-					gtk_widget_set_margin_start (cameras_set->memories_labels[i], 2);
-					gtk_widget_set_margin_end (cameras_set->memories_labels[i], 2);
-					gtk_label_set_xalign (GTK_LABEL (cameras_set->memories_labels[i]), 0.5);
-					gtk_box_pack_start (GTK_BOX (box2), cameras_set->memories_labels[i], FALSE, FALSE, 0);
-					g_signal_connect (G_OBJECT (cameras_set->entry_widgets[i]), "activate", G_CALLBACK (entry_activate), cameras_set->memories_labels[i]);
-				}
-					widget = gtk_drawing_area_new ();
-					gtk_widget_set_size_request (widget, 4, 10);
-				gtk_box_pack_start (GTK_BOX (box2), widget, FALSE, FALSE, 0);
-			gtk_container_add (GTK_CONTAINER (scrolled_window), box2);
-			cameras_set->label_scrolled_window_hadjustment = gtk_scrolled_window_get_hadjustment (GTK_SCROLLED_WINDOW (scrolled_window));
-			g_signal_connect (G_OBJECT (cameras_set->label_scrolled_window_hadjustment), "value-changed", G_CALLBACK (label_scrolled_window_hadjustment_value_changed), cameras_set);
-		gtk_box_pack_start (GTK_BOX (box1), scrolled_window, TRUE, TRUE, 0);
-	gtk_box_pack_start (GTK_BOX (cameras_set->page), box1, FALSE, FALSE, 0);
-
-	gtk_widget_show_all (cameras_set->page);
-
-	widget = gtk_label_new (cameras_set->name);
-	cameras_set->page_num = gtk_notebook_append_page (GTK_NOTEBOOK (main_window_notebook), cameras_set->page, widget);
-	gtk_notebook_set_tab_reorderable (GTK_NOTEBOOK (main_window_notebook), cameras_set->page, TRUE);
 }
 

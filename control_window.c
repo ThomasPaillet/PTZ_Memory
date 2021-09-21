@@ -27,16 +27,16 @@ extern GdkPixbuf *pixbuf_down;
 #endif
 
 
-char focus_near_speed_cmd[5] = {'#', 'F', '2', '5', '\0'};
-char focus_far_speed_cmd[5] = {'#', 'F', '7', '5', '\0'};
-char *focus_stop_cmd = "#F50";
+char focus_near_speed_cmd[5] = "#F25";
+char focus_far_speed_cmd[5] = "#F75";
+char focus_stop_cmd[5] = "#F50";
 
-char zoom_wide_speed_cmd[5] = {'#', 'Z', '2', '5', '\0'};
-char zoom_tele_speed_cmd[5] = {'#', 'Z', '7', '5', '\0'};
-char *zoom_stop_cmd = "#Z50";
+char zoom_wide_speed_cmd[5] = "#Z25";
+char zoom_tele_speed_cmd[5] = "#Z75";
+char zoom_stop_cmd[5] = "#Z50";
 
-char pan_tilt_speed_cmd[9] = {'#', 'P', 'T', 'S', '5', '0', '5', '0', '\0'};
-char *pan_tilt_stop_cmd = "#PTS5050";
+char pan_tilt_speed_cmd[9] = "#PTS5050";
+char pan_tilt_stop_cmd[9] = "#PTS5050";
 
 
 gboolean get_control_window_position_and_size (GtkWidget *window, gpointer cr, ptz_t *ptz)
@@ -54,7 +54,7 @@ void show_control_window (ptz_t *ptz)
 	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (ptz->control_window.auto_focus_toggle_button), ptz->auto_focus);
 	g_signal_handler_unblock (ptz->control_window.auto_focus_toggle_button, ptz->control_window.auto_focus_handler_id);
 
-	gtk_widget_set_sensitive (ptz->control_window.focus_widget_box, !ptz->auto_focus);
+	gtk_widget_set_sensitive (ptz->control_window.focus_box, !ptz->auto_focus);
 
 	gtk_widget_show_all (ptz->control_window.window);
 	ptz->control_window.is_on_screen = TRUE;
@@ -137,11 +137,11 @@ gboolean control_window_key_press (GtkWidget *window, GdkEventKey *event, ptz_t 
 		} else if ((GDK_KEY_F1 <= event->keyval) && (event->keyval <= GDK_KEY_F15)) {
 			i = event->keyval - GDK_KEY_F1;
 
-			if ((i != ptz->index) && (i < current_camera_set->number_of_cameras)) {
+			if ((i != ptz->index) && (i < current_cameras_set->number_of_cameras)) {
 				ptz->control_window.is_on_screen = FALSE;
 				gtk_widget_hide (ptz->control_window.window);
 
-				new_ptz = current_camera_set->ptz_ptr_array[i];
+				new_ptz = current_cameras_set->ptz_ptr_array[i];
 
 				if (new_ptz->active && gtk_widget_get_sensitive (new_ptz->name_grid)) {
 					gtk_window_set_position (GTK_WINDOW (new_ptz->control_window.window), GTK_WIN_POS_CENTER);
@@ -195,6 +195,7 @@ gboolean control_window_button_press (GtkWidget *window, GdkEventButton *event, 
 			(event->y_root < ptz->control_window.y_root) || (event->y_root > ptz->control_window.y_root + ptz->control_window.height)) {
 			ptz->control_window.is_on_screen = FALSE;
 			gtk_widget_hide (window);
+
 			return GDK_EVENT_STOP;
 		}
 	}
@@ -323,7 +324,7 @@ gboolean update_auto_focus_toggle_button (ptz_t *ptz)
 	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (ptz->control_window.auto_focus_toggle_button), ptz->auto_focus);
 	g_signal_handler_unblock (ptz->control_window.auto_focus_toggle_button, ptz->control_window.auto_focus_handler_id);
 
-	gtk_widget_set_sensitive (ptz->control_window.focus_widget_box, !ptz->auto_focus);
+	gtk_widget_set_sensitive (ptz->control_window.focus_box, !ptz->auto_focus);
 
 	return G_SOURCE_REMOVE;
 }
@@ -332,7 +333,7 @@ void auto_focus_toggle_button_clicked (GtkToggleButton *auto_focus_toggle_button
 {
 	if (gtk_toggle_button_get_active (auto_focus_toggle_button)) {
 		ptz->auto_focus = TRUE;
-		gtk_widget_set_sensitive (ptz->control_window.focus_widget_box, FALSE);
+		gtk_widget_set_sensitive (ptz->control_window.focus_box, FALSE);
 		send_cam_control_command (ptz, "OAF:1");
 	} else send_cam_control_command (ptz, "OAF:0");
 }
@@ -1267,8 +1268,8 @@ void create_control_window (ptz_t *ptz)
 		gtk_grid_attach (GTK_GRID (grid), ptz->control_window.auto_focus_toggle_button, 0, 0, 1, 1);
 
 			box = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
-			ptz->control_window.focus_widget_box = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
-			gtk_widget_set_margin_bottom (ptz->control_window.focus_widget_box, 50);
+			ptz->control_window.focus_box = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
+			gtk_widget_set_margin_bottom (ptz->control_window.focus_box, 50);
 #ifdef _WIN32
 				image = gtk_image_new_from_pixbuf (pixbuf_up);
 #elif defined (__linux)
@@ -1279,11 +1280,11 @@ void create_control_window (ptz_t *ptz)
 				gtk_widget_set_margin_bottom (widget, MARGIN_VALUE);
 				g_signal_connect (G_OBJECT (widget), "button_press_event", G_CALLBACK (focus_far_button_pressed), ptz);
 				g_signal_connect (G_OBJECT (widget), "button_release_event", G_CALLBACK (focus_speed_button_released), ptz);
-			gtk_box_pack_start (GTK_BOX (ptz->control_window.focus_widget_box), widget, FALSE, FALSE, 0);
+			gtk_box_pack_start (GTK_BOX (ptz->control_window.focus_box), widget, FALSE, FALSE, 0);
 
 				ptz->control_window.otaf_button = gtk_button_new_with_label ("OTAF");
 				g_signal_connect (G_OBJECT (ptz->control_window.otaf_button), "button_press_event", G_CALLBACK (one_touch_auto_focus_button_pressed), ptz);
-			gtk_box_pack_start (GTK_BOX (ptz->control_window.focus_widget_box), ptz->control_window.otaf_button, FALSE, FALSE, 0);
+			gtk_box_pack_start (GTK_BOX (ptz->control_window.focus_box), ptz->control_window.otaf_button, FALSE, FALSE, 0);
 
 #ifdef _WIN32
 				image = gtk_image_new_from_pixbuf (pixbuf_down);
@@ -1295,8 +1296,8 @@ void create_control_window (ptz_t *ptz)
 				gtk_widget_set_margin_top (widget, MARGIN_VALUE);
 				g_signal_connect (G_OBJECT (widget), "button_press_event", G_CALLBACK (focus_near_button_pressed), ptz);
 				g_signal_connect (G_OBJECT (widget), "button_release_event", G_CALLBACK (focus_speed_button_released), ptz);
-			gtk_box_pack_start (GTK_BOX (ptz->control_window.focus_widget_box), widget, FALSE, FALSE, 0);
-		gtk_box_set_center_widget (GTK_BOX (box), ptz->control_window.focus_widget_box);
+			gtk_box_pack_start (GTK_BOX (ptz->control_window.focus_box), widget, FALSE, FALSE, 0);
+		gtk_box_set_center_widget (GTK_BOX (box), ptz->control_window.focus_box);
 		gtk_grid_attach (GTK_GRID (grid), box, 0, 1, 1, 6);
 
 			ptz->control_window.focus_level_bar_drawing_area = gtk_drawing_area_new ();
