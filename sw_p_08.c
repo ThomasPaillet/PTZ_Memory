@@ -502,8 +502,10 @@ gpointer receive_message_from_remote_device (remote_device_t *remote_device)
 									tally_ptz = ptz->index;
 
 									gtk_window_set_position (GTK_WINDOW (ptz->control_window.window), GTK_WIN_POS_CENTER);
+
 									show_control_window (ptz);
-									gdk_window_get_device_position_double (ptz->control_window.gdk_window, trackball, &ptz->control_window.x, &ptz->control_window.y, NULL);
+
+									if (trackball != NULL) gdk_window_get_device_position_double (ptz->control_window.gdk_window, trackball, &ptz->control_window.x, &ptz->control_window.y, NULL);
 								}  else tally_ptz = MAX_CAMERAS + 1;
 							}  else {
 								g_mutex_unlock (&cameras_sets_mutex);

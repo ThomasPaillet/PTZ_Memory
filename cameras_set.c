@@ -251,9 +251,9 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 
 	cameras_set->number_of_cameras = new_number_of_cameras;
 
-	if (new_cameras_set != NULL) add_cameras_set_to_main_window_notebook (cameras_set);
-
 	g_mutex_unlock (&cameras_sets_mutex);
+
+	if (new_cameras_set != NULL) add_cameras_set_to_main_window_notebook (cameras_set);
 
 	ip_addresss_list = NULL;
 

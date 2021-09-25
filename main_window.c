@@ -333,6 +333,7 @@ gboolean main_window_key_press (GtkWidget *widget, GdkEventKey *event)
 
 				if (ptz->active && gtk_widget_get_sensitive (ptz->name_grid)) {
 					gtk_window_set_position (GTK_WINDOW (ptz->control_window.window), GTK_WIN_POS_CENTER);
+
 					show_control_window (ptz);
 
 					if (trackball != NULL) gdk_device_get_position_double (mouse, NULL, &ptz->control_window.x, &ptz->control_window.y);
