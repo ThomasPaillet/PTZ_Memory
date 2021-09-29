@@ -84,6 +84,22 @@ gboolean g_source_select_cameras_set_page (gpointer page_num)
 	return G_SOURCE_REMOVE;
 }
 
+gboolean g_source_show_control_window (ptz_t *ptz)
+{
+	if (current_ptz_control_window != NULL) {
+		current_ptz_control_window->control_window.is_on_screen = FALSE;
+		gtk_widget_hide (current_ptz_control_window->control_window.window);
+	}
+
+	gtk_window_set_position (GTK_WINDOW (ptz->control_window.window), GTK_WIN_POS_CENTER);
+
+	show_control_window (ptz);
+
+	if (trackball != NULL) gdk_window_get_device_position_double (ptz->control_window.gdk_window, trackball, &ptz->control_window.x, &ptz->control_window.y, NULL);
+
+	return G_SOURCE_REMOVE;
+}
+
 gboolean delete_matrix_window (GtkWidget *window)
 {
 	remote_devices[0].connected_label = NULL;
@@ -393,7 +409,7 @@ void send_ok_plus_crosspoint_tally_message (SOCKET sock, char dest)
 		full_sw_p_08_buffer[8] = DLE;
 		full_sw_p_08_buffer[9] = DLE;
 		full_sw_p_08_buffer[10] = 5;
-		full_sw_p_08_buffer[11] = - 24 - dest;
+		full_sw_p_08_buffer[11] = -24 - dest;
 		full_sw_p_08_buffer[12] = DLE;
 //		full_sw_p_08_buffer[13] = ETX;
 		sw_p_08_buffer_len = 12;
@@ -499,15 +515,11 @@ gpointer receive_message_from_remote_device (remote_device_t *remote_device)
 								g_mutex_unlock (&cameras_sets_mutex);
 
 								if (ptz->active && gtk_widget_get_sensitive (ptz->name_grid)) {
+									g_idle_add ((GSourceFunc)g_source_show_control_window, ptz);
+
 									tally_ptz = ptz->index;
-
-									gtk_window_set_position (GTK_WINDOW (ptz->control_window.window), GTK_WIN_POS_CENTER);
-
-									show_control_window (ptz);
-
-									if (trackball != NULL) gdk_window_get_device_position_double (ptz->control_window.gdk_window, trackball, &ptz->control_window.x, &ptz->control_window.y, NULL);
-								}  else tally_ptz = MAX_CAMERAS + 1;
-							}  else {
+								} else tally_ptz = MAX_CAMERAS + 1;
+							} else {
 								g_mutex_unlock (&cameras_sets_mutex);
 
 								tally_ptz = MAX_CAMERAS + 1;
@@ -563,6 +575,7 @@ gpointer sw_p_08_server (void)
 				closesocket (src_socket);
 				continue;
 			}
+
 			remote_devices[0].src_socket = src_socket;
 			memcpy (&remote_devices[0].src_addr, &src_addr, sizeof (struct sockaddr_in));
 			remote_devices[0].index = 0;
@@ -580,6 +593,7 @@ gpointer sw_p_08_server (void)
 				closesocket (src_socket);
 				continue;
 			}
+
 			remote_devices[1].src_socket = src_socket;
 			memcpy (&remote_devices[1].src_addr, &src_addr, sizeof (struct sockaddr_in));
 			remote_devices[1].index = 0;

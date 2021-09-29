@@ -38,6 +38,8 @@ char zoom_stop_cmd[5] = "#Z50";
 char pan_tilt_speed_cmd[9] = "#PTS5050";
 char pan_tilt_stop_cmd[9] = "#PTS5050";
 
+ptz_t *current_ptz_control_window = NULL;
+
 
 gboolean get_control_window_position_and_size (GtkWidget *window, gpointer cr, ptz_t *ptz)
 {
@@ -57,12 +59,14 @@ void show_control_window (ptz_t *ptz)
 	gtk_widget_set_sensitive (ptz->control_window.focus_box, !ptz->auto_focus);
 
 	gtk_widget_show_all (ptz->control_window.window);
+	current_ptz_control_window = ptz;
 	ptz->control_window.is_on_screen = TRUE;
 }
 
 gboolean hide_control_window (GtkWidget *window, GdkEvent *event, ptz_t *ptz)
 {
 	ptz->control_window.is_on_screen = FALSE;
+	current_ptz_control_window = NULL;
 	gtk_widget_hide (window);
 
 	return GDK_EVENT_STOP;
@@ -77,6 +81,7 @@ gboolean control_window_key_press (GtkWidget *window, GdkEventKey *event, ptz_t 
 	if (!ptz->control_window.key_pressed) {
 		if (event->keyval == GDK_KEY_Escape) {
 			ptz->control_window.is_on_screen = FALSE;
+			current_ptz_control_window = NULL;
 			gtk_widget_hide (window);
 
 			return GDK_EVENT_STOP;

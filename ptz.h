@@ -257,6 +257,8 @@ extern char focus_far_speed_cmd[5];
 extern char zoom_wide_speed_cmd[5];
 extern char zoom_tele_speed_cmd[5];
 
+extern ptz_t *current_ptz_control_window;
+
 
 void show_control_window (ptz_t *ptz);
 

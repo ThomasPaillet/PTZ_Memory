@@ -253,7 +253,7 @@ gboolean memory_name_draw (GtkWidget *widget, cairo_t *cr, char *name)
 
 	if (name[0] != '\0') {
 		cairo_rectangle (cr, 5.0, thumbnail_height + 5.0 - (20.0 * thumbnail_size), thumbnail_width, 20.0 * thumbnail_size);
-		cairo_set_source_rgba (cr, 1.0, 1.0, 1.0, 0.5);
+		cairo_set_source_rgba (cr, 1.0, 1.0, 1.0, 0.2);
 		cairo_fill (cr);
 
 		cairo_set_source_rgb (cr, 0.0, 0.0, 0.0);
