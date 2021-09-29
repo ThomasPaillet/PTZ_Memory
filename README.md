@@ -15,6 +15,8 @@ Echap : Close child window (camera control window, settings window, ...).
 
 Alt + I : Retrieve jpeg picture (quality n°1) from the selected camera (control window opened) or from all cameras.
 
+Right click on thumbnail : Allow you to name it.
+
 ## Miscellaneous :
 The settings, memories and thumbnails are stored in the file « PTZ-Memory.dat ».
 
