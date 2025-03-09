@@ -22,6 +22,8 @@ ptz.o: ptz.h
 
 cameras_set.o: ptz.h
 
+memory.o: ptz.h
+
 control_window.o: ptz.h
 
 settings.o: ptz.h
