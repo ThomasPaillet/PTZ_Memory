@@ -1,5 +1,5 @@
 /*
- * copyright (c) 2020 2021 Thomas Paillet <thomas.paillet@net-c.fr>
+ * copyright (c) 2020 2021 2025 Thomas Paillet <thomas.paillet@net-c.fr>
 
  * This file is part of PTZ-Memory.
 
@@ -27,6 +27,7 @@ gboolean controller_ip_address_is_valid = FALSE;
 
 struct sockaddr_in controller_address;
 
+
 extern char *http_cam_cmd, *http_cam_ptz_header;
 extern char *http_header_1, *http_header_2, *http_header_3;
 
@@ -39,7 +40,7 @@ gpointer controller_switch_ptz (ptz_thread_t *ptz_thread)
 	int port_number;
 	SOCKET sock;
 
-	port_number = ((ptz_t*)(ptz_thread->pointer))->index + 1;
+	port_number = ptz_thread->ptz_ptr->index + 1;
 
 	if (port_number == 10) {
 		controller_cmd[28] = '1';
@@ -71,4 +72,3 @@ void init_controller (void)
 
 	controller_cmd_size = sprintf (controller_cmd, "%sXPT:00%s%s%s%s%s%s", http_cam_cmd, http_cam_ptz_header, http_header_1, my_ip_address, http_header_2, my_ip_address, http_header_3);
 }
-
