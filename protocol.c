@@ -29,6 +29,32 @@
 #include <jpeglib.h>
 
 
+char my_ip_address[16];
+char network_address[3][4] = { { '\0' }, { '\0' }, { '\0' } };
+int network_address_len[3] = { 0, 0, 0 };
+
+
+char *http_ptz_cmd = "GET /cgi-bin/aw_ptz?cmd=";	//strlen = 24
+char *http_cam_cmd = "GET /cgi-bin/aw_cam?cmd=";	//strlen = 24
+
+char *http_update_start_cmd = "GET /cgi-bin/event?connect=start&my_port=";	//strlen = 41
+char *http_update_stop_cmd = "GET /cgi-bin/event?connect=stop&my_port=";	//strlen = 40
+
+char *http_thumbnail_320_cmd = "GET /cgi-bin/camera?resolution=320&quality=1&page=";	//strlen = 50
+char *http_thumbnail_640_cmd = "GET /cgi-bin/camera?resolution=640&quality=1&page=";	//strlen = 50
+char *http_camera_cmd = "GET /cgi-bin/camera?resolution=1920&quality=1&page=";	//strlen = 51
+
+char *http_cam_ptz_header = "&res=1";	//strlen = 6
+char *http_update_header = "&uid=0";	//strlen = 6
+char *http_header_1 = " HTTP/1.1\r\nAccept: image/gif, ... (omitted) ... , */*\r\nReferer: http://";	//strlen = 71
+char *http_header_2 = "/\r\nAccept-Language: en\r\nAccept-Encoding: gzip, deflate\r\nUser-Agent: AW-Cam Controller\r\nHost: ";	//strlen = 93
+char *http_header_3 = "\r\nConnection: Keep-Alive\r\n\r\n";	//strlen = 28
+
+char *http_header;
+int http_header_size;
+int full_http_header_size;
+
+
 #define WAIT_IF_NEEDED \
 	gettimeofday (&current_time, NULL); \
 	timersub (&current_time, &ptz->last_time, &elapsed_time); \
@@ -54,31 +80,10 @@ g_mutex_unlock (&ptz->cmd_mutex); \
 }
 
 
-char *http_ptz_cmd = "GET /cgi-bin/aw_ptz?cmd=";	//strlen = 24
-char *http_cam_cmd = "GET /cgi-bin/aw_cam?cmd=";	//strlen = 24
-
-char *http_update_start_cmd = "GET /cgi-bin/event?connect=start&my_port=";	//strlen = 41
-char *http_update_stop_cmd = "GET /cgi-bin/event?connect=stop&my_port=";	//strlen = 40
-
-char *http_thumbnail_320_cmd = "GET /cgi-bin/camera?resolution=320&quality=1&page=";	//strlen = 50
-char *http_thumbnail_640_cmd = "GET /cgi-bin/camera?resolution=640&quality=1&page=";	//strlen = 50
-char *http_camera_cmd = "GET /cgi-bin/camera?resolution=1920&quality=1&page=";	//strlen = 51
-
-char *http_cam_ptz_header = "&res=1";	//strlen = 6
-char *http_update_header = "&uid=0";	//strlen = 6
-char *http_header_1 = " HTTP/1.1\r\nAccept: image/gif, ... (omitted) ... , */*\r\nReferer: http://";	//strlen = 71
-char *http_header_2 = "/\r\nAccept-Language: en\r\nAccept-Encoding: gzip, deflate\r\nUser-Agent: AW-Cam Controller\r\nHost: ";	//strlen = 93
-char *http_header_3 = "\r\nConnection: Keep-Alive\r\n\r\n";	//strlen = 28
-
-char *http_header;
-int http_header_size;
-int full_http_header_size;
-
-char my_ip_address[16];
-
-
 void init_protocol (void)
 {
+	int i, j;
+
 #ifdef _WIN32
 	char host_name[256];
 	char **pp;
@@ -92,7 +97,6 @@ void init_protocol (void)
 #elif defined (__linux)
 	SOCKET sock;
 	struct ifconf ip_interfaces;
-	int i;
 
 	sock = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	ip_interfaces.ifc_len = 0;
@@ -104,6 +108,30 @@ void init_protocol (void)
 	for (i = 0; i < ip_interfaces.ifc_len / sizeof (struct ifreq); i++)
 		strcpy (my_ip_address, inet_ntoa (((struct sockaddr_in *)&ip_interfaces.ifc_req[i].ifr_addr)->sin_addr));
 #endif
+
+	i = 0;
+	do {
+		network_address[0][i] = my_ip_address[i];
+		i++;
+	} while (my_ip_address[i] != '.');
+	network_address[0][i] = '\0';
+	network_address_len[0] = i;
+	i++;
+
+	j = 0;
+	do {
+		network_address[1][j++] = my_ip_address[i++];
+	} while (my_ip_address[i] != '.');
+	network_address[1][j] = '\0';
+	network_address_len[1] = j;
+	i++;
+
+	j = 0;
+	do {
+		network_address[2][j++] = my_ip_address[i++];
+	} while (my_ip_address[i] != '.');
+	network_address[2][j] = '\0';
+	network_address_len[2] = j;
 
 	http_header = g_malloc (152);
 	http_header_size = sprintf (http_header, "%s%s%s%s", my_ip_address, http_header_2, my_ip_address, http_header_3);
@@ -649,4 +677,3 @@ WAIT_IF_NEEDED
 		fclose (jpeg_file);
 
 COMMAND_FUNCTION_END
-
