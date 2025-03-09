@@ -1,5 +1,5 @@
 /*
- * copyright (c) 2020 2021 Thomas Paillet <thomas.paillet@net-c.fr>
+ * copyright (c) 2020 2021 2025 Thomas Paillet <thomas.paillet@net-c.fr>
 
  * This file is part of PTZ-Memory.
 
@@ -185,7 +185,7 @@ void switch_cameras_on (void)
 	for (i = 0; i < current_cameras_set->number_of_cameras; i++) {
 		if (current_cameras_set->ptz_ptr_array[i]->ip_address_is_valid) {
 			ptz_thread = g_malloc (sizeof (ptz_thread_t));
-			ptz_thread->pointer = current_cameras_set->ptz_ptr_array[i];
+			ptz_thread->ptz_ptr = current_cameras_set->ptz_ptr_array[i];
 			ptz_thread->thread = g_thread_new (NULL, (GThreadFunc)switch_ptz_on, ptz_thread);
 		}
 	}
@@ -199,7 +199,7 @@ void switch_cameras_off (void)
 	for (i = 0; i < current_cameras_set->number_of_cameras; i++) {
 		if (current_cameras_set->ptz_ptr_array[i]->ip_address_is_valid) {
 			ptz_thread = g_malloc (sizeof (ptz_thread_t));
-			ptz_thread->pointer = current_cameras_set->ptz_ptr_array[i];
+			ptz_thread->ptz_ptr = current_cameras_set->ptz_ptr_array[i];
 			ptz_thread->thread = g_thread_new (NULL, (GThreadFunc)switch_ptz_off, ptz_thread);
 		}
 	}
@@ -242,7 +242,7 @@ void show_about_window (void)
 		gtk_label_set_markup (GTK_LABEL (widget), "<b>Mémoires Pan Tilt Zoom pour caméras PTZ Panasonic</b>");
 		gtk_box_pack_start (GTK_BOX (box), widget, FALSE, FALSE, 0);
 
-		widget = gtk_label_new ("Version 1.2");
+		widget = gtk_label_new ("Version 1.3");
 		gtk_box_pack_start (GTK_BOX (box), widget, FALSE, FALSE, 0);
 #ifdef _WIN32
 		widget = gtk_image_new_from_pixbuf (pixbuf_logo);
@@ -665,7 +665,7 @@ int main (int argc, char** argv)
 
 				if (cameras_set_itr->ptz_ptr_array[i]->ip_address_is_valid) {
 					ptz_thread = g_malloc (sizeof (ptz_thread_t));
-					ptz_thread->pointer = cameras_set_itr->ptz_ptr_array[i];
+					ptz_thread->ptz_ptr = cameras_set_itr->ptz_ptr_array[i];
 					ptz_thread->thread = g_thread_new (NULL, (GThreadFunc)start_ptz, ptz_thread);
 				}
 			}
@@ -694,4 +694,3 @@ int main (int argc, char** argv)
 
 	return 0;
 }
-
