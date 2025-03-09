@@ -32,7 +32,7 @@ void load_pixbufs (void);
 
 const char application_name_txt[] = "Mémoires Pan Tilt Zoom pour caméras PTZ Panasonic";
 const char warning_txt[] = "Attention !";
-const char about_txt[] = "A propos";
+const char about_txt[] = "_A propos";
 
 GtkWidget *main_window, *main_window_notebook;
 GtkWidget *thumbnail_size_scale;
@@ -71,7 +71,7 @@ void ptz_main_quit (GtkWidget *confirmation_window)
 	gtk_main_quit ();
 }
 
-gboolean quit_confirmation_window_key_press (GtkWidget *confirmation_window, GdkEventKey *event)
+gboolean exit_confirmation_window_key_press (GtkWidget *confirmation_window, GdkEventKey *event)
 {
 	if ((event->keyval == GDK_KEY_n) || (event->keyval == GDK_KEY_N) || (event->keyval == GDK_KEY_Escape)) gtk_widget_destroy (confirmation_window);
 	else if ((event->keyval == GDK_KEY_o) || (event->keyval == GDK_KEY_O)) ptz_main_quit (confirmation_window);
@@ -79,7 +79,7 @@ gboolean quit_confirmation_window_key_press (GtkWidget *confirmation_window, Gdk
 	return GDK_EVENT_PROPAGATE;
 }
 
-gboolean show_quit_confirmation_window (void)
+gboolean show_exit_confirmation_window (void)
 {
 	GtkWidget *confirmation_window, *box2, *box3, *widget;
 
@@ -91,11 +91,11 @@ gboolean show_quit_confirmation_window (void)
 	gtk_window_set_skip_taskbar_hint (GTK_WINDOW (confirmation_window), FALSE);
 	gtk_window_set_skip_pager_hint (GTK_WINDOW (confirmation_window), FALSE);
 	gtk_window_set_position (GTK_WINDOW (confirmation_window), GTK_WIN_POS_CENTER_ON_PARENT);
-	g_signal_connect (G_OBJECT (confirmation_window), "key-press-event", G_CALLBACK (quit_confirmation_window_key_press), NULL);
+	g_signal_connect (G_OBJECT (confirmation_window), "key-press-event", G_CALLBACK (exit_confirmation_window_key_press), NULL);
 
 	box2 = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
 	gtk_container_set_border_width (GTK_CONTAINER (box2), MARGIN_VALUE);
-		widget = gtk_label_new ("Etes-vous sûr de vouloir quitter l'application ?");
+		widget = gtk_label_new ("Etes-vous sûr de vouloir quitter le logiciel ?");
 		gtk_box_pack_start (GTK_BOX (box2), widget, FALSE, FALSE, 0);
 
 		box3 = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
@@ -228,7 +228,7 @@ void show_about_window (void)
 
 	about_window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_type_hint (GTK_WINDOW (about_window), GDK_WINDOW_TYPE_HINT_DIALOG);
-	gtk_window_set_title (GTK_WINDOW (about_window), about_txt);
+	gtk_window_set_title (GTK_WINDOW (about_window), about_txt + 1);
 	gtk_window_set_transient_for (GTK_WINDOW (about_window), GTK_WINDOW (main_window));
 	gtk_window_set_modal (GTK_WINDOW (about_window), TRUE);
 	gtk_window_set_skip_taskbar_hint (GTK_WINDOW (about_window), FALSE);
@@ -351,8 +351,7 @@ gboolean main_window_key_press (GtkWidget *widget, GdkEventKey *event)
 
 		return GDK_EVENT_STOP;
 	} else if (event->state & GDK_MOD1_MASK) {
-		if ((event->keyval == GDK_KEY_q) || (event->keyval == GDK_KEY_Q)) show_quit_confirmation_window ();
-		else if ((event->keyval == GDK_KEY_f) || (event->keyval == GDK_KEY_F)) {
+		if ((event->keyval == GDK_KEY_f) || (event->keyval == GDK_KEY_F)) {
 			if (fullscreen) {
 				gtk_window_unfullscreen (GTK_WINDOW (main_window));
 				fullscreen = FALSE;
@@ -462,7 +461,7 @@ void create_main_window (void)
 	gtk_window_fullscreen (GTK_WINDOW (main_window));
 	g_signal_connect (G_OBJECT (main_window), "key-press-event", G_CALLBACK (main_window_key_press), NULL);
 	g_signal_connect (G_OBJECT (main_window), "scroll-event", G_CALLBACK (main_window_scroll), NULL);
-	g_signal_connect (G_OBJECT (main_window), "delete-event", G_CALLBACK (show_quit_confirmation_window), NULL);
+	g_signal_connect (G_OBJECT (main_window), "delete-event", G_CALLBACK (show_exit_confirmation_window), NULL);
 
 #ifdef _WIN32
 	gtk_window_set_icon (GTK_WINDOW (main_window), pixbuf_icon);
@@ -523,8 +522,16 @@ void create_main_window (void)
 			gtk_box_pack_start (GTK_BOX (box3), link_toggle_button, FALSE, FALSE, 0);
 		gtk_box_set_center_widget (GTK_BOX (box2), box3);
 
-			widget = gtk_button_new_with_label (about_txt);
+			widget = gtk_button_new_with_label ("_Quitter");
 			gtk_style_context_add_provider (gtk_widget_get_style_context (widget), GTK_STYLE_PROVIDER (css_provider_button), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+			gtk_button_set_use_underline (GTK_BUTTON (widget), TRUE);
+			g_signal_connect (G_OBJECT (widget), "clicked", G_CALLBACK (show_exit_confirmation_window), NULL);
+		gtk_box_pack_end (GTK_BOX (box2), widget, FALSE, FALSE, 0);
+
+			widget = gtk_button_new_with_label (about_txt);
+			gtk_widget_set_margin_end (widget, 6);
+			gtk_style_context_add_provider (gtk_widget_get_style_context (widget), GTK_STYLE_PROVIDER (css_provider_button), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+			gtk_button_set_use_underline (GTK_BUTTON (widget), TRUE);
 			g_signal_connect (G_OBJECT (widget), "clicked", G_CALLBACK (show_about_window), NULL);
 		gtk_box_pack_end (GTK_BOX (box2), widget, FALSE, FALSE, 0);
 
