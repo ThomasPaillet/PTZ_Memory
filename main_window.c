@@ -207,7 +207,7 @@ void switch_cameras_off (void)
 
 gpointer get_camera_screen_shot (ptz_thread_t *ptz_thread)
 {
-	send_jpeg_image_request_cmd (ptz_thread->pointer);
+	send_jpeg_image_request_cmd (ptz_thread->ptz_ptr);
 
 	g_idle_add ((GSourceFunc)free_ptz_thread, ptz_thread);
 
@@ -369,7 +369,7 @@ gboolean main_window_key_press (GtkWidget *widget, GdkEventKey *event)
 
 					if (ptz->active && gtk_widget_get_sensitive (ptz->name_grid)) {
 						ptz_thread[i] = g_malloc (sizeof (ptz_thread_t));
-						ptz_thread[i]->pointer = ptz;
+						ptz_thread[i]->ptz_ptr = ptz;
 					} else ptz_thread[i] = NULL;
 				}
 
