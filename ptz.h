@@ -168,7 +168,7 @@ typedef struct {
 } ptz_t;
 
 typedef struct {
-	gpointer pointer;
+	ptz_t_t *ptz_ptr;
 	GThread *thread;
 } ptz_thread_t;
 
@@ -287,6 +287,8 @@ void save_config_file (void);
 
 //protocol.h
 extern char my_ip_address[16];
+extern char network_address[3][4];
+extern int network_address_len[3];
 
 
 void init_protocol (void);
