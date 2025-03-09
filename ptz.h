@@ -1,5 +1,5 @@
 /*
- * copyright (c) 2020 2021 Thomas Paillet <thomas.paillet@net-c.fr>
+ * copyright (c) 2020 2021 2025 Thomas Paillet <thomas.paillet@net-c.fr>
 
  * This file is part of PTZ-Memory.
 
@@ -56,7 +56,7 @@
 
 
 typedef struct {
-	gpointer ptz;
+	gpointer ptz_ptr;
 	int index;
 
 	gboolean empty;
@@ -79,6 +79,11 @@ typedef struct {
 	GtkWidget *name_window;
 	GtkWidget *name_entry;
 } memory_t;
+
+typedef struct {
+	memory_t *memory_ptr;
+	GThread *thread;
+} memory_thread_t;
 
 typedef struct {
 	GtkWidget *window;
@@ -168,7 +173,7 @@ typedef struct {
 } ptz_t;
 
 typedef struct {
-	ptz_t_t *ptz_ptr;
+	ptz_t *ptz_ptr;
 	GThread *thread;
 } ptz_thread_t;
 
@@ -490,4 +495,3 @@ gboolean show_quit_confirmation_window (void);
 
 
 #endif
-
