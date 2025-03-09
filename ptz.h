@@ -81,11 +81,6 @@ typedef struct {
 } memory_t;
 
 typedef struct {
-	memory_t *memory_ptr;
-	GThread *thread;
-} memory_thread_t;
-
-typedef struct {
 	GtkWidget *window;
 	gboolean is_on_screen;
 	GtkWidget *tally[4];
@@ -253,6 +248,16 @@ void add_cameras_set (void);
 void delete_cameras_set (void);
 
 void add_cameras_set_to_main_window_notebook (cameras_set_t *cameras_set);
+
+
+//memory.h
+typedef struct {
+	memory_t *memory_ptr;
+	GThread *thread;
+} memory_thread_t;
+
+
+gboolean memory_button_button_press_event (GtkButton *button, GdkEventButton *event, memory_t *memory);
 
 
 //control_window.h
