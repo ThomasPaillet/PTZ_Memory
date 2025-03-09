@@ -1,5 +1,5 @@
 /*
- * copyright (c) 2020 2021 Thomas Paillet <thomas.paillet@net-c.fr>
+ * copyright (c) 2020 2021 2025 Thomas Paillet <thomas.paillet@net-c.fr>
 
  * This file is part of PTZ-Memory.
 
@@ -366,7 +366,7 @@ void create_settings_window (void)
 						for (l = 1; controller_ip_address[l] != '.'; l++) {}
 						controller_ip_entry_buffer[0] = gtk_entry_buffer_new (controller_ip_address, l);
 						k = l + 1;
-					} else controller_ip_entry_buffer[0] = gtk_entry_buffer_new (NULL, -1);
+					} else controller_ip_entry_buffer[0] = gtk_entry_buffer_new (network_address[0], network_address_len[0]);
 
 					widget = gtk_entry_new_with_buffer (controller_ip_entry_buffer[0]);
 					gtk_entry_set_input_purpose (GTK_ENTRY (widget), GTK_INPUT_PURPOSE_DIGITS);
@@ -385,7 +385,7 @@ void create_settings_window (void)
 						for (l = 1; controller_ip_address[k + l] != '.'; l++) {}
 						controller_ip_entry_buffer[1] = gtk_entry_buffer_new (controller_ip_address + k, l);
 						k += l + 1;
-					} else controller_ip_entry_buffer[1] = gtk_entry_buffer_new (NULL, -1);
+					} else controller_ip_entry_buffer[1] = gtk_entry_buffer_new (network_address[1], network_address_len[1]);
 
 					widget = gtk_entry_new_with_buffer (controller_ip_entry_buffer[1]);
 					gtk_entry_set_input_purpose (GTK_ENTRY (widget), GTK_INPUT_PURPOSE_DIGITS);
@@ -404,7 +404,7 @@ void create_settings_window (void)
 						for (l = 1; controller_ip_address[k + l] != '.'; l++) {}
 						controller_ip_entry_buffer[2] = gtk_entry_buffer_new (controller_ip_address + k, l);
 						k += l + 1;
-					} else controller_ip_entry_buffer[2] = gtk_entry_buffer_new (NULL, -1);
+					} else controller_ip_entry_buffer[2] = gtk_entry_buffer_new (network_address[2], network_address_len[2]);
 
 					widget = gtk_entry_new_with_buffer (controller_ip_entry_buffer[2]);
 					gtk_entry_set_input_purpose (GTK_ENTRY (widget), GTK_INPUT_PURPOSE_DIGITS);
