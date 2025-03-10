@@ -136,7 +136,7 @@ gboolean control_window_key_press (GtkWidget *window, GdkEventKey *event, ptz_t 
 		} else if ((event->state & GDK_MOD1_MASK) && ((event->keyval == GDK_KEY_q) || (event->keyval == GDK_KEY_Q))) {
 			ptz->control_window.is_on_screen = FALSE;
 			gtk_widget_hide (window);
-			show_quit_confirmation_window ();
+			show_exit_confirmation_window ();
 
 			return GDK_EVENT_STOP;
 		} else if ((GDK_KEY_F1 <= event->keyval) && (event->keyval <= GDK_KEY_F15)) {
@@ -1382,4 +1382,3 @@ void create_control_window (ptz_t *ptz)
 	gtk_widget_realize (ptz->control_window.window);
 	ptz->control_window.gdk_window = gtk_widget_get_window (ptz->control_window.window);
 }
-
