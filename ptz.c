@@ -36,6 +36,7 @@ void init_ptz (ptz_t *ptz)
 		ptz->memories[i].ptz_ptr = ptz;
 		ptz->memories[i].index = i;
 		ptz->memories[i].empty = TRUE;
+		ptz->memories[i].is_loaded = FALSE;
 		ptz->memories[i].image = NULL;
 		ptz->memories[i].pan_tilt_position_cmd[0] = '#';
 		ptz->memories[i].pan_tilt_position_cmd[1] = 'A';
