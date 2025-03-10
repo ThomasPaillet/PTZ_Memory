@@ -529,10 +529,10 @@ WAIT_IF_NEEDED
 			size += i;
 		} while (i > 0);
 
-		if (memory->empty) memory->pixbuf = gdk_pixbuf_new (GDK_COLORSPACE_RGB, FALSE, 8, 320, 180);
+		if (memory->empty) memory->full_pixbuf = gdk_pixbuf_new (GDK_COLORSPACE_RGB, FALSE, 8, 320, 180);
 
-		rowstride = gdk_pixbuf_get_rowstride (memory->pixbuf);
-		pixels = gdk_pixbuf_get_pixels (memory->pixbuf);
+		rowstride = gdk_pixbuf_get_rowstride (memory->full_pixbuf);
+		pixels = gdk_pixbuf_get_pixels (memory->full_pixbuf);
 
 		for (i = 0; i < 180; i++) scanlines[i] = pixels + i * rowstride;
 
@@ -616,9 +616,9 @@ WAIT_IF_NEEDED
 		jpeg_finish_decompress (&cinfo);
 		jpeg_destroy_decompress (&cinfo);
 
-		if (!memory->empty) g_object_unref (G_OBJECT (memory->pixbuf));
+		if (!memory->empty) g_object_unref (G_OBJECT (memory->full_pixbuf));
 
-		memory->pixbuf = gdk_pixbuf_scale_simple (pixbuf, 320, 180, GDK_INTERP_BILINEAR);
+		memory->full_pixbuf = gdk_pixbuf_scale_simple (pixbuf, 320, 180, GDK_INTERP_BILINEAR);
 
 		g_object_unref (G_OBJECT (pixbuf));
 
@@ -677,3 +677,4 @@ WAIT_IF_NEEDED
 		fclose (jpeg_file);
 
 COMMAND_FUNCTION_END
+
