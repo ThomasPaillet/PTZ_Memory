@@ -60,14 +60,13 @@ typedef struct {
 	int index;
 
 	gboolean empty;
+	gboolean is_loaded;
 
 	GtkWidget *button;
 	gulong button_handler_id;
 	GtkWidget *image;
-	GdkPixbuf *pixbuf;
 	GdkPixbuf *full_pixbuf;
 	GdkPixbuf *scaled_pixbuf;
-	GdkPixbuf *tainted_pixbuf;
 
 	char pan_tilt_position_cmd[13];
 
@@ -148,6 +147,8 @@ typedef struct {
 
 	int focus_position;
 	char focus_position_cmd[8];
+
+	GMutex lens_information_mutex;
 
 	control_window_t control_window;
 
@@ -260,6 +261,10 @@ typedef struct {
 
 
 gboolean memory_button_button_press_event (GtkButton *button, GdkEventButton *event, memory_t *memory);
+
+gboolean memory_name_draw (GtkWidget *widget, cairo_t *cr, char *name);
+
+gboolean memory_outline_draw (GtkWidget *widget, cairo_t *cr, memory_t *memory);
 
 
 //control_window.h
@@ -404,8 +409,6 @@ gboolean name_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz);
 gboolean ghost_name_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz);
 
 gboolean control_window_name_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz);
-
-gboolean memory_name_draw (GtkWidget *widget, cairo_t *cr, char *name);
 
 void init_tally (void);
 
