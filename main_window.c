@@ -142,9 +142,9 @@ void thumbnail_size_value_changed (GtkRange *range)
 					gtk_button_set_image (GTK_BUTTON (ptz->memories[j].button), NULL);
 					gtk_widget_set_size_request (ptz->memories[j].button, thumbnail_width + 10, thumbnail_height + 10);
 					if (old_thumbnail_width != 320) g_object_unref (G_OBJECT (ptz->memories[j].scaled_pixbuf));
-					if (thumbnail_width == 320) ptz->memories[j].image = gtk_image_new_from_pixbuf (ptz->memories[j].pixbuf);
+					if (thumbnail_width == 320) ptz->memories[j].image = gtk_image_new_from_pixbuf (ptz->memories[j].full_pixbuf);
 					else {
-						ptz->memories[j].scaled_pixbuf = gdk_pixbuf_scale_simple (ptz->memories[j].pixbuf, thumbnail_width, thumbnail_height, GDK_INTERP_BILINEAR);
+						ptz->memories[j].scaled_pixbuf = gdk_pixbuf_scale_simple (ptz->memories[j].full_pixbuf, thumbnail_width, thumbnail_height, GDK_INTERP_BILINEAR);
 						ptz->memories[j].image = gtk_image_new_from_pixbuf (ptz->memories[j].scaled_pixbuf);
 					}
 					gtk_button_set_image (GTK_BUTTON (ptz->memories[j].button), ptz->memories[j].image);
@@ -701,3 +701,4 @@ int main (int argc, char** argv)
 
 	return 0;
 }
+
