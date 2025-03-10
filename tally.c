@@ -246,36 +246,6 @@ gboolean control_window_name_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 	return GDK_EVENT_PROPAGATE;
 }
 
-gboolean memory_name_draw (GtkWidget *widget, cairo_t *cr, char *name)
-{
-	PangoLayout *pl;
-	PangoFontDescription *desc;
-
-	if (name[0] != '\0') {
-		cairo_rectangle (cr, 5.0, thumbnail_height + 5.0 - (20.0 * thumbnail_size), thumbnail_width, 20.0 * thumbnail_size);
-		cairo_set_source_rgba (cr, 1.0, 1.0, 1.0, 0.2);
-		cairo_fill (cr);
-
-		cairo_set_source_rgb (cr, 0.0, 0.0, 0.0);
-		pl = pango_cairo_create_layout (cr);
-
-		cairo_translate (cr, 5.0 + 16.0 * (10 - (strlen (name) / 2)) * thumbnail_size, thumbnail_height - (19.0 * thumbnail_size) + (1.0 - thumbnail_size) * 4.0);
-
-		sprintf (font + 13, "%d", (int)(20.0 * thumbnail_size));
-
-		pango_layout_set_text (pl, name, -1);
-		desc = pango_font_description_from_string (font);
-		pango_layout_set_font_description (pl, desc);
-		pango_font_description_free (desc);
-
-		pango_cairo_show_layout (cr, pl);
-
-		g_object_unref(pl);
-	}
-
-	return GDK_EVENT_PROPAGATE;
-}
-
 void init_tally (void)
 {
 	memset (&tsl_umd_v5_address, 0, sizeof (struct sockaddr_in));
