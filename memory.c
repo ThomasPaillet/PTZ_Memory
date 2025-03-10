@@ -31,11 +31,11 @@ gboolean free_memory_thread (memory_thread_t *memory_thread)
 gboolean update_button (memory_t *memory)
 {
 	if (memory->image == NULL) {
-		if (thumbnail_width == 320) memory->image = gtk_image_new_from_pixbuf (memory->pixbuf);
+		if (thumbnail_width == 320) memory->image = gtk_image_new_from_pixbuf (memory->full_pixbuf);
 		else memory->image = gtk_image_new_from_pixbuf (memory->scaled_pixbuf);
 		gtk_button_set_image (GTK_BUTTON (memory->button), memory->image);
 	} else {
-		if (thumbnail_width == 320) gtk_image_set_from_pixbuf (GTK_IMAGE (memory->image), memory->pixbuf);
+		if (thumbnail_width == 320) gtk_image_set_from_pixbuf (GTK_IMAGE (memory->image), memory->full_pixbuf);
 		else gtk_image_set_from_pixbuf (GTK_IMAGE (memory->image), memory->scaled_pixbuf);
 	}
 
@@ -162,6 +162,7 @@ gpointer load_other_memory (memory_thread_t *memory_thread)
 {
 	memory_t *memory = memory_thread->memory_ptr;
 	ptz_t *ptz = memory->ptz_ptr;
+	int i;
 
 	send_ptz_control_command (ptz, memory->pan_tilt_position_cmd, TRUE);
 
@@ -220,7 +221,7 @@ gboolean memory_button_button_press_event (GtkButton *button, GdkEventButton *ev
 			memory->is_loaded = FALSE;
 			((ptz_t*)memory->ptz_ptr)->number_of_memories--;
 			gtk_button_set_image (GTK_BUTTON (memory->button), NULL);
-			g_object_unref (G_OBJECT (memory->pixbuf));
+			g_object_unref (G_OBJECT (memory->full_pixbuf));
 			if (thumbnail_width != 320) g_object_unref (G_OBJECT (memory->scaled_pixbuf));
 			memory->image = NULL;
 			memory->name[0] = '\0';
