@@ -340,7 +340,7 @@ gboolean main_window_key_press (GtkWidget *widget, GdkEventKey *event)
 
 					if (controller_is_used && controller_ip_address_is_valid) {
 						controller_thread = g_malloc (sizeof (ptz_thread_t));
-						controller_thread->pointer = ptz;
+						controller_thread->ptz_ptr = ptz;
 						controller_thread->thread = g_thread_new (NULL, (GThreadFunc)controller_switch_ptz, controller_thread);
 					}
 				}
