@@ -42,6 +42,7 @@ void init_ptz (ptz_t *ptz)
 		ptz->memories[i].pan_tilt_position_cmd[2] = 'P';
 		ptz->memories[i].pan_tilt_position_cmd[3] = 'C';
 		ptz->memories[i].pan_tilt_position_cmd[12] = '\0';
+		g_mutex_init (&ptz->memories[i].lens_information_mutex);
 		ptz->memories[i].name[0] = '\0';
 	}
 	ptz->number_of_memories = 0;
@@ -317,6 +318,7 @@ void create_ptz_widgets (ptz_t *ptz)
 			gtk_widget_set_size_request (ptz->memories[i].button, thumbnail_width + 10, thumbnail_height + 10);
 			ptz->memories[i].button_handler_id = g_signal_connect (G_OBJECT (ptz->memories[i].button), "button-press-event", G_CALLBACK (memory_button_button_press_event), ptz->memories + i);
 			g_signal_connect_after (G_OBJECT (ptz->memories[i].button), "draw", G_CALLBACK (memory_name_draw), ptz->memories[i].name);
+			g_signal_connect_after (G_OBJECT (ptz->memories[i].button), "draw", G_CALLBACK (memory_outline_draw), ptz->memories + i);
 			gtk_grid_attach (GTK_GRID (ptz->memories_grid), ptz->memories[i].button, i, 1, 1, 1);
 
 			memory_name_window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
@@ -409,3 +411,4 @@ void create_ghost_ptz_widgets (ptz_t *ptz)
 		g_signal_connect (G_OBJECT (ptz->tally[5]), "draw", G_CALLBACK (ghost_tally_draw), ptz);
 	gtk_grid_attach (GTK_GRID (ptz->memories_grid), ptz->tally[5], MAX_MEMORIES, 0, 1, 3);
 }
+
