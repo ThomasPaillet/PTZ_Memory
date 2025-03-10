@@ -42,7 +42,6 @@ void init_ptz (ptz_t *ptz)
 		ptz->memories[i].pan_tilt_position_cmd[2] = 'P';
 		ptz->memories[i].pan_tilt_position_cmd[3] = 'C';
 		ptz->memories[i].pan_tilt_position_cmd[12] = '\0';
-		g_mutex_init (&ptz->memories[i].lens_information_mutex);
 		ptz->memories[i].name[0] = '\0';
 	}
 	ptz->number_of_memories = 0;
@@ -68,6 +67,8 @@ void init_ptz (ptz_t *ptz)
 	ptz->focus_position_cmd[5] = 'A';
 	ptz->focus_position_cmd[6] = 'A';
 	ptz->focus_position_cmd[7] = '\0';
+
+	g_mutex_init (&ptz->lens_information_mutex);
 
 	ptz->control_window.is_on_screen = FALSE;
 
