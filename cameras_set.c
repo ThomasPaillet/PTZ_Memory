@@ -371,7 +371,7 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 				g_idle_add ((GSourceFunc)ptz_is_off, ptz);
 
 				ptz_thread = g_malloc (sizeof (ptz_thread_t));
-				ptz_thread->pointer = ptz;
+				ptz_thread->ptz_ptr = ptz;
 				ptz_thread->thread = g_thread_new (NULL, (GThreadFunc)start_ptz, ptz_thread);
 			}
 		} else {
@@ -947,4 +947,3 @@ void add_cameras_set_to_main_window_notebook (cameras_set_t *cameras_set)
 	cameras_set->page_num = gtk_notebook_append_page (GTK_NOTEBOOK (main_window_notebook), cameras_set->page, widget);
 	gtk_notebook_set_tab_reorderable (GTK_NOTEBOOK (main_window_notebook), cameras_set->page, TRUE);
 }
-
