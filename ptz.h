@@ -65,8 +65,9 @@ typedef struct {
 	gulong button_handler_id;
 	GtkWidget *image;
 	GdkPixbuf *pixbuf;
+	GdkPixbuf *full_pixbuf;
 	GdkPixbuf *scaled_pixbuf;
-	GdkPixbuf *selected_pixbuf;
+	GdkPixbuf *tainted_pixbuf;
 
 	char pan_tilt_position_cmd[13];
 
