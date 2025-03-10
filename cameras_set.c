@@ -202,7 +202,7 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 
 					for (j = 0; j < MAX_MEMORIES; j++) {
 						if (!ptz->memories[j].empty) {
-							g_object_unref (G_OBJECT (ptz->memories[j].pixbuf));
+							g_object_unref (G_OBJECT (ptz->memories[j].full_pixbuf));
 							if (thumbnail_width != 320) g_object_unref (G_OBJECT (ptz->memories[j].scaled_pixbuf));
 						}
 					}
@@ -302,7 +302,7 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 
 					for (j = 0; j < MAX_MEMORIES; j++) {
 						if (!ptz->memories[j].empty) {
-							g_object_unref (G_OBJECT (ptz->memories[j].pixbuf));
+							g_object_unref (G_OBJECT (ptz->memories[j].full_pixbuf));
 							if (thumbnail_width != 320) g_object_unref (G_OBJECT (ptz->memories[j].scaled_pixbuf));
 						}
 					}
@@ -785,7 +785,7 @@ void delete_cameras_set (void)
 
 			for (j = 0; j < MAX_MEMORIES; j++) {
 				if (!ptz->memories[j].empty) {
-					g_object_unref (G_OBJECT (ptz->memories[j].pixbuf));
+					g_object_unref (G_OBJECT (ptz->memories[j].full_pixbuf));
 					if (thumbnail_width != 320) g_object_unref (G_OBJECT (ptz->memories[j].scaled_pixbuf));
 				}
 			}
@@ -947,3 +947,4 @@ void add_cameras_set_to_main_window_notebook (cameras_set_t *cameras_set)
 	cameras_set->page_num = gtk_notebook_append_page (GTK_NOTEBOOK (main_window_notebook), cameras_set->page, widget);
 	gtk_notebook_set_tab_reorderable (GTK_NOTEBOOK (main_window_notebook), cameras_set->page, TRUE);
 }
+
