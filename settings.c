@@ -666,10 +666,11 @@ void load_config_file (void)
 					pixbuf_data = g_malloc (pixbuf_byte_length);
 					fread (pixbuf_data, sizeof (guint8), pixbuf_byte_length, config_file);
 
-					ptz->memories[index].pixbuf = gdk_pixbuf_new_from_data (pixbuf_data, GDK_COLORSPACE_RGB, FALSE, 8, 320, 180, pixbuf_rowstride, (GdkPixbufDestroyNotify)g_free, NULL);
-					if (thumbnail_width == 320) ptz->memories[index].image = gtk_image_new_from_pixbuf (ptz->memories[index].pixbuf);
-					else {
-						ptz->memories[index].scaled_pixbuf = gdk_pixbuf_scale_simple (ptz->memories[index].pixbuf, thumbnail_width, thumbnail_height, GDK_INTERP_BILINEAR);
+					ptz->memories[index].full_pixbuf = gdk_pixbuf_new_from_data (pixbuf_data, GDK_COLORSPACE_RGB, FALSE, 8, 320, 180, pixbuf_rowstride, (GdkPixbufDestroyNotify)g_free, NULL);
+					if (thumbnail_width == 320) {
+						ptz->memories[index].image = gtk_image_new_from_pixbuf (ptz->memories[index].full_pixbuf);
+					} else {
+						ptz->memories[index].scaled_pixbuf = gdk_pixbuf_scale_simple (ptz->memories[index].full_pixbuf, thumbnail_width, thumbnail_height, GDK_INTERP_BILINEAR);
 						ptz->memories[index].image = gtk_image_new_from_pixbuf (ptz->memories[index].scaled_pixbuf);
 					}
 					gtk_button_set_image (GTK_BUTTON (ptz->memories[index].button), ptz->memories[index].image);
@@ -778,11 +779,11 @@ void save_config_file (void)
 						fwrite (ptz->memories[k].zoom_position_hexa, sizeof (char), 3, config_file);
 						fwrite (&ptz->memories[k].focus_position, sizeof (int), 1, config_file);
 						fwrite (ptz->memories[k].focus_position_hexa, sizeof (char), 3, config_file);
-						pixbuf_rowstride = gdk_pixbuf_get_rowstride (ptz->memories[k].pixbuf);
+						pixbuf_rowstride = gdk_pixbuf_get_rowstride (ptz->memories[k].full_pixbuf);
 						fwrite (&pixbuf_rowstride, sizeof (int), 1, config_file);
-						pixbuf_byte_length = gdk_pixbuf_get_byte_length (ptz->memories[k].pixbuf);
+						pixbuf_byte_length = gdk_pixbuf_get_byte_length (ptz->memories[k].full_pixbuf);
 						fwrite (&pixbuf_byte_length, sizeof (gsize), 1, config_file);
-						fwrite (gdk_pixbuf_read_pixels (ptz->memories[k].pixbuf), sizeof (guint8), pixbuf_byte_length, config_file);
+						fwrite (gdk_pixbuf_read_pixels (ptz->memories[k].full_pixbuf), sizeof (guint8), pixbuf_byte_length, config_file);
 						fwrite (ptz->memories[k].name, sizeof (char), MEMORIES_NAME_LENGTH, config_file);
 					}
 				}
