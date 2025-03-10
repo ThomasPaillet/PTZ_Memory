@@ -158,7 +158,7 @@ gboolean control_window_key_press (GtkWidget *window, GdkEventKey *event, ptz_t 
 
 					if (controller_is_used && controller_ip_address_is_valid) {
 						controller_thread = g_malloc (sizeof (ptz_thread_t));
-						controller_thread->pointer = new_ptz;
+						controller_thread->ptz_ptr = new_ptz;
 						controller_thread->thread = g_thread_new (NULL, (GThreadFunc)controller_switch_ptz, controller_thread);
 					}
 				}
