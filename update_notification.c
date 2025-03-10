@@ -1,5 +1,5 @@
 /*
- * copyright (c) 2020 2021 Thomas Paillet <thomas.paillet@net-c.fr>
+ * copyright (c) 2020 2021 2025 Thomas Paillet <thomas.paillet@net-c.fr>
 
  * This file is part of PTZ-Memory.
 
@@ -133,6 +133,7 @@ gpointer receive_update_notification (gpointer data)
 						if (ptz == NULL) {
 							ptz = cameras_set_itr->ptz_ptr_array[i];
 
+g_mutex_lock (&ptz->lens_information_mutex);
 							if ((ptz->zoom_position_cmd[4] != buffer[33]) || (ptz->zoom_position_cmd[5] != buffer[34]) || (ptz->zoom_position_cmd[6] != buffer[35])) {
 								ptz->zoom_position_cmd[4] = buffer[33];
 								ptz->zoom_position_cmd[5] = buffer[34];
@@ -162,26 +163,31 @@ gpointer receive_update_notification (gpointer data)
 
 								if (ptz->control_window.is_on_screen) gtk_widget_queue_draw (ptz->control_window.focus_level_bar_drawing_area);
 							}
+g_mutex_unlock (&ptz->lens_information_mutex);
 						} else {
 							other_ptz = cameras_set_itr->ptz_ptr_array[i];
 
+g_mutex_lock (&ptz->lens_information_mutex);
+g_mutex_lock (&other_ptz->lens_information_mutex);
 							if (other_ptz->zoom_position != ptz->zoom_position) {
 								other_ptz->zoom_position = ptz->zoom_position;
-								other_ptz->zoom_position_cmd[4] = buffer[33];
-								other_ptz->zoom_position_cmd[5] = buffer[34];
-								other_ptz->zoom_position_cmd[6] = buffer[35];
+								other_ptz->zoom_position_cmd[4] = ptz->zoom_position_cmd[4];
+								other_ptz->zoom_position_cmd[5] = ptz->zoom_position_cmd[5];
+								other_ptz->zoom_position_cmd[6] = ptz->zoom_position_cmd[6];
 
 								if (other_ptz->control_window.is_on_screen) gtk_widget_queue_draw (other_ptz->control_window.zoom_level_bar_drawing_area);
 							}
 
 							if (other_ptz->focus_position != ptz->focus_position) {
 								other_ptz->focus_position = ptz->focus_position;
-								other_ptz->focus_position_cmd[4] = buffer[36];
-								other_ptz->focus_position_cmd[5] = buffer[37];
-								other_ptz->focus_position_cmd[6] = buffer[38];
+								other_ptz->focus_position_cmd[4] = ptz->focus_position_cmd[4];
+								other_ptz->focus_position_cmd[5] = ptz->focus_position_cmd[5];
+								other_ptz->focus_position_cmd[6] = ptz->focus_position_cmd[6];
 
 								if (other_ptz->control_window.is_on_screen) gtk_widget_queue_draw (other_ptz->control_window.focus_level_bar_drawing_area);
 							}
+g_mutex_unlock (&other_ptz->lens_information_mutex);
+g_mutex_unlock (&ptz->lens_information_mutex);
 						}
 						break;
 					}
