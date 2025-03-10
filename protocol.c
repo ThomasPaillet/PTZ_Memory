@@ -1,5 +1,5 @@
 /*
- * copyright (c) 2020 2021 Thomas Paillet <thomas.paillet@net-c.fr>
+ * copyright (c) 2020 2021 2025 Thomas Paillet <thomas.paillet@net-c.fr>
 
  * This file is part of PTZ-Memory.
 
@@ -485,7 +485,7 @@ COMMAND_FUNCTION_END
 
 void send_thumbnail_320_request_cmd (memory_t *memory)
 {
-	ptz_t *ptz = memory->ptz;
+	ptz_t *ptz = memory->ptz_ptr;
 	SOCKET sock;
 	struct timeval current_time, elapsed_time;
 	int size, index, i;
@@ -553,7 +553,7 @@ COMMAND_FUNCTION_END
 
 void send_thumbnail_640_request_cmd (memory_t *memory)
 {
-	ptz_t *ptz = memory->ptz;
+	ptz_t *ptz = memory->ptz_ptr;
 	SOCKET sock;
 	struct timeval current_time, elapsed_time;
 	int size, index, i;
