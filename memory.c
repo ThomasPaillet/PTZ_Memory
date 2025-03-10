@@ -55,23 +55,29 @@ gpointer save_memory (memory_thread_t *memory_thread)
 
 	if (thumbnail_width != 320) {
 		if (!memory->empty) g_object_unref (G_OBJECT (memory->scaled_pixbuf));
-		memory->scaled_pixbuf = gdk_pixbuf_scale_simple (memory->pixbuf, thumbnail_width, thumbnail_height, GDK_INTERP_BILINEAR);
+		memory->scaled_pixbuf = gdk_pixbuf_scale_simple (memory->full_pixbuf, thumbnail_width, thumbnail_height, GDK_INTERP_BILINEAR);
 	}
 
+g_mutex_lock (&ptz->lens_information_mutex);
+
+	memory->zoom_position = ptz->zoom_position;
 	memory->zoom_position_hexa[0] = ptz->zoom_position_cmd[4];
 	memory->zoom_position_hexa[1] = ptz->zoom_position_cmd[5];
 	memory->zoom_position_hexa[2] = ptz->zoom_position_cmd[6];
-	memory->zoom_position = ptz->zoom_position;
 
+	memory->focus_position = ptz->focus_position;
 	memory->focus_position_hexa[0] = ptz->focus_position_cmd[4];
 	memory->focus_position_hexa[1] = ptz->focus_position_cmd[5];
 	memory->focus_position_hexa[2] = ptz->focus_position_cmd[6];
-	memory->focus_position = ptz->focus_position;
+
+g_mutex_unlock (&ptz->lens_information_mutex);
 
 	if (memory->empty) {
 		memory->empty = FALSE;
 		ptz->number_of_memories++;
 	}
+
+//	memory->is_loaded = FALSE;
 
 	send_ptz_request_command_string (ptz, "#APC", response);
 	memory->pan_tilt_position_cmd[4] = response[3];
@@ -96,6 +102,7 @@ gpointer load_memory (memory_thread_t *memory_thread)
 	memory_t *memory = memory_thread->memory_ptr;
 	ptz_t *ptz = memory->ptz_ptr;
 	ptz_thread_t *controller_thread;
+	int i;
 
 	send_ptz_control_command (ptz, memory->pan_tilt_position_cmd, TRUE);
 
@@ -105,20 +112,35 @@ gpointer load_memory (memory_thread_t *memory_thread)
 		controller_thread->thread = g_thread_new (NULL, (GThreadFunc)controller_switch_ptz, controller_thread);
 	}
 
+g_mutex_lock (&ptz->lens_information_mutex);
 	if (ptz->zoom_position != memory->zoom_position) {
+		ptz->zoom_position = memory->zoom_position;
 		ptz->zoom_position_cmd[4] = memory->zoom_position_hexa[0];
 		ptz->zoom_position_cmd[5] = memory->zoom_position_hexa[1];
 		ptz->zoom_position_cmd[6] = memory->zoom_position_hexa[2];
 		send_ptz_control_command (ptz, ptz->zoom_position_cmd, TRUE);
-		ptz->zoom_position = memory->zoom_position;
 	}
+g_mutex_unlock (&ptz->lens_information_mutex);
 
+g_mutex_lock (&ptz->lens_information_mutex);
 	if (!ptz->auto_focus && (ptz->focus_position != memory->focus_position)) {
+		ptz->focus_position = memory->focus_position;
 		ptz->focus_position_cmd[4] = memory->focus_position_hexa[0];
 		ptz->focus_position_cmd[5] = memory->focus_position_hexa[1];
 		ptz->focus_position_cmd[6] = memory->focus_position_hexa[2];
 		send_ptz_control_command (ptz, ptz->focus_position_cmd, TRUE);
-		ptz->focus_position = memory->focus_position;
+	}
+g_mutex_unlock (&ptz->lens_information_mutex);
+
+	memory->is_loaded = TRUE;
+
+	for (i = 0; i < MAX_MEMORIES; i++) {
+		if ((ptz->memories + i) != memory) {
+			if (ptz->memories[i].is_loaded) {
+				ptz->memories[i].is_loaded = FALSE;
+				gtk_widget_queue_draw (ptz->memories[i].image);
+			}
+		}
 	}
 
 	g_signal_handler_unblock (memory->button, memory->button_handler_id);
@@ -143,20 +165,35 @@ gpointer load_other_memory (memory_thread_t *memory_thread)
 
 	send_ptz_control_command (ptz, memory->pan_tilt_position_cmd, TRUE);
 
+g_mutex_lock (&ptz->lens_information_mutex);
 	if (ptz->zoom_position != memory->zoom_position) {
+		ptz->zoom_position = memory->zoom_position;
 		ptz->zoom_position_cmd[4] = memory->zoom_position_hexa[0];
 		ptz->zoom_position_cmd[5] = memory->zoom_position_hexa[1];
 		ptz->zoom_position_cmd[6] = memory->zoom_position_hexa[2];
 		send_ptz_control_command (ptz, ptz->zoom_position_cmd, TRUE);
-		ptz->zoom_position = memory->zoom_position;
 	}
+g_mutex_unlock (&ptz->lens_information_mutex);
 
+g_mutex_lock (&ptz->lens_information_mutex);
 	if (!ptz->auto_focus && (ptz->focus_position != memory->focus_position)) {
+		ptz->focus_position = memory->focus_position;
 		ptz->focus_position_cmd[4] = memory->focus_position_hexa[0];
 		ptz->focus_position_cmd[5] = memory->focus_position_hexa[1];
 		ptz->focus_position_cmd[6] = memory->focus_position_hexa[2];
 		send_ptz_control_command (ptz, ptz->focus_position_cmd, TRUE);
-		ptz->focus_position = memory->focus_position;
+	}
+g_mutex_unlock (&ptz->lens_information_mutex);
+
+	memory->is_loaded = TRUE;
+
+	for (i = 0; i < MAX_MEMORIES; i++) {
+		if ((ptz->memories + i) != memory) {
+			if (ptz->memories[i].is_loaded) {
+				ptz->memories[i].is_loaded = FALSE;
+				gtk_widget_queue_draw (ptz->memories[i].image);
+			}
+		}
 	}
 
 	g_idle_add ((GSourceFunc)release_memory_button, memory);
@@ -180,6 +217,7 @@ gboolean memory_button_button_press_event (GtkButton *button, GdkEventButton *ev
 	if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (delete_toggle_button))) {
 		if (!memory->empty) {
 			memory->empty = TRUE;
+			memory->is_loaded = FALSE;
 			((ptz_t*)memory->ptz_ptr)->number_of_memories--;
 			gtk_button_set_image (GTK_BUTTON (memory->button), NULL);
 			g_object_unref (G_OBJECT (memory->pixbuf));
@@ -231,3 +269,45 @@ gboolean memory_button_button_press_event (GtkButton *button, GdkEventButton *ev
 
 	return GDK_EVENT_PROPAGATE;
 }
+
+gboolean memory_name_draw (GtkWidget *widget, cairo_t *cr, char *name)
+{
+	PangoLayout *pl;
+	PangoFontDescription *desc;
+
+	if (name[0] != '\0') {
+		cairo_rectangle (cr, 5.0, thumbnail_height + 5.0 - (20.0 * thumbnail_size), thumbnail_width, 20.0 * thumbnail_size);
+		cairo_set_source_rgba (cr, 1.0, 1.0, 1.0, 0.2);
+		cairo_fill (cr);
+
+		cairo_set_source_rgb (cr, 0.0, 0.0, 0.0);
+		pl = pango_cairo_create_layout (cr);
+
+		cairo_translate (cr, 5.0 + 16.0 * (10 - (strlen (name) / 2)) * thumbnail_size, thumbnail_height - (19.0 * thumbnail_size) + (1.0 - thumbnail_size) * 4.0);
+
+		sprintf (font + 13, "%d", (int)(20.0 * thumbnail_size));
+
+		pango_layout_set_text (pl, name, -1);
+		desc = pango_font_description_from_string (font);
+		pango_layout_set_font_description (pl, desc);
+		pango_font_description_free (desc);
+
+		pango_cairo_show_layout (cr, pl);
+
+		g_object_unref(pl);
+	}
+
+	return GDK_EVENT_PROPAGATE;
+}
+
+gboolean memory_outline_draw (GtkWidget *widget, cairo_t *cr, memory_t *memory)
+{
+	if (memory->is_loaded) {
+		cairo_rectangle (cr, 5.0, thumbnail_height + 5.0 - (20.0 * thumbnail_size), thumbnail_width, 20.0 * thumbnail_size);
+		cairo_set_source_rgba (cr, 1.0, 1.0, 1.0, 0.2);
+		cairo_fill (cr);
+	}
+
+	return GDK_EVENT_PROPAGATE;
+}
+
