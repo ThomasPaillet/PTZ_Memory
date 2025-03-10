@@ -66,6 +66,7 @@ typedef struct {
 	GtkWidget *image;
 	GdkPixbuf *pixbuf;
 	GdkPixbuf *scaled_pixbuf;
+	GdkPixbuf *selected_pixbuf;
 
 	char pan_tilt_position_cmd[13];
 
@@ -496,7 +497,8 @@ extern GdkDevice *trackball;
 
 gboolean digit_key_press (GtkEntry *entry, GdkEventKey *event);
 
-gboolean show_quit_confirmation_window (void);
+gboolean show_exit_confirmation_window (void);
 
 
 #endif
+
