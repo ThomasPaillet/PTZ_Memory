@@ -58,7 +58,7 @@ gpointer save_memory (memory_thread_t *memory_thread)
 		memory->scaled_pixbuf = gdk_pixbuf_scale_simple (memory->full_pixbuf, thumbnail_width, thumbnail_height, GDK_INTERP_BILINEAR);
 	}
 
-g_mutex_lock (&ptz->lens_information_mutex);
+	g_mutex_lock (&ptz->lens_information_mutex);
 
 	memory->zoom_position = ptz->zoom_position;
 	memory->zoom_position_hexa[0] = ptz->zoom_position_cmd[4];
@@ -70,7 +70,7 @@ g_mutex_lock (&ptz->lens_information_mutex);
 	memory->focus_position_hexa[1] = ptz->focus_position_cmd[5];
 	memory->focus_position_hexa[2] = ptz->focus_position_cmd[6];
 
-g_mutex_unlock (&ptz->lens_information_mutex);
+	g_mutex_unlock (&ptz->lens_information_mutex);
 
 	if (memory->empty) {
 		memory->empty = FALSE;
@@ -112,25 +112,27 @@ gpointer load_memory (memory_thread_t *memory_thread)
 		controller_thread->thread = g_thread_new (NULL, (GThreadFunc)controller_switch_ptz, controller_thread);
 	}
 
-g_mutex_lock (&ptz->lens_information_mutex);
+	g_mutex_lock (&ptz->lens_information_mutex);
+
 	if (ptz->zoom_position != memory->zoom_position) {
 		ptz->zoom_position = memory->zoom_position;
 		ptz->zoom_position_cmd[4] = memory->zoom_position_hexa[0];
 		ptz->zoom_position_cmd[5] = memory->zoom_position_hexa[1];
 		ptz->zoom_position_cmd[6] = memory->zoom_position_hexa[2];
+
 		send_ptz_control_command (ptz, ptz->zoom_position_cmd, TRUE);
 	}
-g_mutex_unlock (&ptz->lens_information_mutex);
 
-g_mutex_lock (&ptz->lens_information_mutex);
 	if (!ptz->auto_focus && (ptz->focus_position != memory->focus_position)) {
 		ptz->focus_position = memory->focus_position;
 		ptz->focus_position_cmd[4] = memory->focus_position_hexa[0];
 		ptz->focus_position_cmd[5] = memory->focus_position_hexa[1];
 		ptz->focus_position_cmd[6] = memory->focus_position_hexa[2];
+
 		send_ptz_control_command (ptz, ptz->focus_position_cmd, TRUE);
 	}
-g_mutex_unlock (&ptz->lens_information_mutex);
+
+	g_mutex_unlock (&ptz->lens_information_mutex);
 
 	memory->is_loaded = TRUE;
 
@@ -138,6 +140,7 @@ g_mutex_unlock (&ptz->lens_information_mutex);
 		if ((ptz->memories + i) != memory) {
 			if (ptz->memories[i].is_loaded) {
 				ptz->memories[i].is_loaded = FALSE;
+
 				gtk_widget_queue_draw (ptz->memories[i].image);
 			}
 		}
@@ -166,25 +169,27 @@ gpointer load_other_memory (memory_thread_t *memory_thread)
 
 	send_ptz_control_command (ptz, memory->pan_tilt_position_cmd, TRUE);
 
-g_mutex_lock (&ptz->lens_information_mutex);
+	g_mutex_lock (&ptz->lens_information_mutex);
+
 	if (ptz->zoom_position != memory->zoom_position) {
 		ptz->zoom_position = memory->zoom_position;
 		ptz->zoom_position_cmd[4] = memory->zoom_position_hexa[0];
 		ptz->zoom_position_cmd[5] = memory->zoom_position_hexa[1];
 		ptz->zoom_position_cmd[6] = memory->zoom_position_hexa[2];
+
 		send_ptz_control_command (ptz, ptz->zoom_position_cmd, TRUE);
 	}
-g_mutex_unlock (&ptz->lens_information_mutex);
 
-g_mutex_lock (&ptz->lens_information_mutex);
 	if (!ptz->auto_focus && (ptz->focus_position != memory->focus_position)) {
 		ptz->focus_position = memory->focus_position;
 		ptz->focus_position_cmd[4] = memory->focus_position_hexa[0];
 		ptz->focus_position_cmd[5] = memory->focus_position_hexa[1];
 		ptz->focus_position_cmd[6] = memory->focus_position_hexa[2];
+
 		send_ptz_control_command (ptz, ptz->focus_position_cmd, TRUE);
 	}
-g_mutex_unlock (&ptz->lens_information_mutex);
+
+	g_mutex_unlock (&ptz->lens_information_mutex);
 
 	memory->is_loaded = TRUE;
 
@@ -192,6 +197,7 @@ g_mutex_unlock (&ptz->lens_information_mutex);
 		if ((ptz->memories + i) != memory) {
 			if (ptz->memories[i].is_loaded) {
 				ptz->memories[i].is_loaded = FALSE;
+
 				gtk_widget_queue_draw (ptz->memories[i].image);
 			}
 		}
@@ -270,6 +276,8 @@ gboolean memory_button_button_press_event (GtkButton *button, GdkEventButton *ev
 
 	return GDK_EVENT_PROPAGATE;
 }
+
+extern char *font;
 
 gboolean memory_name_draw (GtkWidget *widget, cairo_t *cr, char *name)
 {
