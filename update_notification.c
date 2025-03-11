@@ -57,16 +57,23 @@ gpointer receive_update_notification (gpointer data)
 
 		if (buffer[30] == 'p') {
 			if (buffer[31] == '0') {		//P0	//Power Standby
+				g_mutex_lock (&cameras_sets_mutex);
+
 				for (cameras_set_itr = cameras_sets; cameras_set_itr != NULL; cameras_set_itr = cameras_set_itr->next) {
 					for (i = 0; i < cameras_set_itr->number_of_cameras; i++) {
 						if (cameras_set_itr->ptz_ptr_array[i]->address.sin_addr.s_addr == src_addr.sin_addr.s_addr) {
 							g_idle_add ((GSourceFunc)ptz_is_off, cameras_set_itr->ptz_ptr_array[i]);
+
 							break;
 						}
 					}
 				}
+
+				g_mutex_unlock (&cameras_sets_mutex);
 			} else if (buffer[31] == '1') {		//P1	//Power On
 				ptz = NULL;
+
+				g_mutex_lock (&cameras_sets_mutex);
 
 				for (cameras_set_itr = cameras_sets; cameras_set_itr != NULL; cameras_set_itr = cameras_set_itr->next) {
 					for (i = 0; i < cameras_set_itr->number_of_cameras; i++) {
@@ -78,21 +85,19 @@ gpointer receive_update_notification (gpointer data)
 								if (response == 1) ptz->auto_focus = TRUE;
 								else ptz->auto_focus = FALSE;
 
+								g_mutex_lock (&ptz->lens_information_mutex);
+
 								send_ptz_request_command_string (ptz, "#LPI", buffer);
-								ptz->zoom_position_cmd[4] = buffer[3];
-								ptz->zoom_position_cmd[5] = buffer[4];
-								ptz->zoom_position_cmd[6] = buffer[5];
-
-								ptz->focus_position_cmd[4] = buffer[6];
-								ptz->focus_position_cmd[5] = buffer[7];
-								ptz->focus_position_cmd[6] = buffer[8];
-
 								if (buffer[3] <= '9') ptz->zoom_position = (buffer[3] - '0') * 256;
 								else ptz->zoom_position = (buffer[3] - '7') * 256;
 								if (buffer[4] <= '9') ptz->zoom_position += (buffer[4] - '0') * 16;
 								else ptz->zoom_position += (buffer[4] - '7') * 16;
 								if (buffer[5] <= '9') ptz->zoom_position += buffer[5] - '0';
 								else ptz->zoom_position += buffer[5] - '7';
+
+								ptz->zoom_position_cmd[4] = buffer[3];
+								ptz->zoom_position_cmd[5] = buffer[4];
+								ptz->zoom_position_cmd[6] = buffer[5];
 
 								if (buffer[6] <= '9') ptz->focus_position = (buffer[6] - '0') * 256;
 								else ptz->focus_position = (buffer[6] - '7') * 256;
@@ -101,6 +106,10 @@ gpointer receive_update_notification (gpointer data)
 								if (buffer[8] <= '9') ptz->focus_position += buffer[8] - '0';
 								else ptz->focus_position += buffer[8] - '7';
 
+								ptz->focus_position_cmd[4] = buffer[6];
+								ptz->focus_position_cmd[5] = buffer[7];
+								ptz->focus_position_cmd[6] = buffer[8];
+
 								send_ptz_control_command (ptz, "#LPC1", TRUE);
 
 								g_idle_add ((GSourceFunc)ptz_is_on, ptz);
@@ -108,24 +117,37 @@ gpointer receive_update_notification (gpointer data)
 								other_ptz = cameras_set_itr->ptz_ptr_array[i];
 
 								other_ptz->auto_focus = ptz->auto_focus;
-								other_ptz->zoom_position_cmd[4] = ptz->zoom_position_cmd[4];
-								other_ptz->zoom_position_cmd[5] = ptz->zoom_position_cmd[5];
-								other_ptz->zoom_position_cmd[6] = ptz->zoom_position_cmd[6];
+
+								g_mutex_lock (&other_ptz->lens_information_mutex);
+
 								other_ptz->zoom_position = ptz->zoom_position;
-								other_ptz->focus_position_cmd[4] = ptz->focus_position_cmd[4];
-								other_ptz->focus_position_cmd[5] = ptz->focus_position_cmd[5];
-								other_ptz->focus_position_cmd[6] = ptz->focus_position_cmd[6];
+								other_ptz->zoom_position_cmd[4] = buffer[3];
+								other_ptz->zoom_position_cmd[5] = buffer[4];
+								other_ptz->zoom_position_cmd[6] = buffer[5];
+
 								other_ptz->focus_position = ptz->focus_position;
+								other_ptz->focus_position_cmd[4] = buffer[6];
+								other_ptz->focus_position_cmd[5] = buffer[7];
+								other_ptz->focus_position_cmd[6] = buffer[8];
+
+								g_mutex_unlock (&other_ptz->lens_information_mutex);
 
 								g_idle_add ((GSourceFunc)ptz_is_on, other_ptz);
 							}
+
 							break;
 						}
 					}
 				}
+
+				if (ptz != NULL) g_mutex_unlock (&ptz->lens_information_mutex);
+
+				g_mutex_unlock (&cameras_sets_mutex);
 			}
 		} else if ((buffer[30] == 'l') && (buffer[31] == 'P') && (buffer[32] == 'I')) { 	//lPI	//Lens information
 			ptz = NULL;
+
+			g_mutex_lock (&cameras_sets_mutex);
 
 			for (cameras_set_itr = cameras_sets; cameras_set_itr != NULL; cameras_set_itr = cameras_set_itr->next) {
 				for (i = 0; i < cameras_set_itr->number_of_cameras; i++) {
@@ -133,12 +155,9 @@ gpointer receive_update_notification (gpointer data)
 						if (ptz == NULL) {
 							ptz = cameras_set_itr->ptz_ptr_array[i];
 
-g_mutex_lock (&ptz->lens_information_mutex);
-							if ((ptz->zoom_position_cmd[4] != buffer[33]) || (ptz->zoom_position_cmd[5] != buffer[34]) || (ptz->zoom_position_cmd[6] != buffer[35])) {
-								ptz->zoom_position_cmd[4] = buffer[33];
-								ptz->zoom_position_cmd[5] = buffer[34];
-								ptz->zoom_position_cmd[6] = buffer[35];
+							g_mutex_lock (&ptz->lens_information_mutex);
 
+							if ((ptz->zoom_position_cmd[4] != buffer[33]) || (ptz->zoom_position_cmd[5] != buffer[34]) || (ptz->zoom_position_cmd[6] != buffer[35])) {
 								if (buffer[33] <= '9') ptz->zoom_position = (buffer[33] - '0') * 256;
 								else ptz->zoom_position = (buffer[33] - '7') * 256;
 								if (buffer[34] <= '9') ptz->zoom_position += (buffer[34] - '0') * 16;
@@ -146,14 +165,14 @@ g_mutex_lock (&ptz->lens_information_mutex);
 								if (buffer[35] <= '9') ptz->zoom_position += buffer[35] - '0';
 								else ptz->zoom_position += buffer[35] - '7';
 
+								ptz->zoom_position_cmd[4] = buffer[33];
+								ptz->zoom_position_cmd[5] = buffer[34];
+								ptz->zoom_position_cmd[6] = buffer[35];
+
 								if (ptz->control_window.is_on_screen) gtk_widget_queue_draw (ptz->control_window.zoom_level_bar_drawing_area);
 							}
 
 							if ((ptz->focus_position_cmd[4] != buffer[36]) || (ptz->focus_position_cmd[5] != buffer[37]) || (ptz->focus_position_cmd[6] != buffer[38])) {
-								ptz->focus_position_cmd[4] = buffer[36];
-								ptz->focus_position_cmd[5] = buffer[37];
-								ptz->focus_position_cmd[6] = buffer[38];
-
 								if (buffer[36] <= '9') ptz->focus_position = (buffer[36] - '0') * 256;
 								else ptz->focus_position = (buffer[36] - '7') * 256;
 								if (buffer[37] <= '9') ptz->focus_position += (buffer[37] - '0') * 16;
@@ -161,39 +180,49 @@ g_mutex_lock (&ptz->lens_information_mutex);
 								if (buffer[38] <= '9') ptz->focus_position += buffer[38] - '0';
 								else ptz->focus_position += buffer[38] - '7';
 
+								ptz->focus_position_cmd[4] = buffer[36];
+								ptz->focus_position_cmd[5] = buffer[37];
+								ptz->focus_position_cmd[6] = buffer[38];
+
 								if (ptz->control_window.is_on_screen) gtk_widget_queue_draw (ptz->control_window.focus_level_bar_drawing_area);
 							}
-g_mutex_unlock (&ptz->lens_information_mutex);
 						} else {
 							other_ptz = cameras_set_itr->ptz_ptr_array[i];
 
-g_mutex_lock (&ptz->lens_information_mutex);
-g_mutex_lock (&other_ptz->lens_information_mutex);
+							g_mutex_lock (&other_ptz->lens_information_mutex);
+
 							if (other_ptz->zoom_position != ptz->zoom_position) {
 								other_ptz->zoom_position = ptz->zoom_position;
-								other_ptz->zoom_position_cmd[4] = ptz->zoom_position_cmd[4];
-								other_ptz->zoom_position_cmd[5] = ptz->zoom_position_cmd[5];
-								other_ptz->zoom_position_cmd[6] = ptz->zoom_position_cmd[6];
+								other_ptz->zoom_position_cmd[4] = buffer[33];
+								other_ptz->zoom_position_cmd[5] = buffer[34];
+								other_ptz->zoom_position_cmd[6] = buffer[35];
 
 								if (other_ptz->control_window.is_on_screen) gtk_widget_queue_draw (other_ptz->control_window.zoom_level_bar_drawing_area);
 							}
 
 							if (other_ptz->focus_position != ptz->focus_position) {
 								other_ptz->focus_position = ptz->focus_position;
-								other_ptz->focus_position_cmd[4] = ptz->focus_position_cmd[4];
-								other_ptz->focus_position_cmd[5] = ptz->focus_position_cmd[5];
-								other_ptz->focus_position_cmd[6] = ptz->focus_position_cmd[6];
+								other_ptz->focus_position_cmd[4] = buffer[36];
+								other_ptz->focus_position_cmd[5] = buffer[37];
+								other_ptz->focus_position_cmd[6] = buffer[38];
 
 								if (other_ptz->control_window.is_on_screen) gtk_widget_queue_draw (other_ptz->control_window.focus_level_bar_drawing_area);
 							}
-g_mutex_unlock (&other_ptz->lens_information_mutex);
-g_mutex_unlock (&ptz->lens_information_mutex);
+
+							g_mutex_unlock (&other_ptz->lens_information_mutex);
 						}
+
 						break;
 					}
 				}
 			}
+
+			if (ptz != NULL) g_mutex_unlock (&ptz->lens_information_mutex);
+
+			g_mutex_unlock (&cameras_sets_mutex);
 		} else if ((buffer[30] == 'O') && (buffer[31] == 'A') && (buffer[32] == 'F')) { 	//OAF:	//Auto focus_position
+			g_mutex_lock (&cameras_sets_mutex);
+
 			for (cameras_set_itr = cameras_sets; cameras_set_itr != NULL; cameras_set_itr = cameras_set_itr->next) {
 				for (i = 0; i < cameras_set_itr->number_of_cameras; i++) {
 					ptz = cameras_set_itr->ptz_ptr_array[i];
@@ -206,9 +235,13 @@ g_mutex_unlock (&ptz->lens_information_mutex);
 							ptz->auto_focus = FALSE;
 							if (ptz->control_window.is_on_screen) g_idle_add ((GSourceFunc)update_auto_focus_toggle_button, ptz);
 						}
+
+						break;
 					}
 				}
 			}
+
+			g_mutex_unlock (&cameras_sets_mutex);
 		} else if ((buffer[30] == 'r') && (buffer[31] == 'E') && (buffer[32] == 'R')) {		//Error information
 			src_in_addr = g_malloc (sizeof (struct in_addr));
 			*src_in_addr = src_addr.sin_addr;
