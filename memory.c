@@ -285,8 +285,8 @@ gboolean memory_name_draw (GtkWidget *widget, cairo_t *cr, char *name)
 	PangoFontDescription *desc;
 
 	if (name[0] != '\0') {
-		cairo_rectangle (cr, 5.0, thumbnail_height + 5.0 - (20.0 * thumbnail_size), thumbnail_width, 20.0 * thumbnail_size);
 		cairo_set_source_rgba (cr, 1.0, 1.0, 1.0, 0.2);
+		cairo_rectangle (cr, 5.0, thumbnail_height + 5.0 - (20.0 * thumbnail_size), thumbnail_width, 20.0 * thumbnail_size);
 		cairo_fill (cr);
 
 		cairo_set_source_rgb (cr, 0.0, 0.0, 0.0);
@@ -312,8 +312,22 @@ gboolean memory_name_draw (GtkWidget *widget, cairo_t *cr, char *name)
 gboolean memory_outline_draw (GtkWidget *widget, cairo_t *cr, memory_t *memory)
 {
 	if (memory->is_loaded) {
-		cairo_rectangle (cr, 5.0, thumbnail_height + 5.0 - (20.0 * thumbnail_size), thumbnail_width, 20.0 * thumbnail_size);
-		cairo_set_source_rgba (cr, 1.0, 1.0, 1.0, 0.2);
+		cairo_set_source_rgba (cr, 0.8, 0.545, 0.0, 1.0);
+//Top
+		cairo_rectangle (cr, 3.0, 2.0, thumbnail_width + 4.0, 1.0);
+		cairo_fill (cr);
+		cairo_rectangle (cr, 2.0, 3.0, thumbnail_width + 6.0, 2.0);
+		cairo_fill (cr);
+//Bottom
+		cairo_rectangle (cr, 2.0, 5.0 + thumbnail_height, thumbnail_width + 6.0, 2.0);
+		cairo_fill (cr);
+		cairo_rectangle (cr, 3.0, 7.0 + thumbnail_height, thumbnail_width + 4.0, 1.0);
+		cairo_fill (cr);
+//Left
+		cairo_rectangle (cr, 2.0, 5.0, 3.0, thumbnail_height);
+		cairo_fill (cr);
+//Right
+		cairo_rectangle (cr, 5.0 + thumbnail_width, 5.0, 3.0, thumbnail_height);
 		cairo_fill (cr);
 	}
 
