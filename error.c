@@ -1,5 +1,5 @@
 /*
- * copyright (c) 2020 2021 Thomas Paillet <thomas.paillet@net-c.fr>
+ * copyright (c) 2020 2021 2025 Thomas Paillet <thomas.paillet@net-c.fr>
 
  * This file is part of PTZ-Memory.
 
@@ -32,6 +32,8 @@
  \
 	ptz = NULL; \
  \
+	g_mutex_lock (&cameras_sets_mutex); \
+ \
 	for (cameras_set_itr = cameras_sets; cameras_set_itr != NULL; cameras_set_itr = cameras_set_itr->next) { \
 		for (i = 0; i < cameras_set_itr->number_of_cameras; i++) { \
 			if (cameras_set_itr->ptz_ptr_array[i]->address.sin_addr.s_addr == src_in_addr->s_addr) { \
@@ -51,6 +53,8 @@
 			} \
 		} \
 	} \
+ \
+	g_mutex_unlock (&cameras_sets_mutex); \
  \
 	g_free (src_in_addr); \
  \
@@ -67,6 +71,8 @@
  \
 	ptz = NULL; \
  \
+	g_mutex_lock (&cameras_sets_mutex); \
+ \
 	for (cameras_set_itr = cameras_sets; cameras_set_itr != NULL; cameras_set_itr = cameras_set_itr->next) { \
 		for (i = 0; i < cameras_set_itr->number_of_cameras; i++) { \
 			if (cameras_set_itr->ptz_ptr_array[i]->address.sin_addr.s_addr == src_in_addr->s_addr) { \
@@ -86,6 +92,8 @@
 			} \
 		} \
 	} \
+ \
+	g_mutex_unlock (&cameras_sets_mutex); \
  \
 	g_free (src_in_addr); \
  \
@@ -123,6 +131,8 @@ gboolean clear_ptz_error (struct in_addr *src_in_addr)
 
 	ptz = NULL;
 
+	g_mutex_lock (&cameras_sets_mutex);
+
 	for (cameras_set_itr = cameras_sets; cameras_set_itr != NULL; cameras_set_itr = cameras_set_itr->next) {
 		for (i = 0; i < cameras_set_itr->number_of_cameras; i++) {
 			if (cameras_set_itr->ptz_ptr_array[i]->address.sin_addr.s_addr == src_in_addr->s_addr) {
@@ -142,6 +152,8 @@ gboolean clear_ptz_error (struct in_addr *src_in_addr)
 			}
 		}
 	}
+
+	g_mutex_unlock (&cameras_sets_mutex);
 
 	g_free (src_in_addr);
 
