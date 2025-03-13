@@ -931,7 +931,7 @@ void add_cameras_set_to_main_window_notebook (cameras_set_t *cameras_set)
 	cameras_set->page = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
 		create_horizontal_linked_memories_names_entries (cameras_set);
 		//else create_vertical_linked_memories_names_entries (cameras_set);
-	gtk_box_pack_start (GTK_BOX (cameras_set->page), linked_memories_names_entries, FALSE, FALSE, 0);
+	gtk_box_pack_start (GTK_BOX (cameras_set->page), cameras_set->linked_memories_names_entries, FALSE, FALSE, 0);
 
 		scrolled_window = gtk_scrolled_window_new (NULL, NULL);
 			box1 = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
@@ -964,12 +964,12 @@ void add_cameras_set_to_main_window_notebook (cameras_set_t *cameras_set)
 
 		create_horizontal_linked_memories_names_labels (cameras_set);
 		//else create_vertical_linked_memories_names_labels (cameras_set);
-	gtk_box_pack_start (GTK_BOX (cameras_set->page), linked_memories_names_labels, FALSE, FALSE, 0);
+	gtk_box_pack_start (GTK_BOX (cameras_set->page), cameras_set->linked_memories_names_labels, FALSE, FALSE, 0);
 
 	gtk_widget_show_all (cameras_set->page);
 
-	if (!show_linked_memories_names_entries) gtk_widget_hide (linked_memories_names_entries);
-	if (!show_linked_memories_names_labels) gtk_widget_hide (linked_memories_names_labels);
+	if (!show_linked_memories_names_entries) gtk_widget_hide (cameras_set->linked_memories_names_entries);
+	if (!show_linked_memories_names_labels) gtk_widget_hide (cameras_set->linked_memories_names_labels);
 
 	widget = gtk_label_new (cameras_set->name);
 	cameras_set->page_num = gtk_notebook_append_page (GTK_NOTEBOOK (main_window_notebook), cameras_set->page, widget);
