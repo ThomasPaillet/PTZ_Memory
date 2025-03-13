@@ -191,9 +191,13 @@ gpointer switch_ptz_on (ptz_thread_t *ptz_thread);
 
 gpointer switch_ptz_off (ptz_thread_t *ptz_thread);
 
-void create_ptz_widgets (ptz_t *ptz);
+void create_ptz_widgets_horizontal (ptz_t *ptz);
 
-void create_ghost_ptz_widgets (ptz_t *ptz);
+void create_ptz_widgets_vertical (ptz_t *ptz);
+
+void create_ghost_ptz_widgets_horizontal (ptz_t *ptz);
+
+void create_ghost_ptz_widgets_vertical (ptz_t *ptz);
 
 
 //cameras_set.h
