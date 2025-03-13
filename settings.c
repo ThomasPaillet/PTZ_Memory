@@ -294,6 +294,8 @@ void show_linked_memories_names_entries_check_button_toggled (GtkToggleButton *t
 
 void show_linked_memories_names_labels_check_button_toggled (GtkToggleButton *togglebutton)
 {
+	cameras_set_t *cameras_set_itr;
+
 	show_linked_memories_names_labels = gtk_toggle_button_get_active (togglebutton);
 
 	if (show_linked_memories_names_labels) {
@@ -306,7 +308,7 @@ void show_linked_memories_names_labels_check_button_toggled (GtkToggleButton *to
 		}
 	}
 
-		backup_needed = TRUE;
+	backup_needed = TRUE;
 }
 
 void create_settings_window (void)
