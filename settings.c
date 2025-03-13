@@ -570,6 +570,35 @@ void create_settings_window (void)
 			gtk_box_pack_start (GTK_BOX (box2), box3, FALSE, FALSE, 0);
 		gtk_container_add (GTK_CONTAINER (frame), box2);
 	gtk_box_pack_start (GTK_BOX (box1), frame, FALSE, FALSE, 0);
+
+		frame = gtk_frame_new ("Interface");
+		gtk_frame_set_label_align (GTK_FRAME (frame), 0.5, 0.5);
+		gtk_container_set_border_width (GTK_CONTAINER (frame), MARGIN_VALUE);
+			box2 = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
+				box3 = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
+				gtk_widget_set_margin_top (box3, MARGIN_VALUE);
+				gtk_widget_set_margin_start (box3, MARGIN_VALUE);
+				gtk_widget_set_margin_end (box3, MARGIN_VALUE);
+				gtk_widget_set_margin_bottom (box3, MARGIN_VALUE);
+					widget =  gtk_label_new ("Taille des marges gauche/droite des boutons de mémoires :");
+				gtk_box_pack_start (GTK_BOX (box3), widget, FALSE, FALSE, 0);
+
+
+			gtk_box_pack_start (GTK_BOX (box2), box3, FALSE, FALSE, 0);
+
+			box2 = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
+				box3 = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
+				gtk_widget_set_margin_top (box3, MARGIN_VALUE);
+				gtk_widget_set_margin_start (box3, MARGIN_VALUE);
+				gtk_widget_set_margin_end (box3, MARGIN_VALUE);
+				gtk_widget_set_margin_bottom (box3, MARGIN_VALUE);
+					widget =  gtk_label_new ("Taille des marges haut/bas des boutons de mémoires :");
+				gtk_box_pack_start (GTK_BOX (box3), widget, FALSE, FALSE, 0);
+
+
+			gtk_box_pack_start (GTK_BOX (box2), box3, FALSE, FALSE, 0);
+		gtk_container_add (GTK_CONTAINER (frame), box2);
+	gtk_box_pack_start (GTK_BOX (box1), frame, FALSE, FALSE, 0);
 	gtk_container_add (GTK_CONTAINER (settings_window), box1);
 
 	gtk_window_set_resizable (GTK_WINDOW (settings_window), FALSE);
@@ -735,6 +764,12 @@ void load_config_file (void)
 	fread (&tsl_umd_v5_address.sin_port, sizeof (guint16), 1, config_file);
 	if (ntohs (tsl_umd_v5_address.sin_port) < 1024) tsl_umd_v5_address.sin_port = htons (TSL_UMD_V5_UDP_PORT);
 
+	fread (&memories_button_vertical_margins, sizeof (int), 1, config_file);
+	if ((memories_button_vertical_margins < 0) || (memories_button_vertical_margins > 50)) memories_button_vertical_margins = 0;
+
+	fread (&memories_button_horizontal_margins, sizeof (int), 1, config_file);
+	if ((memories_button_horizontal_margins < 0) || (memories_button_horizontal_margins > 50)) memories_button_horizontal_margins = 0;
+
 	fclose (config_file);
 }
 
@@ -810,6 +845,10 @@ void save_config_file (void)
 	fwrite (&sw_p_08_address.sin_port, sizeof (guint16), 1, config_file);
 
 	fwrite (&tsl_umd_v5_address.sin_port, sizeof (guint16), 1, config_file);
+
+	fwrite (&memories_button_vertical_margins, sizeof (int), 1, config_file);
+
+	fwrite (&memories_button_horizontal_margins, sizeof (int), 1, config_file);
 
 	fclose (config_file);
 }
