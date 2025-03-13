@@ -273,6 +273,26 @@ void tsl_umd_v5_udp_port_entry_activate (GtkEntry *entry, GtkEntryBuffer *entry_
 	backup_needed = TRUE;
 }
 
+void show_linked_memories_names_entries_check_button_toggled (GtkToggleButton *togglebutton)
+{
+	show_linked_memories_names_entries = gtk_toggle_button_get_active (togglebutton);
+
+	if (show_linked_memories_names_entries) gtk_widget_show (linked_memories_names_entries);
+	else gtk_widget_hide (linked_memories_names_entries);
+
+	backup_needed = TRUE;
+}
+
+void show_linked_memories_names_labels_check_button_toggled (GtkToggleButton *togglebutton)
+{
+	show_linked_memories_names_labels = gtk_toggle_button_get_active (togglebutton);
+
+	if (show_linked_memories_names_labels) gtk_widget_show (linked_memories_names_labels);
+	else gtk_widget_hide (linked_memories_names_labels);
+
+	backup_needed = TRUE;
+}
+
 void create_settings_window (void)
 {
 	GtkWidget *box1, *frame, *box2, *box3, *box4, *widget, *controller_ip_address_box;
@@ -597,6 +617,38 @@ void create_settings_window (void)
 
 
 			gtk_box_pack_start (GTK_BOX (box2), box3, FALSE, FALSE, 0);
+
+			box2 = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
+				box3 = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
+				gtk_widget_set_margin_top (box3, MARGIN_VALUE);
+				gtk_widget_set_margin_start (box3, MARGIN_VALUE);
+				gtk_widget_set_margin_end (box3, MARGIN_VALUE);
+				gtk_widget_set_margin_bottom (box3, MARGIN_VALUE);
+					widget =  gtk_label_new ("Afficher la zone de saisie des noms de mémoires liées :");
+				gtk_box_pack_start (GTK_BOX (box3), widget, FALSE, FALSE, 0);
+
+					widget = gtk_check_button_new ();
+					gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (widget), show_linked_memories_names_entries);
+					g_signal_connect (G_OBJECT (widget), "toggled", G_CALLBACK (show_linked_memories_names_entries_check_button_toggled), NULL);
+					gtk_widget_set_margin_start (widget, MARGIN_VALUE);
+				gtk_box_pack_end (GTK_BOX (box3), widget, FALSE, FALSE, 0);
+			gtk_box_pack_start (GTK_BOX (box2), box3, FALSE, FALSE, 0);
+
+			box2 = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
+				box3 = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
+				gtk_widget_set_margin_top (box3, MARGIN_VALUE);
+				gtk_widget_set_margin_start (box3, MARGIN_VALUE);
+				gtk_widget_set_margin_end (box3, MARGIN_VALUE);
+				gtk_widget_set_margin_bottom (box3, MARGIN_VALUE);
+					widget =  gtk_label_new ("Afficher la zone de rappel des noms de mémoires liées :");
+				gtk_box_pack_start (GTK_BOX (box3), widget, FALSE, FALSE, 0);
+
+					widget = gtk_check_button_new ();
+					gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (widget), show_linked_memories_names_labels);
+					g_signal_connect (G_OBJECT (widget), "toggled", G_CALLBACK (show_linked_memories_names_labels_check_button_toggled), NULL);
+					gtk_widget_set_margin_start (widget, MARGIN_VALUE);
+				gtk_box_pack_end (GTK_BOX (box3), widget, FALSE, FALSE, 0);
+			gtk_box_pack_start (GTK_BOX (box2), box3, FALSE, FALSE, 0);
 		gtk_container_add (GTK_CONTAINER (frame), box2);
 	gtk_box_pack_start (GTK_BOX (box1), frame, FALSE, FALSE, 0);
 	gtk_container_add (GTK_CONTAINER (settings_window), box1);
@@ -770,6 +822,10 @@ void load_config_file (void)
 	fread (&memories_button_horizontal_margins, sizeof (int), 1, config_file);
 	if ((memories_button_horizontal_margins < 0) || (memories_button_horizontal_margins > 50)) memories_button_horizontal_margins = 0;
 
+	fread (&show_linked_memories_names_entries, sizeof (gboolean), 1, config_file);
+
+	fread (&show_linked_memories_names_labels, sizeof (gboolean), 1, config_file);
+
 	fclose (config_file);
 }
 
@@ -849,6 +905,10 @@ void save_config_file (void)
 	fwrite (&memories_button_vertical_margins, sizeof (int), 1, config_file);
 
 	fwrite (&memories_button_horizontal_margins, sizeof (int), 1, config_file);
+
+	fwrite (&show_linked_memories_names_entries, sizeof (gboolean), 1, config_file);
+
+	fwrite (&show_linked_memories_names_labels, sizeof (gboolean), 1, config_file);
 
 	fclose (config_file);
 }
