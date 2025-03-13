@@ -20,6 +20,10 @@
 #include "ptz.h"
 
 
+int memories_button_vertical_margins;
+int memories_button_horizontal_margins;
+
+
 gboolean free_memory_thread (memory_thread_t *memory_thread)
 {
 	g_thread_join (memory_thread->thread);
