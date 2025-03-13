@@ -139,6 +139,7 @@ typedef struct {
 
 	memory_t memories[MAX_MEMORIES];
 	int number_of_memories;
+	memory_t *previous_loaded_memory;
 
 	gboolean auto_focus;
 
@@ -238,10 +239,14 @@ extern int number_of_cameras_sets;
 extern cameras_set_t *cameras_sets;
 
 extern cameras_set_t *current_cameras_set;
-
 extern cameras_set_t *new_cameras_set;
-
 extern cameras_set_t *cameras_set_with_error;
+
+extern GtkWidget *linked_memories_names_entries;
+extern GtkWidget *linked_memories_names_labels;
+
+extern gboolean show_linked_memories_names_entries;
+extern gboolean show_linked_memories_names_labels;
 
 
 void show_cameras_set_configuration_window (void);
@@ -258,6 +263,10 @@ typedef struct {
 	memory_t *memory_ptr;
 	GThread *thread;
 } memory_thread_t;
+
+
+extern int memories_button_vertical_margins;
+extern int memories_button_horizontal_margins;
 
 
 gboolean memory_button_button_press_event (GtkButton *button, GdkEventButton *event, memory_t *memory);
