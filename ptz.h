@@ -214,12 +214,14 @@ typedef struct cameras_set_s {
 
 	int number_of_ghost_cameras;
 
+	GtkWidget *linked_memories_names_entries;
 	GtkWidget *entry_widgets_padding;
 	GtkWidget *entry_widgets[MAX_MEMORIES];
 	GtkAdjustment *entry_scrolled_window_hadjustment;	
 	GtkWidget *name_grid_box;
 	GtkWidget *memories_grid_box;
 	GtkAdjustment *memories_scrolled_window_hadjustment;
+	GtkWidget *linked_memories_names_labels;
 	GtkWidget *memories_labels_padding;
 	GtkWidget *memories_labels[MAX_MEMORIES];
 	GtkAdjustment *label_scrolled_window_hadjustment;
@@ -245,9 +247,6 @@ extern cameras_set_t *cameras_sets;
 extern cameras_set_t *current_cameras_set;
 extern cameras_set_t *new_cameras_set;
 extern cameras_set_t *cameras_set_with_error;
-
-extern GtkWidget *linked_memories_names_entries;
-extern GtkWidget *linked_memories_names_labels;
 
 extern gboolean show_linked_memories_names_entries;
 extern gboolean show_linked_memories_names_labels;
