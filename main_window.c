@@ -640,6 +640,18 @@ int main (int argc, char** argv)
 	gtk_widget_show_all (main_window);
 	gtk_window_set_focus (GTK_WINDOW (main_window), NULL);
 
+	if (!show_linked_memories_names_entries) {
+		for (cameras_set_itr = cameras_sets; cameras_set_itr != NULL; cameras_set_itr = cameras_set_itr->next) {
+			gtk_widget_hide (cameras_set_itr->linked_memories_names_entries);
+		}
+	}
+
+	if (!show_linked_memories_names_labels) {
+		for (cameras_set_itr = cameras_sets; cameras_set_itr != NULL; cameras_set_itr = cameras_set_itr->next) {
+			gtk_widget_hide (cameras_set_itr->linked_memories_names_labels);
+		}
+	}
+
 	if (number_of_cameras_sets == 0) {
 		create_settings_window ();
 		add_cameras_set ();
