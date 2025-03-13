@@ -715,7 +715,8 @@ void load_config_file (void)
 			fread (&ptz->active, sizeof (gboolean), 1, config_file);
 
 			if (ptz->active) {
-				create_ptz_widgets (ptz);
+				/*if ()*/ create_ptz_widgets_horizontal (ptz);
+				//else create_ptz_widgets_vertical (ptz);
 
 				fread (ptz->ip_address, sizeof (char), 16, config_file);
 				ptz->ip_address[15] = '\0';
@@ -761,7 +762,8 @@ void load_config_file (void)
 				}
 			} else {
 				cameras_set_tmp->number_of_ghost_cameras++;
-				create_ghost_ptz_widgets (ptz);
+				/*if ()*/ create_ghost_ptz_widgets_horizontal (ptz);
+				//else create_ghost_ptz_widgets_vertical (ptz);
 			}
 		}
 
