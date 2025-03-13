@@ -275,10 +275,19 @@ void tsl_umd_v5_udp_port_entry_activate (GtkEntry *entry, GtkEntryBuffer *entry_
 
 void show_linked_memories_names_entries_check_button_toggled (GtkToggleButton *togglebutton)
 {
+	cameras_set_t *cameras_set_itr;
+
 	show_linked_memories_names_entries = gtk_toggle_button_get_active (togglebutton);
 
-	if (show_linked_memories_names_entries) gtk_widget_show (linked_memories_names_entries);
-	else gtk_widget_hide (linked_memories_names_entries);
+	if (show_linked_memories_names_entries) {
+		for (cameras_set_itr = cameras_sets; cameras_set_itr != NULL; cameras_set_itr = cameras_set_itr->next) {
+			gtk_widget_show (cameras_set_itr->linked_memories_names_entries);
+		}
+	} else {
+		for (cameras_set_itr = cameras_sets; cameras_set_itr != NULL; cameras_set_itr = cameras_set_itr->next) {
+			gtk_widget_hide (cameras_set_itr->linked_memories_names_entries);
+		}
+	}
 
 	backup_needed = TRUE;
 }
@@ -287,10 +296,17 @@ void show_linked_memories_names_labels_check_button_toggled (GtkToggleButton *to
 {
 	show_linked_memories_names_labels = gtk_toggle_button_get_active (togglebutton);
 
-	if (show_linked_memories_names_labels) gtk_widget_show (linked_memories_names_labels);
-	else gtk_widget_hide (linked_memories_names_labels);
+	if (show_linked_memories_names_labels) {
+		for (cameras_set_itr = cameras_sets; cameras_set_itr != NULL; cameras_set_itr = cameras_set_itr->next) {
+			gtk_widget_show (cameras_set_itr->linked_memories_names_labels);
+		}
+	} else {
+		for (cameras_set_itr = cameras_sets; cameras_set_itr != NULL; cameras_set_itr = cameras_set_itr->next) {
+			gtk_widget_hide (cameras_set_itr->linked_memories_names_labels);
+		}
+	}
 
-	backup_needed = TRUE;
+		backup_needed = TRUE;
 }
 
 void create_settings_window (void)
