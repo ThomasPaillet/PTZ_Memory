@@ -77,7 +77,8 @@ gpointer save_memory (memory_thread_t *memory_thread)
 		ptz->number_of_memories++;
 	}
 
-//	memory->is_loaded = FALSE;
+	memory->is_loaded = FALSE;
+	ptz->previous_loaded_memory = NULL;
 
 	send_ptz_request_command_string (ptz, "#APC", response);
 	memory->pan_tilt_position_cmd[4] = response[3];
@@ -112,6 +113,16 @@ gpointer load_memory (memory_thread_t *memory_thread)
 		controller_thread->thread = g_thread_new (NULL, (GThreadFunc)controller_switch_ptz, controller_thread);
 	}
 
+	memory->is_loaded = TRUE;
+	gtk_widget_queue_draw (memory->image);
+
+	if (ptz->previous_loaded_memory != NULL) {
+		ptz->previous_loaded_memory->is_loaded = FALSE;
+		gtk_widget_queue_draw (ptz->previous_loaded_memory->image);
+	}
+
+	ptz->previous_loaded_memory = memory;
+
 	g_mutex_lock (&ptz->lens_information_mutex);
 
 	if (ptz->zoom_position != memory->zoom_position) {
@@ -133,18 +144,6 @@ gpointer load_memory (memory_thread_t *memory_thread)
 	}
 
 	g_mutex_unlock (&ptz->lens_information_mutex);
-
-	memory->is_loaded = TRUE;
-
-	for (i = 0; i < MAX_MEMORIES; i++) {
-		if ((ptz->memories + i) != memory) {
-			if (ptz->memories[i].is_loaded) {
-				ptz->memories[i].is_loaded = FALSE;
-
-				gtk_widget_queue_draw (ptz->memories[i].image);
-			}
-		}
-	}
 
 	g_signal_handler_unblock (memory->button, memory->button_handler_id);
 	g_idle_add ((GSourceFunc)free_memory_thread, memory_thread);
@@ -169,6 +168,16 @@ gpointer load_other_memory (memory_thread_t *memory_thread)
 
 	send_ptz_control_command (ptz, memory->pan_tilt_position_cmd, TRUE);
 
+	memory->is_loaded = TRUE;
+	gtk_widget_queue_draw (memory->image);
+
+	if (ptz->previous_loaded_memory != NULL) {
+		ptz->previous_loaded_memory->is_loaded = FALSE;
+		gtk_widget_queue_draw (ptz->previous_loaded_memory->image);
+	}
+
+	ptz->previous_loaded_memory = memory;
+
 	g_mutex_lock (&ptz->lens_information_mutex);
 
 	if (ptz->zoom_position != memory->zoom_position) {
@@ -191,18 +200,6 @@ gpointer load_other_memory (memory_thread_t *memory_thread)
 
 	g_mutex_unlock (&ptz->lens_information_mutex);
 
-	memory->is_loaded = TRUE;
-
-	for (i = 0; i < MAX_MEMORIES; i++) {
-		if ((ptz->memories + i) != memory) {
-			if (ptz->memories[i].is_loaded) {
-				ptz->memories[i].is_loaded = FALSE;
-
-				gtk_widget_queue_draw (ptz->memories[i].image);
-			}
-		}
-	}
-
 	g_idle_add ((GSourceFunc)release_memory_button, memory);
 	g_idle_add ((GSourceFunc)free_memory_thread, memory_thread);
 
@@ -223,16 +220,26 @@ gboolean memory_button_button_press_event (GtkButton *button, GdkEventButton *ev
 
 	if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (delete_toggle_button))) {
 		if (!memory->empty) {
+			ptz = memory->ptz_ptr;
+
 			memory->empty = TRUE;
-			memory->is_loaded = FALSE;
-			((ptz_t*)memory->ptz_ptr)->number_of_memories--;
-			gtk_button_set_image (GTK_BUTTON (memory->button), NULL);
+			ptz->number_of_memories--;
+
+			if (ptz->previous_loaded_memory == memory) {
+				ptz->previous_loaded_memory = NULL;
+				memory->is_loaded = FALSE;
+			}
+
+			gtk_widget_destroy (memory->image);
+			memory->image = NULL;
 			g_object_unref (G_OBJECT (memory->full_pixbuf));
 			if (thumbnail_width != 320) g_object_unref (G_OBJECT (memory->scaled_pixbuf));
-			memory->image = NULL;
+
 			memory->name[0] = '\0';
+
 			backup_needed = TRUE;
 		}
+
 		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (delete_toggle_button), FALSE);
 	} else if (memory->empty || gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (store_toggle_button))) {
 		g_signal_handler_block (memory->button, memory->button_handler_id);
