@@ -863,6 +863,7 @@ void label_scrolled_window_hadjustment_value_changed (GtkAdjustment *hadjustment
 
 void create_horizontal_linked_memories_names_entries (cameras_set_t *cameras_set)
 {
+	int i;
 	GtkWidget *box, *scrolled_window, *widget;
 
 	linked_memories_names_entries = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
@@ -895,6 +896,7 @@ void create_horizontal_linked_memories_names_entries (cameras_set_t *cameras_set
 
 void create_horizontal_linked_memories_names_labels (cameras_set_t *cameras_set)
 {
+	int i;
 	GtkWidget *box, *scrolled_window, *widget;
 
 	linked_memories_names_labels = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
@@ -927,7 +929,7 @@ void create_horizontal_linked_memories_names_labels (cameras_set_t *cameras_set)
 void add_cameras_set_to_main_window_notebook (cameras_set_t *cameras_set)
 {
 	int i;
-	GtkWidget *box1, *box2, *scrolled_window, *widget, *memories_scrolled_window;
+	GtkWidget *box1, *scrolled_window, *widget, *memories_scrolled_window;
 
 	cameras_set->page = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
 		create_horizontal_linked_memories_names_entries (cameras_set);
