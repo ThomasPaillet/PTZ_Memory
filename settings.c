@@ -606,7 +606,6 @@ void create_settings_window (void)
 
 			gtk_box_pack_start (GTK_BOX (box2), box3, FALSE, FALSE, 0);
 
-			box2 = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
 				box3 = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
 				gtk_widget_set_margin_top (box3, MARGIN_VALUE);
 				gtk_widget_set_margin_start (box3, MARGIN_VALUE);
@@ -618,7 +617,6 @@ void create_settings_window (void)
 
 			gtk_box_pack_start (GTK_BOX (box2), box3, FALSE, FALSE, 0);
 
-			box2 = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
 				box3 = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
 				gtk_widget_set_margin_top (box3, MARGIN_VALUE);
 				gtk_widget_set_margin_start (box3, MARGIN_VALUE);
@@ -634,7 +632,6 @@ void create_settings_window (void)
 				gtk_box_pack_end (GTK_BOX (box3), widget, FALSE, FALSE, 0);
 			gtk_box_pack_start (GTK_BOX (box2), box3, FALSE, FALSE, 0);
 
-			box2 = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
 				box3 = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
 				gtk_widget_set_margin_top (box3, MARGIN_VALUE);
 				gtk_widget_set_margin_start (box3, MARGIN_VALUE);
