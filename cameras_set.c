@@ -34,9 +34,6 @@ cameras_set_t *current_cameras_set = NULL;
 cameras_set_t *new_cameras_set = NULL;
 cameras_set_t *cameras_set_with_error = NULL;
 
-GtkWidget *linked_memories_names_entries;
-GtkWidget *linked_memories_names_labels;
-
 gboolean show_linked_memories_names_entries;
 gboolean show_linked_memories_names_labels;
 
@@ -866,10 +863,10 @@ void create_horizontal_linked_memories_names_entries (cameras_set_t *cameras_set
 	int i;
 	GtkWidget *box, *scrolled_window, *widget;
 
-	linked_memories_names_entries = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
+	cameras_set->linked_memories_names_entries = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
 		cameras_set->entry_widgets_padding = gtk_drawing_area_new ();
 		gtk_widget_set_size_request (cameras_set->entry_widgets_padding, thumbnail_height + 13, 34);
-	gtk_box_pack_start (GTK_BOX (linked_memories_names_entries), cameras_set->entry_widgets_padding, FALSE, FALSE, 0);
+	gtk_box_pack_start (GTK_BOX (cameras_set->linked_memories_names_entries), cameras_set->entry_widgets_padding, FALSE, FALSE, 0);
 
 		scrolled_window = gtk_scrolled_window_new (NULL, NULL);
 		gtk_scrolled_window_set_min_content_height (GTK_SCROLLED_WINDOW (scrolled_window), 30);
@@ -891,7 +888,7 @@ void create_horizontal_linked_memories_names_entries (cameras_set_t *cameras_set
 		gtk_container_add (GTK_CONTAINER (scrolled_window), box);
 		cameras_set->entry_scrolled_window_hadjustment = gtk_scrolled_window_get_hadjustment (GTK_SCROLLED_WINDOW (scrolled_window));
 		g_signal_connect (G_OBJECT (cameras_set->entry_scrolled_window_hadjustment), "value-changed", G_CALLBACK (entry_scrolled_window_hadjustment_value_changed), cameras_set);
-	gtk_box_pack_start (GTK_BOX (linked_memories_names_entries), scrolled_window, TRUE, TRUE, 0);
+	gtk_box_pack_start (GTK_BOX (cameras_set->linked_memories_names_entries), scrolled_window, TRUE, TRUE, 0);
 }
 
 void create_horizontal_linked_memories_names_labels (cameras_set_t *cameras_set)
@@ -899,10 +896,10 @@ void create_horizontal_linked_memories_names_labels (cameras_set_t *cameras_set)
 	int i;
 	GtkWidget *box, *scrolled_window, *widget;
 
-	linked_memories_names_labels = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
+	cameras_set->linked_memories_names_labels = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
 		cameras_set->memories_labels_padding = gtk_drawing_area_new ();
 		gtk_widget_set_size_request (cameras_set->memories_labels_padding, thumbnail_height + 13, 10);
-	gtk_box_pack_start (GTK_BOX (linked_memories_names_labels), cameras_set->memories_labels_padding, FALSE, FALSE, 0);
+	gtk_box_pack_start (GTK_BOX (cameras_set->linked_memories_names_labels), cameras_set->memories_labels_padding, FALSE, FALSE, 0);
 
 		scrolled_window = gtk_scrolled_window_new (NULL, NULL);
 		gtk_scrolled_window_set_placement (GTK_SCROLLED_WINDOW (scrolled_window), GTK_CORNER_BOTTOM_LEFT);
@@ -923,7 +920,7 @@ void create_horizontal_linked_memories_names_labels (cameras_set_t *cameras_set)
 		gtk_container_add (GTK_CONTAINER (scrolled_window), box);
 		cameras_set->label_scrolled_window_hadjustment = gtk_scrolled_window_get_hadjustment (GTK_SCROLLED_WINDOW (scrolled_window));
 		g_signal_connect (G_OBJECT (cameras_set->label_scrolled_window_hadjustment), "value-changed", G_CALLBACK (label_scrolled_window_hadjustment_value_changed), cameras_set);
-	gtk_box_pack_start (GTK_BOX (linked_memories_names_labels), scrolled_window, TRUE, TRUE, 0);
+	gtk_box_pack_start (GTK_BOX (cameras_set->linked_memories_names_labels), scrolled_window, TRUE, TRUE, 0);
 }
 
 void add_cameras_set_to_main_window_notebook (cameras_set_t *cameras_set)
