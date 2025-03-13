@@ -107,7 +107,6 @@ gpointer load_memory (memory_thread_t *memory_thread)
 	memory_t *memory = memory_thread->memory_ptr;
 	ptz_t *ptz = memory->ptz_ptr;
 	ptz_thread_t *controller_thread;
-	int i;
 
 	send_ptz_control_command (ptz, memory->pan_tilt_position_cmd, TRUE);
 
@@ -168,7 +167,6 @@ gpointer load_other_memory (memory_thread_t *memory_thread)
 {
 	memory_t *memory = memory_thread->memory_ptr;
 	ptz_t *ptz = memory->ptz_ptr;
-	int i;
 
 	send_ptz_control_command (ptz, memory->pan_tilt_position_cmd, TRUE);
 
