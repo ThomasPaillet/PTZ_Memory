@@ -1044,7 +1044,7 @@ GtkWidget *create_horizontal_memories_scrollbar (cameras_set_t *cameras_set)
 	gtk_box_pack_start (GTK_BOX (cameras_set->memories_scrollbar), scrolled_window, TRUE, TRUE, 0);
 }*/
 
-void configure_memories_scrollbar_adjustment (cameras_set_t *cameras_set)
+gboolean configure_memories_scrollbar_adjustment (GtkWidget *widget, cairo_t *cr, cameras_set_t *cameras_set)
 {
 	gdouble value = gtk_adjustment_get_value (cameras_set->memories_scrolled_window_adjustment);
 	gdouble lower = gtk_adjustment_get_lower (cameras_set->memories_scrolled_window_adjustment);
@@ -1054,9 +1054,11 @@ void configure_memories_scrollbar_adjustment (cameras_set_t *cameras_set)
 	gdouble page_size = gtk_adjustment_get_page_size (cameras_set->memories_scrolled_window_adjustment);
 
 	gtk_adjustment_configure (cameras_set->memories_scrollbar_adjustment, value, lower, upper, step_increment, page_increment, page_size);
+
+	return GDK_EVENT_PROPAGATE;
 }
 
-void fill_cameras_set_page (cameras_set_t *cameras_set)
+void fill_cameras_set_page (GtkWidget *widget, cairo_t *cr, cameras_set_t *cameras_set)
 {
 	int i;
 	GtkWidget *box, *scrolled_window, *memories_scrolled_window;
@@ -1092,6 +1094,7 @@ cameras_set->page_box
 
 				memories_scrolled_window = gtk_scrolled_window_new (NULL, NULL);
 				gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (memories_scrolled_window), GTK_POLICY_EXTERNAL, GTK_POLICY_EXTERNAL);
+				g_signal_connect_after (G_OBJECT (memories_scrolled_window), "draw", G_CALLBACK (configure_memories_scrollbar_adjustment), cameras_set);
 					cameras_set->memories_grid_box = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
 						gtk_box_pack_start (GTK_BOX (cameras_set->name_grid_box), cameras_set->ptz_ptr_array[0]->name_grid, FALSE, FALSE, 0);
 						gtk_box_pack_start (GTK_BOX (cameras_set->memories_grid_box), cameras_set->ptz_ptr_array[0]->memories_grid, FALSE, FALSE, 0);
@@ -1117,7 +1120,7 @@ cameras_set->page_box
 
 		scrolled_window = create_horizontal_memories_scrollbar (cameras_set);
 		gtk_box_pack_start (GTK_BOX (cameras_set->page_box), scrolled_window, FALSE, FALSE, 0);
-		gtk_box_pack_start (GTK_BOX (cameras_set->page), cameras_set->page_box, FALSE, FALSE, 0);
+		gtk_box_pack_start (GTK_BOX (cameras_set->page), cameras_set->page_box, TRUE, TRUE, 0);
 	} else {
 	}
 }
@@ -1134,8 +1137,6 @@ void add_cameras_set_to_main_window_notebook (cameras_set_t *cameras_set)
 
 	if (!show_linked_memories_names_entries) gtk_widget_hide (cameras_set->linked_memories_names_entries);
 	if (!show_linked_memories_names_labels) gtk_widget_hide (cameras_set->linked_memories_names_labels);
-
-	configure_memories_scrollbar_adjustment (cameras_set);
 
 	widget = gtk_label_new (cameras_set->name);
 	cameras_set->page_num = gtk_notebook_append_page (GTK_NOTEBOOK (main_window_notebook), cameras_set->page, widget);
