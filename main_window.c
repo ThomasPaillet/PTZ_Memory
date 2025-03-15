@@ -134,12 +134,17 @@ void thumbnail_size_value_changed (GtkRange *range)
 		ptz = current_cameras_set->ptz_ptr_array[i];
 
 		if (ptz->active) {
-			gtk_widget_set_size_request (ptz->name_drawing_area, thumbnail_height, thumbnail_height + 10);
-			gtk_widget_set_size_request (ptz->error_drawing_area, 8, thumbnail_height + 10);
+			if (cameras_set_orientation) {
+				gtk_widget_set_size_request (ptz->name_drawing_area, thumbnail_height, thumbnail_height + 10);
+				gtk_widget_set_size_request (ptz->error_drawing_area, 8, thumbnail_height + 10);
+			} else {
+				gtk_widget_set_size_request (ptz->name_drawing_area, thumbnail_width + 10, thumbnail_height);
+				gtk_widget_set_size_request (ptz->error_drawing_area, thumbnail_width + 10, 8);
+			}
 
 			for (j = 0; j < MAX_MEMORIES; j++) {
 				if (!ptz->memories[j].empty) {
-					gtk_button_set_image (GTK_BUTTON (ptz->memories[j].button), NULL);
+					gtk_widget_destroy (ptz->memories[j].image);
 					gtk_widget_set_size_request (ptz->memories[j].button, thumbnail_width + 10, thumbnail_height + 10);
 					if (old_thumbnail_width != 320) g_object_unref (G_OBJECT (ptz->memories[j].scaled_pixbuf));
 					if (thumbnail_width == 320) ptz->memories[j].image = gtk_image_new_from_pixbuf (ptz->memories[j].full_pixbuf);
@@ -151,17 +156,28 @@ void thumbnail_size_value_changed (GtkRange *range)
 				} else gtk_widget_set_size_request (ptz->memories[j].button, thumbnail_width + 10, thumbnail_height + 10);
 			}
 		} else {
-			gtk_widget_set_size_request (ptz->name_drawing_area, thumbnail_height + 8, thumbnail_height / 2);
-			gtk_widget_set_size_request (ptz->ghost_body, (thumbnail_width + 10) * MAX_MEMORIES, thumbnail_height / 2);
+			if (cameras_set_orientation) {
+				gtk_widget_set_size_request (ptz->name_drawing_area, thumbnail_height + 8, thumbnail_height / 2);
+				gtk_widget_set_size_request (ptz->ghost_body, ((thumbnail_width + 10) + (2 * memories_button_vertical_margins)) * MAX_MEMORIES, thumbnail_height / 2);
+			} else {
+				gtk_widget_set_size_request (ptz->name_drawing_area, thumbnail_height / 2, thumbnail_height + 8);
+				gtk_widget_set_size_request (ptz->ghost_body, thumbnail_height / 2, ((thumbnail_height + 10) + (2 * memories_button_horizontal_margins)) * MAX_MEMORIES);
+			}
 		}
 
-		gtk_widget_set_size_request (current_cameras_set->entry_widgets_padding, thumbnail_height + 13, 34);
-		gtk_widget_set_size_request (current_cameras_set->memories_labels_padding, thumbnail_height + 13, 10);
+		if (cameras_set_orientation) {
+			gtk_widget_set_size_request (current_cameras_set->entry_widgets_padding, thumbnail_height + 12, 34);
+			gtk_widget_set_size_request (current_cameras_set->memories_labels_padding, thumbnail_height + 12, 10);
+			gtk_widget_set_size_request (current_cameras_set->memories_scrollbar_padding, thumbnail_height + 12, 10);
+		} else {
+		}
 
 		for (j = 0; j < MAX_MEMORIES; j++) {
 			gtk_widget_set_size_request (current_cameras_set->entry_widgets[j], thumbnail_width + 6, 34);
 			gtk_widget_set_size_request (current_cameras_set->memories_labels[j], thumbnail_width + 6, 10);
 		}
+
+		configure_memories_scrollbar_adjustment (current_cameras_set);
 	}
 
 	backup_needed = TRUE;
@@ -381,25 +397,55 @@ gboolean main_window_key_press (GtkWidget *widget, GdkEventKey *event)
 		}
 	} else if (current_cameras_set != NULL) {
 		if (event->keyval == GDK_KEY_Left) {
-			adjustment_value = gtk_adjustment_get_value (current_cameras_set->memories_scrolled_window_hadjustment) - 50;
-			gtk_adjustment_set_value (current_cameras_set->entry_scrolled_window_hadjustment, adjustment_value);
-			gtk_adjustment_set_value (current_cameras_set->memories_scrolled_window_hadjustment, adjustment_value);
-			gtk_adjustment_set_value (current_cameras_set->label_scrolled_window_hadjustment, adjustment_value);
+			if (cameras_set_orientation) {
+				adjustment_value = gtk_adjustment_get_value (current_cameras_set->memories_scrolled_window_adjustment) - 50;
+
+				gtk_adjustment_set_value (current_cameras_set->entry_scrolled_window_adjustment, adjustment_value);
+				gtk_adjustment_set_value (current_cameras_set->memories_scrolled_window_adjustment, adjustment_value);
+				gtk_adjustment_set_value (current_cameras_set->label_scrolled_window_adjustment, adjustment_value);
+				gtk_adjustment_set_value (current_cameras_set->memories_scrollbar_adjustment, adjustment_value);
+			} else {
+				gtk_adjustment_set_value (current_cameras_set->scrolled_window_vadjustment, gtk_adjustment_get_value (current_cameras_set->scrolled_window_vadjustment) - 50);
+			}
 
 			return GDK_EVENT_STOP;
 		} else if (event->keyval == GDK_KEY_Right) {
-			adjustment_value = gtk_adjustment_get_value (current_cameras_set->memories_scrolled_window_hadjustment) + 50;
-			gtk_adjustment_set_value (current_cameras_set->entry_scrolled_window_hadjustment, adjustment_value);
-			gtk_adjustment_set_value (current_cameras_set->memories_scrolled_window_hadjustment, adjustment_value);
-			gtk_adjustment_set_value (current_cameras_set->label_scrolled_window_hadjustment, adjustment_value);
+			if (cameras_set_orientation) {
+				adjustment_value = gtk_adjustment_get_value (current_cameras_set->memories_scrolled_window_adjustment) + 50;
+
+				gtk_adjustment_set_value (current_cameras_set->entry_scrolled_window_adjustment, adjustment_value);
+				gtk_adjustment_set_value (current_cameras_set->memories_scrolled_window_adjustment, adjustment_value);
+				gtk_adjustment_set_value (current_cameras_set->label_scrolled_window_adjustment, adjustment_value);
+				gtk_adjustment_set_value (current_cameras_set->memories_scrollbar_adjustment, adjustment_value);
+			} else {
+				gtk_adjustment_set_value (current_cameras_set->scrolled_window_vadjustment, gtk_adjustment_get_value (current_cameras_set->scrolled_window_vadjustment) + 50);
+			}
 
 			return GDK_EVENT_STOP;
 		} else if (event->keyval == GDK_KEY_Up) {
-			gtk_adjustment_set_value (current_cameras_set->scrolled_window_vadjustment, gtk_adjustment_get_value (current_cameras_set->scrolled_window_vadjustment) - 50);
+			if (cameras_set_orientation) {
+				gtk_adjustment_set_value (current_cameras_set->scrolled_window_vadjustment, gtk_adjustment_get_value (current_cameras_set->scrolled_window_vadjustment) - 50);
+			} else {
+				adjustment_value = gtk_adjustment_get_value (current_cameras_set->memories_scrolled_window_adjustment) - 50;
+
+				gtk_adjustment_set_value (current_cameras_set->entry_scrolled_window_adjustment, adjustment_value);
+				gtk_adjustment_set_value (current_cameras_set->memories_scrolled_window_adjustment, adjustment_value);
+				gtk_adjustment_set_value (current_cameras_set->label_scrolled_window_adjustment, adjustment_value);
+				gtk_adjustment_set_value (current_cameras_set->memories_scrollbar_adjustment, adjustment_value);
+			}
 
 			return GDK_EVENT_STOP;
 		} else if (event->keyval == GDK_KEY_Down) {
-			gtk_adjustment_set_value (current_cameras_set->scrolled_window_vadjustment, gtk_adjustment_get_value (current_cameras_set->scrolled_window_vadjustment) + 50);
+			if (cameras_set_orientation) {
+				gtk_adjustment_set_value (current_cameras_set->scrolled_window_vadjustment, gtk_adjustment_get_value (current_cameras_set->scrolled_window_vadjustment) + 50);
+			} else {
+				adjustment_value = gtk_adjustment_get_value (current_cameras_set->memories_scrolled_window_adjustment) + 50;
+
+				gtk_adjustment_set_value (current_cameras_set->entry_scrolled_window_adjustment, adjustment_value);
+				gtk_adjustment_set_value (current_cameras_set->memories_scrolled_window_adjustment, adjustment_value);
+				gtk_adjustment_set_value (current_cameras_set->label_scrolled_window_adjustment, adjustment_value);
+				gtk_adjustment_set_value (current_cameras_set->memories_scrollbar_adjustment, adjustment_value);
+			}
 
 			return GDK_EVENT_STOP;
 		}
@@ -414,15 +460,23 @@ gboolean main_window_scroll (GtkWidget *widget, GdkEventScroll *event)
 
 	if (current_cameras_set != NULL) {
 		if (event->direction == GDK_SCROLL_LEFT) {
-			adjustment_value = gtk_adjustment_get_value (current_cameras_set->memories_scrolled_window_hadjustment) - 50;
-			gtk_adjustment_set_value (current_cameras_set->entry_scrolled_window_hadjustment, adjustment_value);
-			gtk_adjustment_set_value (current_cameras_set->memories_scrolled_window_hadjustment, adjustment_value);
-			gtk_adjustment_set_value (current_cameras_set->label_scrolled_window_hadjustment, adjustment_value);
+			if (cameras_set_orientation) {
+				adjustment_value = gtk_adjustment_get_value (current_cameras_set->memories_scrolled_window_adjustment) - 50;
+				gtk_adjustment_set_value (current_cameras_set->entry_scrolled_window_adjustment, adjustment_value);
+				gtk_adjustment_set_value (current_cameras_set->memories_scrolled_window_adjustment, adjustment_value);
+				gtk_adjustment_set_value (current_cameras_set->label_scrolled_window_adjustment, adjustment_value);
+				gtk_adjustment_set_value (current_cameras_set->memories_scrollbar_adjustment, adjustment_value);
+			} else {
+			}
 		} else if (event->direction == GDK_SCROLL_RIGHT) {
-			adjustment_value = gtk_adjustment_get_value (current_cameras_set->memories_scrolled_window_hadjustment) + 50;
-			gtk_adjustment_set_value (current_cameras_set->entry_scrolled_window_hadjustment, adjustment_value);
-			gtk_adjustment_set_value (current_cameras_set->memories_scrolled_window_hadjustment, adjustment_value);
-			gtk_adjustment_set_value (current_cameras_set->label_scrolled_window_hadjustment, adjustment_value);
+			if (cameras_set_orientation) {
+				adjustment_value = gtk_adjustment_get_value (current_cameras_set->memories_scrolled_window_adjustment) + 50;
+				gtk_adjustment_set_value (current_cameras_set->entry_scrolled_window_adjustment, adjustment_value);
+				gtk_adjustment_set_value (current_cameras_set->memories_scrolled_window_adjustment, adjustment_value);
+				gtk_adjustment_set_value (current_cameras_set->label_scrolled_window_adjustment, adjustment_value);
+				gtk_adjustment_set_value (current_cameras_set->memories_scrollbar_adjustment, adjustment_value);
+			} else {
+			}
 		} else if (event->direction == GDK_SCROLL_UP) {
 			gtk_adjustment_set_value (current_cameras_set->scrolled_window_vadjustment, gtk_adjustment_get_value (current_cameras_set->scrolled_window_vadjustment) - 50);
 		} else if (event->direction == GDK_SCROLL_DOWN) {
@@ -678,6 +732,8 @@ int main (int argc, char** argv)
 	g_list_free (pointing_devices);
 
 	for (cameras_set_itr = cameras_sets; cameras_set_itr != NULL; cameras_set_itr = cameras_set_itr->next) {
+		configure_memories_scrollbar_adjustment (cameras_set_itr);
+
 		for (i = 0; i < cameras_set_itr->number_of_cameras; i++) {
 			if (cameras_set_itr->ptz_ptr_array[i]->active) {
 				ptz_is_off (cameras_set_itr->ptz_ptr_array[i]);
