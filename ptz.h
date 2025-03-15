@@ -177,6 +177,10 @@ typedef struct {
 } ptz_thread_t;
 
 
+extern int memories_button_vertical_margins;
+extern int memories_button_horizontal_margins;
+
+
 void init_ptz (ptz_t *ptz);
 
 gboolean ptz_is_on (ptz_t *ptz);
@@ -217,17 +221,26 @@ typedef struct cameras_set_s {
 	GtkWidget *linked_memories_names_entries;
 	GtkWidget *entry_widgets_padding;
 	GtkWidget *entry_widgets[MAX_MEMORIES];
-	GtkAdjustment *entry_scrolled_window_hadjustment;	
+	GtkAdjustment *entry_scrolled_window_adjustment;
+
 	GtkWidget *name_grid_box;
+
 	GtkWidget *memories_grid_box;
-	GtkAdjustment *memories_scrolled_window_hadjustment;
+	GtkAdjustment *memories_scrolled_window_adjustment;
+
 	GtkWidget *linked_memories_names_labels;
 	GtkWidget *memories_labels_padding;
 	GtkWidget *memories_labels[MAX_MEMORIES];
-	GtkAdjustment *label_scrolled_window_hadjustment;
+	GtkAdjustment *label_scrolled_window_adjustment;
+
+	GtkWidget *memories_scrollbar_padding;
+	GtkAdjustment *memories_scrollbar_adjustment;
+
 	GtkAdjustment *scrolled_window_vadjustment;
+
 	GtkWidget *page;
 	gint page_num;
+
 	GtkWidget *list_box_row;
 
 	int thumbnail_width;
@@ -248,6 +261,8 @@ extern cameras_set_t *current_cameras_set;
 extern cameras_set_t *new_cameras_set;
 extern cameras_set_t *cameras_set_with_error;
 
+extern gboolean cameras_set_orientation;
+
 extern gboolean show_linked_memories_names_entries;
 extern gboolean show_linked_memories_names_labels;
 
@@ -258,6 +273,8 @@ void add_cameras_set (void);
 
 void delete_cameras_set (void);
 
+void configure_memories_scrollbar_adjustment (cameras_set_t *cameras_set);
+
 void add_cameras_set_to_main_window_notebook (cameras_set_t *cameras_set);
 
 
@@ -266,10 +283,6 @@ typedef struct {
 	memory_t *memory_ptr;
 	GThread *thread;
 } memory_thread_t;
-
-
-extern int memories_button_vertical_margins;
-extern int memories_button_horizontal_margins;
 
 
 gboolean memory_button_button_press_event (GtkButton *button, GdkEventButton *event, memory_t *memory);
