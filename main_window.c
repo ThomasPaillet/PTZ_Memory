@@ -176,8 +176,6 @@ void thumbnail_size_value_changed (GtkRange *range)
 			gtk_widget_set_size_request (current_cameras_set->entry_widgets[j], thumbnail_width + 6, 34);
 			gtk_widget_set_size_request (current_cameras_set->memories_labels[j], thumbnail_width + 6, 10);
 		}
-
-		configure_memories_scrollbar_adjustment (current_cameras_set);
 	}
 
 	backup_needed = TRUE;
@@ -732,8 +730,6 @@ int main (int argc, char** argv)
 	g_list_free (pointing_devices);
 
 	for (cameras_set_itr = cameras_sets; cameras_set_itr != NULL; cameras_set_itr = cameras_set_itr->next) {
-		configure_memories_scrollbar_adjustment (cameras_set_itr);
-
 		for (i = 0; i < cameras_set_itr->number_of_cameras; i++) {
 			if (cameras_set_itr->ptz_ptr_array[i]->active) {
 				ptz_is_off (cameras_set_itr->ptz_ptr_array[i]);
