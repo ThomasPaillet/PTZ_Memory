@@ -420,7 +420,7 @@ memories_grid
 	gtk_grid_attach (GTK_GRID (ptz->name_grid), ptz->tally[1], 0, 1, 1, 2);
 
 		ptz->name_drawing_area = gtk_drawing_area_new ();
-		gtk_widget_set_size_request (ptz->name_drawing_area, thumbnail_height, thumbnail_height + 10);
+		gtk_widget_set_size_request (ptz->name_drawing_area, thumbnail_width + 10, thumbnail_height);
 		gtk_widget_set_margin_start (ptz->name_drawing_area, memories_button_vertical_margins);
 		gtk_widget_set_margin_end (ptz->name_drawing_area, memories_button_vertical_margins);
 		gtk_widget_set_events (ptz->name_drawing_area, gtk_widget_get_events (ptz->name_drawing_area) | GDK_BUTTON_PRESS_MASK | GDK_ENTER_NOTIFY_MASK | GDK_LEAVE_NOTIFY_MASK);
@@ -431,7 +431,7 @@ memories_grid
 	gtk_grid_attach (GTK_GRID (ptz->name_grid), ptz->name_drawing_area, 1, 1, 1, 1);
 
 		ptz->error_drawing_area = gtk_drawing_area_new ();
-		gtk_widget_set_size_request (ptz->error_drawing_area, 8, thumbnail_height + 10);
+		gtk_widget_set_size_request (ptz->error_drawing_area, thumbnail_width, 8);
 		g_signal_connect (G_OBJECT (ptz->error_drawing_area), "draw", G_CALLBACK (error_draw), ptz);
 	gtk_grid_attach (GTK_GRID (ptz->name_grid), ptz->error_drawing_area, 2, 1, 1, 2);
 
