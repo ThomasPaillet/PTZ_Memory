@@ -20,6 +20,10 @@
 #include "ptz.h"
 
 
+int memories_button_vertical_margins = 0;
+int memories_button_horizontal_margins = 0;
+
+
 void init_ptz (ptz_t *ptz)
 {
 	int i;
