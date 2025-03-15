@@ -274,7 +274,7 @@ void add_cameras_set (void);
 
 void delete_cameras_set (void);
 
-void configure_memories_scrollbar_adjustment (cameras_set_t *cameras_set);
+void fill_cameras_set_page (cameras_set_t *cameras_set);
 
 void add_cameras_set_to_main_window_notebook (cameras_set_t *cameras_set);
 
