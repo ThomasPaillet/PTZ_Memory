@@ -1058,7 +1058,7 @@ gboolean configure_memories_scrollbar_adjustment (GtkWidget *widget, cairo_t *cr
 	return GDK_EVENT_PROPAGATE;
 }
 
-void fill_cameras_set_page (GtkWidget *widget, cairo_t *cr, cameras_set_t *cameras_set)
+void fill_cameras_set_page (cameras_set_t *cameras_set)
 {
 	int i;
 	GtkWidget *box, *scrolled_window, *memories_scrolled_window;
@@ -1122,6 +1122,11 @@ cameras_set->page_box
 		gtk_box_pack_start (GTK_BOX (cameras_set->page_box), scrolled_window, FALSE, FALSE, 0);
 		gtk_box_pack_start (GTK_BOX (cameras_set->page), cameras_set->page_box, TRUE, TRUE, 0);
 	} else {
+/*
+cameras_set->page_box
++-----------------------------------------------------------------------------------------+
++-----------------------------------------------------------------------------------------+
+*/
 	}
 }
 
