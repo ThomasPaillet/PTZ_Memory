@@ -431,7 +431,7 @@ memories_grid
 	gtk_grid_attach (GTK_GRID (ptz->name_grid), ptz->name_drawing_area, 1, 1, 1, 1);
 
 		ptz->error_drawing_area = gtk_drawing_area_new ();
-		gtk_widget_set_size_request (ptz->error_drawing_area, thumbnail_width, 8);
+		gtk_widget_set_size_request (ptz->error_drawing_area, thumbnail_width + 10, 8);
 		g_signal_connect (G_OBJECT (ptz->error_drawing_area), "draw", G_CALLBACK (error_draw), ptz);
 	gtk_grid_attach (GTK_GRID (ptz->name_grid), ptz->error_drawing_area, 2, 1, 1, 2);
 
