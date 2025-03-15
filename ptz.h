@@ -240,6 +240,7 @@ typedef struct cameras_set_s {
 
 	GtkWidget *page;
 	gint page_num;
+	GtkWidget *page_box;
 
 	GtkWidget *list_box_row;
 
