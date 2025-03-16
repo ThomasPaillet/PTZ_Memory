@@ -29,6 +29,7 @@ const char config_file_name[] = "PTZ-Memory.dat";
 gboolean backup_needed = FALSE;
 
 const char settings_txt[] = "_Paramètres";
+const char about_txt[] = "A propos";
 
 GtkWidget *settings_window = NULL;
 
@@ -42,6 +43,85 @@ GtkEntryBuffer *controller_ip_entry_buffer[4];
 int focus_speed = 25;
 int zoom_speed = 25;
 
+
+gboolean destroy_about_window (GtkWidget *about_window, GdkEventKey *event, gpointer user_data)
+{
+	gtk_widget_destroy (about_window);
+
+	gtk_window_set_transient_for (GTK_WINDOW (settings_window), GTK_WINDOW (main_window));
+	gtk_window_set_modal (GTK_WINDOW (settings_window), TRUE);
+
+	return GDK_EVENT_STOP;
+}
+
+void show_about_window (void)
+{
+	GtkWidget *about_window, *box, *widget;
+	char gtk_version[64];
+
+	gtk_window_set_transient_for (GTK_WINDOW (settings_window), NULL);
+	gtk_window_set_modal (GTK_WINDOW (settings_window), FALSE);
+
+	about_window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+	gtk_window_set_title (GTK_WINDOW (about_window), about_txt);
+	gtk_window_set_type_hint (GTK_WINDOW (about_window), GDK_WINDOW_TYPE_HINT_DIALOG);
+	gtk_window_set_modal (GTK_WINDOW (about_window), TRUE);
+	gtk_window_set_transient_for (GTK_WINDOW (about_window), GTK_WINDOW (settings_window));
+	gtk_window_set_skip_taskbar_hint (GTK_WINDOW (about_window), FALSE);
+	gtk_window_set_skip_pager_hint (GTK_WINDOW (about_window), FALSE);
+	gtk_window_set_position (GTK_WINDOW (about_window), GTK_WIN_POS_CENTER_ON_PARENT);
+	g_signal_connect (G_OBJECT (about_window), "delete-event", G_CALLBACK (destroy_about_window), NULL);
+	g_signal_connect (G_OBJECT (about_window), "key-press-event", G_CALLBACK (destroy_about_window), NULL);
+
+	box = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
+	gtk_container_set_border_width (GTK_CONTAINER (box), MARGIN_VALUE);
+		widget = gtk_label_new (NULL);
+		gtk_label_set_markup (GTK_LABEL (widget), "<b>Mémoires Pan Tilt Zoom pour caméras PTZ Panasonic</b>");
+		gtk_box_pack_start (GTK_BOX (box), widget, FALSE, FALSE, 0);
+
+		widget = gtk_label_new ("Version 1.3");
+		gtk_box_pack_start (GTK_BOX (box), widget, FALSE, FALSE, 0);
+#ifdef _WIN32
+		widget = gtk_image_new_from_pixbuf (pixbuf_logo);
+#elif defined (__linux)
+		widget = gtk_image_new_from_resource ("/org/PTZ-Memory/images/logo.png");
+#endif
+		gtk_widget_set_margin_top (widget, MARGIN_VALUE);
+		gtk_widget_set_margin_bottom (widget, MARGIN_VALUE);
+		gtk_box_pack_start (GTK_BOX (box), widget, FALSE, FALSE, 0);
+
+		widget = gtk_label_new ("Panasonic Interface Specifications v1.12");
+		gtk_box_pack_start (GTK_BOX (box), widget, FALSE, FALSE, 0);
+
+		widget = gtk_label_new ("Router Control Protocols document n°SW-P-88 issue n°4b");
+		gtk_box_pack_start (GTK_BOX (box), widget, FALSE, FALSE, 0);
+
+		widget = gtk_label_new ("TSL UMD Protocol V5.0");
+		gtk_box_pack_start (GTK_BOX (box), widget, FALSE, FALSE, 0);
+
+		sprintf (gtk_version, "Compiled against GTK+ version %d.%d.%d", GTK_MAJOR_VERSION, GTK_MINOR_VERSION, GTK_MICRO_VERSION);
+		widget = gtk_label_new (gtk_version);
+		gtk_box_pack_start (GTK_BOX (box), widget, FALSE, FALSE, 0);
+
+		widget = gtk_label_new ("Interface based on \"Adwaita-dark\" theme");
+		gtk_box_pack_start (GTK_BOX (box), widget, FALSE, FALSE, 0);
+
+		widget = gtk_label_new ("This software use the libjpeg-turbo8 library provided by the Independent JPEG Group");
+		gtk_box_pack_start (GTK_BOX (box), widget, FALSE, FALSE, 0);
+
+		widget = gtk_separator_new (GTK_ORIENTATION_HORIZONTAL);
+		gtk_box_pack_start (GTK_BOX (box), widget, FALSE, FALSE, 0);
+
+		widget = gtk_label_new ("Copyright (c) 2020 2021 2025 Thomas Paillet");
+		gtk_box_pack_start (GTK_BOX (box), widget, FALSE, FALSE, 0);
+
+		widget = gtk_label_new ("GNU General Public License version 3");
+		gtk_box_pack_start (GTK_BOX (box), widget, FALSE, FALSE, 0);
+	gtk_container_add (GTK_CONTAINER (about_window), box);
+
+	gtk_window_set_resizable (GTK_WINDOW (about_window), FALSE);
+	gtk_widget_show_all (about_window);
+}
 
 gboolean delete_confirmation_window_key_press (GtkWidget *confirmation_window, GdkEventKey *event)
 {
@@ -273,6 +353,41 @@ void tsl_umd_v5_udp_port_entry_activate (GtkEntry *entry, GtkEntryBuffer *entry_
 	backup_needed = TRUE;
 }
 
+void cameras_set_orientation_check_button_toggled (GtkToggleButton *togglebutton)
+{
+	cameras_set_t *cameras_set_itr;
+	int i;
+
+	cameras_set_orientation = gtk_toggle_button_get_active (togglebutton);
+
+	for (cameras_set_itr = cameras_sets; cameras_set_itr != NULL; cameras_set_itr = cameras_set_itr->next) {
+		for (i = 0; i < cameras_set_itr->number_of_cameras; i++) {
+			g_object_ref (G_OBJECT (cameras_set_itr->ptz_ptr_array[i]->name_separator));
+			g_object_ref (G_OBJECT (cameras_set_itr->ptz_ptr_array[i]->name_grid));
+			g_object_ref (G_OBJECT (cameras_set_itr->ptz_ptr_array[i]->memories_separator));
+			g_object_ref (G_OBJECT (cameras_set_itr->ptz_ptr_array[i]->memories_grid));
+		}
+
+		gtk_widget_destroy (cameras_set->page_box);
+
+		fill_cameras_set_page (cameras_set);
+
+		for (i = 0; i < cameras_set_itr->number_of_cameras; i++) {
+			g_object_unref (G_OBJECT (cameras_set_itr->ptz_ptr_array[i]->name_separator));
+			g_object_unref (G_OBJECT (cameras_set_itr->ptz_ptr_array[i]->name_grid));
+			g_object_unref (G_OBJECT (cameras_set_itr->ptz_ptr_array[i]->memories_separator));
+			g_object_unref (G_OBJECT (cameras_set_itr->ptz_ptr_array[i]->memories_grid));
+		}
+
+		gtk_widget_show_all (cameras_set->page);
+
+		if (!show_linked_memories_names_entries) gtk_widget_hide (cameras_set->linked_memories_names_entries);
+		if (!show_linked_memories_names_labels) gtk_widget_hide (cameras_set->linked_memories_names_labels);
+	}
+
+	backup_needed = TRUE;
+}
+
 void show_linked_memories_names_entries_check_button_toggled (GtkToggleButton *togglebutton)
 {
 	cameras_set_t *cameras_set_itr;
@@ -309,6 +424,42 @@ void show_linked_memories_names_labels_check_button_toggled (GtkToggleButton *to
 	}
 
 	backup_needed = TRUE;
+}
+
+void memories_button_vertical_margins_value_changed (GtkRange *range)
+{
+	int i, j;
+	ptz_t *ptz;
+
+	memories_button_vertical_margins = gtk_range_get_value (range);
+	current_cameras_set->memories_button_vertical_margins = memories_button_vertical_margins;
+
+	for (i = 0; i < current_cameras_set->number_of_cameras; i++) {
+		ptz = current_cameras_set->ptz_ptr_array[i];
+
+		for (j = 0; j < MAX_MEMORIES; j++) {
+			gtk_widget_set_margin_start (ptz->memories[j].button, memories_button_vertical_margins);
+			gtk_widget_set_margin_end (ptz->memories[j].button, memories_button_vertical_margins);
+		}
+	}
+}
+
+void memories_button_horizontal_margins_value_changed (GtkRange *range)
+{
+	int i, j;
+	ptz_t *ptz;
+
+	memories_button_horizontal_margins = gtk_range_get_value (range);
+	current_cameras_set->memories_button_horizontal_margins = memories_button_horizontal_margins;
+
+	for (i = 0; i < current_cameras_set->number_of_cameras; i++) {
+		ptz = current_cameras_set->ptz_ptr_array[i];
+
+		for (j = 0; j < MAX_MEMORIES; j++) {
+			gtk_widget_set_margin_top (ptz->memories[j].button, memories_button_horizontal_margins);
+			gtk_widget_set_margin_bottom (ptz->memories[j].button, memories_button_horizontal_margins);
+		}
+	}
 }
 
 void create_settings_window (void)
@@ -618,21 +769,14 @@ void create_settings_window (void)
 				gtk_widget_set_margin_start (box3, MARGIN_VALUE);
 				gtk_widget_set_margin_end (box3, MARGIN_VALUE);
 				gtk_widget_set_margin_bottom (box3, MARGIN_VALUE);
-					widget =  gtk_label_new ("Taille des marges gauche/droite des boutons de mémoires :");
+					widget =  gtk_label_new ("Orientation :");
 				gtk_box_pack_start (GTK_BOX (box3), widget, FALSE, FALSE, 0);
 
-
-			gtk_box_pack_start (GTK_BOX (box2), box3, FALSE, FALSE, 0);
-
-				box3 = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
-				gtk_widget_set_margin_top (box3, MARGIN_VALUE);
-				gtk_widget_set_margin_start (box3, MARGIN_VALUE);
-				gtk_widget_set_margin_end (box3, MARGIN_VALUE);
-				gtk_widget_set_margin_bottom (box3, MARGIN_VALUE);
-					widget =  gtk_label_new ("Taille des marges haut/bas des boutons de mémoires :");
-				gtk_box_pack_start (GTK_BOX (box3), widget, FALSE, FALSE, 0);
-
-
+					widget = gtk_check_button_new ();
+					gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (widget), cameras_set_orientation);
+					g_signal_connect (G_OBJECT (widget), "toggled", G_CALLBACK (cameras_set_orientation_check_button_toggled), NULL);
+					gtk_widget_set_margin_start (widget, MARGIN_VALUE);
+				gtk_box_pack_end (GTK_BOX (box3), widget, FALSE, FALSE, 0);
 			gtk_box_pack_start (GTK_BOX (box2), box3, FALSE, FALSE, 0);
 
 				box3 = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
@@ -664,6 +808,57 @@ void create_settings_window (void)
 					gtk_widget_set_margin_start (widget, MARGIN_VALUE);
 				gtk_box_pack_end (GTK_BOX (box3), widget, FALSE, FALSE, 0);
 			gtk_box_pack_start (GTK_BOX (box2), box3, FALSE, FALSE, 0);
+
+				widget =  gtk_label_new ("Taille des marges gauche/droite des boutons de mémoires :");
+			gtk_box_pack_start (GTK_BOX (box2), widget, FALSE, FALSE, 0);
+
+				box3 = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
+				gtk_widget_set_margin_top (box3, MARGIN_VALUE);
+				gtk_widget_set_margin_start (box3, MARGIN_VALUE);
+				gtk_widget_set_margin_end (box3, MARGIN_VALUE);
+				gtk_widget_set_margin_bottom (box3, MARGIN_VALUE);
+					widget = gtk_scale_new_with_range (GTK_ORIENTATION_HORIZONTAL, 1.0, 20.0, 1.0);
+					gtk_scale_set_draw_value (GTK_SCALE (widget), TRUE);
+					gtk_scale_set_has_origin (GTK_SCALE (widget), FALSE);
+					//gtk_widget_set_size_request (thumbnail_size_scale, 200, 10);
+					//gtk_widget_set_margin_start (thumbnail_size_scale, 10);
+					//gtk_widget_set_margin_end (thumbnail_size_scale, 10);
+					gtk_range_set_value (GTK_RANGE (widget), memories_button_vertical_margins);
+					g_signal_connect (G_OBJECT (widget), "value-changed", G_CALLBACK (memories_button_vertical_margins_value_changed), NULL);
+				gtk_box_pack_start (GTK_BOX (box3), widget, TRUE, TRUE, 0);
+
+					widget = gtk_label_new ("pixels");
+				gtk_box_pack_start (GTK_BOX (box3), widget, FALSE, FALSE, 0);
+			gtk_box_pack_start (GTK_BOX (box2), box3, FALSE, FALSE, 0);
+
+				widget =  gtk_label_new ("Taille des marges haut/bas des boutons de mémoires :");
+			gtk_box_pack_start (GTK_BOX (box2), widget, FALSE, FALSE, 0);
+
+				box3 = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
+				gtk_widget_set_margin_top (box3, MARGIN_VALUE);
+				gtk_widget_set_margin_start (box3, MARGIN_VALUE);
+				gtk_widget_set_margin_end (box3, MARGIN_VALUE);
+				gtk_widget_set_margin_bottom (box3, MARGIN_VALUE);
+					widget = gtk_scale_new_with_range (GTK_ORIENTATION_HORIZONTAL, 1.0, 20.0, 1.0);
+					gtk_scale_set_draw_value (GTK_SCALE (widget), TRUE);
+					gtk_scale_set_has_origin (GTK_SCALE (widget), FALSE);
+					//gtk_widget_set_size_request (thumbnail_size_scale, 200, 10);
+					//gtk_widget_set_margin_start (thumbnail_size_scale, 10);
+					//gtk_widget_set_margin_end (thumbnail_size_scale, 10);
+					gtk_range_set_value (GTK_RANGE (widget), memories_button_horizontal_margins);
+					g_signal_connect (G_OBJECT (widget), "value-changed", G_CALLBACK (memories_button_horizontal_margins_value_changed), NULL);
+				gtk_box_pack_start (GTK_BOX (box3), widget, TRUE, TRUE, 0);
+
+					widget = gtk_label_new ("pixels");
+				gtk_box_pack_start (GTK_BOX (box3), widget, FALSE, FALSE, 0);
+			gtk_box_pack_start (GTK_BOX (box2), box3, FALSE, FALSE, 0);
+
+				widget = gtk_button_new_with_label (about_txt);
+				//gtk_widget_set_margin_end (widget, 6);
+				//gtk_style_context_add_provider (gtk_widget_get_style_context (widget), GTK_STYLE_PROVIDER (css_provider_button), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+				//gtk_button_set_use_underline (GTK_BUTTON (widget), TRUE);
+				g_signal_connect (G_OBJECT (widget), "clicked", G_CALLBACK (show_about_window), NULL);
+			gtk_box_pack_end (GTK_BOX (box2), widget, FALSE, FALSE, 0);
 		gtk_container_add (GTK_CONTAINER (frame), box2);
 	gtk_box_pack_start (GTK_BOX (box1), frame, FALSE, FALSE, 0);
 	gtk_container_add (GTK_CONTAINER (settings_window), box1);
@@ -693,6 +888,14 @@ void load_config_file (void)
 	thumbnail_width = 320 * thumbnail_size;
 	thumbnail_height = 180 * thumbnail_size;
 
+	fread (&cameras_set_orientation, sizeof (gboolean), 1, config_file);
+
+	fread (&memories_button_vertical_margins, sizeof (int), 1, config_file);
+	if ((memories_button_vertical_margins < 0) || (memories_button_vertical_margins > 50)) memories_button_vertical_margins = 0;
+
+	fread (&memories_button_horizontal_margins, sizeof (int), 1, config_file);
+	if ((memories_button_horizontal_margins < 0) || (memories_button_horizontal_margins > 50)) memories_button_horizontal_margins = 0;
+
 	fread (&number_of_cameras_sets, sizeof (int), 1, config_file);
 
 	if (number_of_cameras_sets < 0) number_of_cameras_sets = 0;
@@ -708,6 +911,8 @@ void load_config_file (void)
 		cameras_set_tmp->number_of_ghost_cameras = 0;
 
 		cameras_set_tmp->thumbnail_width = thumbnail_width;
+		cameras_set_tmp->memories_button_vertical_margins = memories_button_vertical_margins;
+		cameras_set_tmp->memories_button_horizontal_margins = memories_button_horizontal_margins;
 
 		fread (cameras_set_tmp->name, sizeof (char), CAMERAS_SET_NAME_LENGTH, config_file);
 		cameras_set_tmp->name[CAMERAS_SET_NAME_LENGTH] = '\0';
@@ -730,8 +935,8 @@ void load_config_file (void)
 			fread (&ptz->active, sizeof (gboolean), 1, config_file);
 
 			if (ptz->active) {
-				/*if ()*/ create_ptz_widgets_horizontal (ptz);
-				//else create_ptz_widgets_vertical (ptz);
+				if (cameras_set_orientation) create_ptz_widgets_horizontal (ptz);
+				else create_ptz_widgets_vertical (ptz);
 
 				fread (ptz->ip_address, sizeof (char), 16, config_file);
 				ptz->ip_address[15] = '\0';
@@ -777,8 +982,9 @@ void load_config_file (void)
 				}
 			} else {
 				cameras_set_tmp->number_of_ghost_cameras++;
-				/*if ()*/ create_ghost_ptz_widgets_horizontal (ptz);
-				//else create_ghost_ptz_widgets_vertical (ptz);
+
+				if (cameras_set_orientation) create_ghost_ptz_widgets_horizontal (ptz);
+				else create_ghost_ptz_widgets_vertical (ptz);
 			}
 		}
 
@@ -833,12 +1039,6 @@ void load_config_file (void)
 	fread (&tsl_umd_v5_address.sin_port, sizeof (guint16), 1, config_file);
 	if (ntohs (tsl_umd_v5_address.sin_port) < 1024) tsl_umd_v5_address.sin_port = htons (TSL_UMD_V5_UDP_PORT);
 
-	fread (&memories_button_vertical_margins, sizeof (int), 1, config_file);
-	if ((memories_button_vertical_margins < 0) || (memories_button_vertical_margins > 50)) memories_button_vertical_margins = 0;
-
-	fread (&memories_button_horizontal_margins, sizeof (int), 1, config_file);
-	if ((memories_button_horizontal_margins < 0) || (memories_button_horizontal_margins > 50)) memories_button_horizontal_margins = 0;
-
 	fread (&show_linked_memories_names_entries, sizeof (gboolean), 1, config_file);
 
 	fread (&show_linked_memories_names_labels, sizeof (gboolean), 1, config_file);
@@ -858,6 +1058,12 @@ void save_config_file (void)
 	config_file = fopen (config_file_name, "wb");
 
 	fwrite (&thumbnail_size, sizeof (gdouble), 1, config_file);
+
+	fwrite (&cameras_set_orientation, sizeof (gboolean), 1, config_file);
+
+	fwrite (&memories_button_vertical_margins, sizeof (int), 1, config_file);
+
+	fwrite (&memories_button_horizontal_margins, sizeof (int), 1, config_file);
 
 	fwrite (&number_of_cameras_sets, sizeof (int), 1, config_file);
 
@@ -918,10 +1124,6 @@ void save_config_file (void)
 	fwrite (&sw_p_08_address.sin_port, sizeof (guint16), 1, config_file);
 
 	fwrite (&tsl_umd_v5_address.sin_port, sizeof (guint16), 1, config_file);
-
-	fwrite (&memories_button_vertical_margins, sizeof (int), 1, config_file);
-
-	fwrite (&memories_button_horizontal_margins, sizeof (int), 1, config_file);
 
 	fwrite (&show_linked_memories_names_entries, sizeof (gboolean), 1, config_file);
 
