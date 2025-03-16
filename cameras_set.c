@@ -891,8 +891,8 @@ void create_horizontal_linked_memories_names_entries (cameras_set_t *cameras_set
 				for (i = 0; i < MAX_MEMORIES; i++) {
 					cameras_set->entry_widgets[i] = gtk_entry_new ();
 					gtk_widget_set_size_request (cameras_set->entry_widgets[i], thumbnail_width + 6, 34);
-					gtk_widget_set_margin_start (cameras_set->entry_widgets[i], 2);
-					gtk_widget_set_margin_end (cameras_set->entry_widgets[i], 2);
+					gtk_widget_set_margin_start (cameras_set->entry_widgets[i], 2 + memories_button_vertical_margins);
+					gtk_widget_set_margin_end (cameras_set->entry_widgets[i], 2 + memories_button_vertical_margins);
 					gtk_entry_set_max_length (GTK_ENTRY (cameras_set->entry_widgets[i]), MEMORIES_NAME_LENGTH);
 					gtk_entry_set_width_chars (GTK_ENTRY (cameras_set->entry_widgets[i]), MEMORIES_NAME_LENGTH);
 					gtk_entry_set_alignment (GTK_ENTRY (cameras_set->entry_widgets[i]), 0.5);
@@ -925,8 +925,8 @@ void create_vertical_linked_memories_names_entries (cameras_set_t *cameras_set)
 			for (i = 0; i < MAX_MEMORIES; i++) {
 				cameras_set->entry_widgets[i] = gtk_entry_new ();
 				gtk_widget_set_size_request (cameras_set->entry_widgets[i], thumbnail_width + 6, 34);
-				gtk_widget_set_margin_start (cameras_set->entry_widgets[i], 2);
-				gtk_widget_set_margin_end (cameras_set->entry_widgets[i], 2);
+				gtk_widget_set_margin_top (cameras_set->entry_widgets[i], 2 + memories_button_horizontal_margins);
+				gtk_widget_set_margin_bottom (cameras_set->entry_widgets[i], 2 + memories_button_horizontal_margins);
 				gtk_entry_set_max_length (GTK_ENTRY (cameras_set->entry_widgets[i]), MEMORIES_NAME_LENGTH);
 				gtk_entry_set_width_chars (GTK_ENTRY (cameras_set->entry_widgets[i]), MEMORIES_NAME_LENGTH);
 				gtk_entry_set_alignment (GTK_ENTRY (cameras_set->entry_widgets[i]), 0.5);
@@ -946,7 +946,7 @@ void create_horizontal_linked_memories_names_labels (cameras_set_t *cameras_set)
 
 	cameras_set->linked_memories_names_labels = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
 		cameras_set->memories_labels_padding = gtk_drawing_area_new ();
-		gtk_widget_set_size_request (cameras_set->memories_labels_padding, thumbnail_height + 12, 10);
+		gtk_widget_set_size_request (cameras_set->memories_labels_padding, thumbnail_height + 12, 20);
 	gtk_box_pack_start (GTK_BOX (cameras_set->linked_memories_names_labels), cameras_set->memories_labels_padding, FALSE, FALSE, 0);
 
 		scrolled_window = gtk_scrolled_window_new (NULL, NULL);
@@ -957,9 +957,9 @@ void create_horizontal_linked_memories_names_labels (cameras_set_t *cameras_set)
 			box = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
 				for (i = 0; i < MAX_MEMORIES; i++) {
 					cameras_set->memories_labels[i] = gtk_label_new (NULL);
-					gtk_widget_set_size_request (cameras_set->memories_labels[i], thumbnail_width + 6, 10);
-					gtk_widget_set_margin_start (cameras_set->memories_labels[i], 2);
-					gtk_widget_set_margin_end (cameras_set->memories_labels[i], 2);
+					gtk_widget_set_size_request (cameras_set->memories_labels[i], thumbnail_width + 6, 20);
+					gtk_widget_set_margin_start (cameras_set->memories_labels[i], 2 + memories_button_vertical_margins);
+					gtk_widget_set_margin_end (cameras_set->memories_labels[i], 2 + memories_button_vertical_margins);
 					gtk_label_set_xalign (GTK_LABEL (cameras_set->memories_labels[i]), 0.5);
 					gtk_box_pack_start (GTK_BOX (box), cameras_set->memories_labels[i], FALSE, FALSE, 0);
 					g_signal_connect (G_OBJECT (cameras_set->entry_widgets[i]), "activate", G_CALLBACK (entry_activate), cameras_set->memories_labels[i]);
@@ -990,9 +990,10 @@ void create_vertical_linked_memories_names_labels (cameras_set_t *cameras_set)
 			box = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
 			for (i = 0; i < MAX_MEMORIES; i++) {
 				cameras_set->memories_labels[i] = gtk_label_new (NULL);
-				gtk_widget_set_size_request (cameras_set->memories_labels[i], thumbnail_width + 6, 10);
-				gtk_widget_set_margin_start (cameras_set->memories_labels[i], 2);
-				gtk_widget_set_margin_end (cameras_set->memories_labels[i], 2);
+				gtk_label_set_angle (cameras_set->memories_labels[i], 270);
+				gtk_widget_set_size_request (cameras_set->memories_labels[i], 20, thumbnail_height + 6);
+				gtk_widget_set_margin_top (cameras_set->memories_labels[i], 2 + memories_button_horizontal_margins);
+				gtk_widget_set_margin_bottom (cameras_set->memories_labels[i], 2 + memories_button_horizontal_margins);
 				gtk_label_set_xalign (GTK_LABEL (cameras_set->memories_labels[i]), 0.5);
 				gtk_box_pack_start (GTK_BOX (box), cameras_set->memories_labels[i], FALSE, FALSE, 0);
 				g_signal_connect (G_OBJECT (cameras_set->entry_widgets[i]), "activate", G_CALLBACK (entry_activate), cameras_set->memories_labels[i]);
