@@ -330,10 +330,10 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 
 			gtk_widget_show_all (ptz->name_grid);
 			gtk_box_pack_start (GTK_BOX (cameras_set->name_grid_box), ptz->name_grid, FALSE, FALSE, 0);
-			gtk_box_reorder_child (GTK_BOX (cameras_set->name_grid_box), ptz->name_grid, (ptz->index * 2) + 1);
+			gtk_box_reorder_child (GTK_BOX (cameras_set->name_grid_box), ptz->name_grid, ptz->index * 2);
 			gtk_widget_show_all (ptz->memories_grid);
 			gtk_box_pack_start (GTK_BOX (cameras_set->memories_grid_box), ptz->memories_grid, FALSE, FALSE, 0);
-			gtk_box_reorder_child (GTK_BOX (cameras_set->memories_grid_box), ptz->memories_grid, (ptz->index * 2) + 1);
+			gtk_box_reorder_child (GTK_BOX (cameras_set->memories_grid_box), ptz->memories_grid, ptz->index * 2);
 		}
 
 		entry_buffer_text = gtk_entry_buffer_get_text (cameras_configuration_widgets[i].name_entry_buffer);
@@ -922,7 +922,7 @@ void create_vertical_linked_memories_names_entries (cameras_set_t *cameras_set)
 
 	cameras_set->linked_memories_names_entries = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
 		cameras_set->entry_widgets_padding = gtk_drawing_area_new ();
-		gtk_widget_set_size_request (cameras_set->entry_widgets_padding, 20, thumbnail_height + 12);
+		gtk_widget_set_size_request (cameras_set->entry_widgets_padding, 34, thumbnail_height + 12);
 	gtk_box_pack_start (GTK_BOX (cameras_set->linked_memories_names_entries), cameras_set->entry_widgets_padding, FALSE, FALSE, 0);
 
 		scrolled_window = gtk_scrolled_window_new (NULL, NULL);
@@ -933,7 +933,7 @@ void create_vertical_linked_memories_names_entries (cameras_set_t *cameras_set)
 			box = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
 				for (i = 0; i < MAX_MEMORIES; i++) {
 					cameras_set->entry_widgets[i] = gtk_entry_new ();
-					gtk_widget_set_size_request (cameras_set->entry_widgets[i], 20, thumbnail_width + 10);
+					gtk_widget_set_size_request (cameras_set->entry_widgets[i], 34, thumbnail_height + 10);
 					gtk_widget_set_margin_top (cameras_set->entry_widgets[i], memories_button_horizontal_margins);
 					gtk_widget_set_margin_bottom (cameras_set->entry_widgets[i], memories_button_horizontal_margins);
 					gtk_entry_set_max_length (GTK_ENTRY (cameras_set->entry_widgets[i]), MEMORIES_NAME_LENGTH);
@@ -1201,21 +1201,25 @@ void update_current_cameras_set_vertical_margins (void)
 	for (i = 0; i < current_cameras_set->number_of_cameras; i++) {
 		ptz = current_cameras_set->ptz_ptr_array[i];
 
-		for (j = 0; j < MAX_MEMORIES; j++) {
-			gtk_widget_set_margin_start (ptz->memories[j].button, memories_button_vertical_margins);
-			gtk_widget_set_margin_end (ptz->memories[j].button, memories_button_vertical_margins);
+		if (ptz->active) {
+			for (j = 0; j < MAX_MEMORIES; j++) {
+				gtk_widget_set_margin_start (ptz->memories[j].button, memories_button_vertical_margins);
+				gtk_widget_set_margin_end (ptz->memories[j].button, memories_button_vertical_margins);
+			}
+
+			if (!cameras_set_orientation) {
+				gtk_widget_set_margin_start (ptz->name_drawing_area, memories_button_vertical_margins);
+				gtk_widget_set_margin_end (ptz->name_drawing_area, memories_button_vertical_margins);
+			}
 		}
 
 		if (cameras_set_orientation) {
 			for (j = 0; j < MAX_MEMORIES; j++) {
-				gtk_widget_set_margin_start (cameras_set->entry_widgets[j], 2 + memories_button_vertical_margins);
-				gtk_widget_set_margin_end (cameras_set->entry_widgets[j], 2 + memories_button_vertical_margins);
-				gtk_widget_set_margin_start (cameras_set->memories_labels[j], memories_button_vertical_margins);
-				gtk_widget_set_margin_end (cameras_set->memories_labels[j], memories_button_vertical_margins);
+				gtk_widget_set_margin_start (current_cameras_set->entry_widgets[j], 2 + memories_button_vertical_margins);
+				gtk_widget_set_margin_end (current_cameras_set->entry_widgets[j], 2 + memories_button_vertical_margins);
+				gtk_widget_set_margin_start (current_cameras_set->memories_labels[j], memories_button_vertical_margins);
+				gtk_widget_set_margin_end (current_cameras_set->memories_labels[j], memories_button_vertical_margins);
 			}
-		} else {
-			gtk_widget_set_margin_start (ptz->name_drawing_area, memories_button_vertical_margins);
-			gtk_widget_set_margin_end (ptz->name_drawing_area, memories_button_vertical_margins);
 		}
 	}
 }
@@ -1228,20 +1232,24 @@ void update_current_cameras_set_horizontal_margins (void)
 	for (i = 0; i < current_cameras_set->number_of_cameras; i++) {
 		ptz = current_cameras_set->ptz_ptr_array[i];
 
-		for (j = 0; j < MAX_MEMORIES; j++) {
-			gtk_widget_set_margin_top (ptz->memories[j].button, memories_button_horizontal_margins);
-			gtk_widget_set_margin_bottom (ptz->memories[j].button, memories_button_horizontal_margins);
+		if (ptz->active) {
+			for (j = 0; j < MAX_MEMORIES; j++) {
+				gtk_widget_set_margin_top (ptz->memories[j].button, memories_button_horizontal_margins);
+				gtk_widget_set_margin_bottom (ptz->memories[j].button, memories_button_horizontal_margins);
+			}
+
+			if (cameras_set_orientation) {
+				gtk_widget_set_margin_top (ptz->name_drawing_area, memories_button_horizontal_margins);
+				gtk_widget_set_margin_bottom (ptz->name_drawing_area, memories_button_horizontal_margins);
+			}
 		}
 
-		if (cameras_set_orientation) {
-			gtk_widget_set_margin_top (ptz->name_drawing_area, memories_button_horizontal_margins);
-			gtk_widget_set_margin_bottom (ptz->name_drawing_area, memories_button_horizontal_margins);
-		} else {
+		if (!cameras_set_orientation) {
 			for (j = 0; j < MAX_MEMORIES; j++) {
-				gtk_widget_set_margin_top (cameras_set->entry_widgets[j], memories_button_horizontal_margins);
-				gtk_widget_set_margin_bottom (cameras_set->entry_widgets[j], memories_button_horizontal_margins);
-				gtk_widget_set_margin_top (cameras_set->memories_labels[j], memories_button_horizontal_margins);
-				gtk_widget_set_margin_bottom (cameras_set->memories_labels[j], memories_button_horizontal_margins);
+				gtk_widget_set_margin_top (current_cameras_set->entry_widgets[j], memories_button_horizontal_margins);
+				gtk_widget_set_margin_bottom (current_cameras_set->entry_widgets[j], memories_button_horizontal_margins);
+				gtk_widget_set_margin_top (current_cameras_set->memories_labels[j], memories_button_horizontal_margins);
+				gtk_widget_set_margin_bottom (current_cameras_set->memories_labels[j], memories_button_horizontal_margins);
 			}
 		}
 	}
