@@ -357,16 +357,27 @@ void cameras_set_orientation_check_button_toggled (GtkToggleButton *togglebutton
 {
 	cameras_set_t *cameras_set_itr;
 	int i;
+	char memories_name[MAX_MEMORIES][MEMORIES_NAME_LENGTH + 1];
 
 	cameras_set_orientation = gtk_toggle_button_get_active (togglebutton);
 
 	for (cameras_set_itr = cameras_sets; cameras_set_itr != NULL; cameras_set_itr = cameras_set_itr->next) {
+		for (i = 0; i < MAX_MEMORIES; i++) {
+			memcpy (memories_name[i], gtk_label_get_text (GTK_LABEL (cameras_set_itr->memories_labels[i])), MEMORIES_NAME_LENGTH);
+			memories_name[i][MEMORIES_NAME_LENGTH] = '\0';
+		}
+
 		gtk_widget_destroy (cameras_set_itr->page_box);
 
 		for (i = 0; i < cameras_set_itr->number_of_cameras; i++) {
 			if (cameras_set_itr->ptz_ptr_array[i]->active) {
 				if (cameras_set_orientation) create_ptz_widgets_horizontal (cameras_set_itr->ptz_ptr_array[i]);
 				else create_ptz_widgets_vertical (cameras_set_itr->ptz_ptr_array[i]);
+
+				if (!cameras_set_itr->ptz_ptr_array[i]->is_on) {
+					gtk_widget_set_sensitive (cameras_set_itr->ptz_ptr_array[i]->name_grid, FALSE);
+					gtk_widget_set_sensitive (cameras_set_itr->ptz_ptr_array[i]->memories_grid, FALSE);
+				}
 			} else {
 				if (cameras_set_orientation) create_ghost_ptz_widgets_horizontal (cameras_set_itr->ptz_ptr_array[i]);
 				else create_ghost_ptz_widgets_vertical (cameras_set_itr->ptz_ptr_array[i]);
@@ -374,6 +385,11 @@ void cameras_set_orientation_check_button_toggled (GtkToggleButton *togglebutton
 		}
 
 		fill_cameras_set_page (cameras_set_itr);
+
+		for (i = 0; i < MAX_MEMORIES; i++) {
+			gtk_entry_set_text (GTK_ENTRY (cameras_set_itr->entry_widgets[i]), memories_name[i]);
+			gtk_label_set_text (GTK_LABEL (cameras_set_itr->memories_labels[i]), memories_name[i]);
+		}
 
 		gtk_widget_show_all (cameras_set_itr->page);
 
