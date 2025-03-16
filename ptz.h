@@ -236,7 +236,7 @@ typedef struct cameras_set_s {
 	GtkWidget *memories_scrollbar_padding;
 	GtkAdjustment *memories_scrollbar_adjustment;
 
-	GtkAdjustment *scrolled_window_vadjustment;
+	GtkAdjustment *scrolled_window_adjustment;
 
 	GtkWidget *page;
 	gint page_num;
@@ -245,6 +245,8 @@ typedef struct cameras_set_s {
 	GtkWidget *list_box_row;
 
 	int thumbnail_width;
+	int memories_button_vertical_margins;
+	int memories_button_horizontal_margins;
 
 	struct cameras_set_s *next;
 } cameras_set_t;
