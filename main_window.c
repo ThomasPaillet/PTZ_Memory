@@ -32,7 +32,6 @@ void load_pixbufs (void);
 
 const char application_name_txt[] = "Mémoires Pan Tilt Zoom pour caméras PTZ Panasonic";
 const char warning_txt[] = "Attention !";
-const char about_txt[] = "_A propos";
 
 GtkWidget *main_window, *main_window_notebook;
 GtkWidget *thumbnail_size_scale;
@@ -167,14 +166,22 @@ void thumbnail_size_value_changed (GtkRange *range)
 
 		if (cameras_set_orientation) {
 			gtk_widget_set_size_request (current_cameras_set->entry_widgets_padding, thumbnail_height + 12, 34);
-			gtk_widget_set_size_request (current_cameras_set->memories_labels_padding, thumbnail_height + 12, 10);
+			gtk_widget_set_size_request (current_cameras_set->memories_labels_padding, thumbnail_height + 12, 20);
 			gtk_widget_set_size_request (current_cameras_set->memories_scrollbar_padding, thumbnail_height + 12, 10);
 		} else {
+			gtk_widget_set_size_request (current_cameras_set->entry_widgets_padding, 20, thumbnail_height + 12);
+			gtk_widget_set_size_request (current_cameras_set->memories_labels_padding, 20, thumbnail_height + 12);
+			gtk_widget_set_size_request (current_cameras_set->memories_scrollbar_padding, 10, thumbnail_height + 12);
 		}
 
 		for (j = 0; j < MAX_MEMORIES; j++) {
-			gtk_widget_set_size_request (current_cameras_set->entry_widgets[j], thumbnail_width + 6, 34);
-			gtk_widget_set_size_request (current_cameras_set->memories_labels[j], thumbnail_width + 6, 10);
+			if (cameras_set_orientation) {
+				gtk_widget_set_size_request (current_cameras_set->entry_widgets[j], thumbnail_width + 6, 34);
+				gtk_widget_set_size_request (current_cameras_set->memories_labels[j], thumbnail_width + 6, 20);
+			} else {
+				gtk_widget_set_size_request (current_cameras_set->entry_widgets[j], 20, thumbnail_width + 10);
+				gtk_widget_set_size_request (current_cameras_set->memories_labels[j], 20, thumbnail_height + 10);
+			}
 		}
 	}
 
@@ -226,78 +233,6 @@ gpointer get_camera_screen_shot (ptz_thread_t *ptz_thread)
 	g_idle_add ((GSourceFunc)free_ptz_thread, ptz_thread);
 
 	return NULL;
-}
-
-gboolean about_window_key_press (GtkWidget *window, GdkEventKey *event)
-{
-	gtk_widget_destroy (window);
-
-	return GDK_EVENT_STOP;
-}
-
-void show_about_window (void)
-{
-	GtkWidget *about_window, *box, *widget;
-	char gtk_version[64];
-
-	about_window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
-	gtk_window_set_type_hint (GTK_WINDOW (about_window), GDK_WINDOW_TYPE_HINT_DIALOG);
-	gtk_window_set_title (GTK_WINDOW (about_window), about_txt + 1);
-	gtk_window_set_transient_for (GTK_WINDOW (about_window), GTK_WINDOW (main_window));
-	gtk_window_set_modal (GTK_WINDOW (about_window), TRUE);
-	gtk_window_set_skip_taskbar_hint (GTK_WINDOW (about_window), FALSE);
-	gtk_window_set_skip_pager_hint (GTK_WINDOW (about_window), FALSE);
-	gtk_window_set_position (GTK_WINDOW (about_window), GTK_WIN_POS_CENTER_ON_PARENT);
-	g_signal_connect (G_OBJECT (about_window), "key-press-event", G_CALLBACK (about_window_key_press), NULL);
-
-	box = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
-	gtk_container_set_border_width (GTK_CONTAINER (box), MARGIN_VALUE);
-		widget = gtk_label_new (NULL);
-		gtk_label_set_markup (GTK_LABEL (widget), "<b>Mémoires Pan Tilt Zoom pour caméras PTZ Panasonic</b>");
-		gtk_box_pack_start (GTK_BOX (box), widget, FALSE, FALSE, 0);
-
-		widget = gtk_label_new ("Version 1.3");
-		gtk_box_pack_start (GTK_BOX (box), widget, FALSE, FALSE, 0);
-#ifdef _WIN32
-		widget = gtk_image_new_from_pixbuf (pixbuf_logo);
-#elif defined (__linux)
-		widget = gtk_image_new_from_resource ("/org/PTZ-Memory/images/logo.png");
-#endif
-		gtk_widget_set_margin_top (widget, MARGIN_VALUE);
-		gtk_widget_set_margin_bottom (widget, MARGIN_VALUE);
-		gtk_box_pack_start (GTK_BOX (box), widget, FALSE, FALSE, 0);
-
-		widget = gtk_label_new ("Panasonic Interface Specifications v1.12");
-		gtk_box_pack_start (GTK_BOX (box), widget, FALSE, FALSE, 0);
-
-		widget = gtk_label_new ("Router Control Protocols document n°SW-P-88 issue n°4b");
-		gtk_box_pack_start (GTK_BOX (box), widget, FALSE, FALSE, 0);
-
-		widget = gtk_label_new ("TSL UMD Protocol V5.0");
-		gtk_box_pack_start (GTK_BOX (box), widget, FALSE, FALSE, 0);
-
-		sprintf (gtk_version, "Compiled against GTK+ version %d.%d.%d", GTK_MAJOR_VERSION, GTK_MINOR_VERSION, GTK_MICRO_VERSION);
-		widget = gtk_label_new (gtk_version);
-		gtk_box_pack_start (GTK_BOX (box), widget, FALSE, FALSE, 0);
-
-		widget = gtk_label_new ("Interface based on \"Adwaita-dark\" theme");
-		gtk_box_pack_start (GTK_BOX (box), widget, FALSE, FALSE, 0);
-
-		widget = gtk_label_new ("This software use the libjpeg-turbo8 library provided by the Independent JPEG Group");
-		gtk_box_pack_start (GTK_BOX (box), widget, FALSE, FALSE, 0);
-
-		widget = gtk_separator_new (GTK_ORIENTATION_HORIZONTAL);
-		gtk_box_pack_start (GTK_BOX (box), widget, FALSE, FALSE, 0);
-
-		widget = gtk_label_new ("Copyright (c) 2020 2021 Thomas Paillet");
-		gtk_box_pack_start (GTK_BOX (box), widget, FALSE, FALSE, 0);
-
-		widget = gtk_label_new ("GNU General Public License version 3");
-		gtk_box_pack_start (GTK_BOX (box), widget, FALSE, FALSE, 0);
-	gtk_container_add (GTK_CONTAINER (about_window), box);
-
-	gtk_window_set_resizable (GTK_WINDOW (about_window), FALSE);
-	gtk_widget_show_all (about_window);
 }
 
 void main_window_notebook_switch_page (GtkNotebook *notebook, GtkWidget *page, guint page_num)
@@ -403,7 +338,7 @@ gboolean main_window_key_press (GtkWidget *widget, GdkEventKey *event)
 				gtk_adjustment_set_value (current_cameras_set->label_scrolled_window_adjustment, adjustment_value);
 				gtk_adjustment_set_value (current_cameras_set->memories_scrollbar_adjustment, adjustment_value);
 			} else {
-				gtk_adjustment_set_value (current_cameras_set->scrolled_window_vadjustment, gtk_adjustment_get_value (current_cameras_set->scrolled_window_vadjustment) - 50);
+				gtk_adjustment_set_value (current_cameras_set->scrolled_window_adjustment, gtk_adjustment_get_value (current_cameras_set->scrolled_window_adjustment) - 50);
 			}
 
 			return GDK_EVENT_STOP;
@@ -416,13 +351,13 @@ gboolean main_window_key_press (GtkWidget *widget, GdkEventKey *event)
 				gtk_adjustment_set_value (current_cameras_set->label_scrolled_window_adjustment, adjustment_value);
 				gtk_adjustment_set_value (current_cameras_set->memories_scrollbar_adjustment, adjustment_value);
 			} else {
-				gtk_adjustment_set_value (current_cameras_set->scrolled_window_vadjustment, gtk_adjustment_get_value (current_cameras_set->scrolled_window_vadjustment) + 50);
+				gtk_adjustment_set_value (current_cameras_set->scrolled_window_adjustment, gtk_adjustment_get_value (current_cameras_set->scrolled_window_adjustment) + 50);
 			}
 
 			return GDK_EVENT_STOP;
 		} else if (event->keyval == GDK_KEY_Up) {
 			if (cameras_set_orientation) {
-				gtk_adjustment_set_value (current_cameras_set->scrolled_window_vadjustment, gtk_adjustment_get_value (current_cameras_set->scrolled_window_vadjustment) - 50);
+				gtk_adjustment_set_value (current_cameras_set->scrolled_window_adjustment, gtk_adjustment_get_value (current_cameras_set->scrolled_window_adjustment) - 50);
 			} else {
 				adjustment_value = gtk_adjustment_get_value (current_cameras_set->memories_scrolled_window_adjustment) - 50;
 
@@ -435,7 +370,7 @@ gboolean main_window_key_press (GtkWidget *widget, GdkEventKey *event)
 			return GDK_EVENT_STOP;
 		} else if (event->keyval == GDK_KEY_Down) {
 			if (cameras_set_orientation) {
-				gtk_adjustment_set_value (current_cameras_set->scrolled_window_vadjustment, gtk_adjustment_get_value (current_cameras_set->scrolled_window_vadjustment) + 50);
+				gtk_adjustment_set_value (current_cameras_set->scrolled_window_adjustment, gtk_adjustment_get_value (current_cameras_set->scrolled_window_adjustment) + 50);
 			} else {
 				adjustment_value = gtk_adjustment_get_value (current_cameras_set->memories_scrolled_window_adjustment) + 50;
 
@@ -460,25 +395,47 @@ gboolean main_window_scroll (GtkWidget *widget, GdkEventScroll *event)
 		if (event->direction == GDK_SCROLL_LEFT) {
 			if (cameras_set_orientation) {
 				adjustment_value = gtk_adjustment_get_value (current_cameras_set->memories_scrolled_window_adjustment) - 50;
+
 				gtk_adjustment_set_value (current_cameras_set->entry_scrolled_window_adjustment, adjustment_value);
 				gtk_adjustment_set_value (current_cameras_set->memories_scrolled_window_adjustment, adjustment_value);
 				gtk_adjustment_set_value (current_cameras_set->label_scrolled_window_adjustment, adjustment_value);
 				gtk_adjustment_set_value (current_cameras_set->memories_scrollbar_adjustment, adjustment_value);
 			} else {
+				gtk_adjustment_set_value (current_cameras_set->scrolled_window_adjustment, gtk_adjustment_get_value (current_cameras_set->scrolled_window_adjustment) - 50);
 			}
 		} else if (event->direction == GDK_SCROLL_RIGHT) {
 			if (cameras_set_orientation) {
 				adjustment_value = gtk_adjustment_get_value (current_cameras_set->memories_scrolled_window_adjustment) + 50;
+
 				gtk_adjustment_set_value (current_cameras_set->entry_scrolled_window_adjustment, adjustment_value);
 				gtk_adjustment_set_value (current_cameras_set->memories_scrolled_window_adjustment, adjustment_value);
 				gtk_adjustment_set_value (current_cameras_set->label_scrolled_window_adjustment, adjustment_value);
 				gtk_adjustment_set_value (current_cameras_set->memories_scrollbar_adjustment, adjustment_value);
 			} else {
+				gtk_adjustment_set_value (current_cameras_set->scrolled_window_adjustment, gtk_adjustment_get_value (current_cameras_set->scrolled_window_adjustment) + 50);
 			}
 		} else if (event->direction == GDK_SCROLL_UP) {
-			gtk_adjustment_set_value (current_cameras_set->scrolled_window_vadjustment, gtk_adjustment_get_value (current_cameras_set->scrolled_window_vadjustment) - 50);
+			if (cameras_set_orientation) {
+				gtk_adjustment_set_value (current_cameras_set->scrolled_window_adjustment, gtk_adjustment_get_value (current_cameras_set->scrolled_window_adjustment) - 50);
+			} else {
+				adjustment_value = gtk_adjustment_get_value (current_cameras_set->memories_scrolled_window_adjustment) - 50;
+
+				gtk_adjustment_set_value (current_cameras_set->entry_scrolled_window_adjustment, adjustment_value);
+				gtk_adjustment_set_value (current_cameras_set->memories_scrolled_window_adjustment, adjustment_value);
+				gtk_adjustment_set_value (current_cameras_set->label_scrolled_window_adjustment, adjustment_value);
+				gtk_adjustment_set_value (current_cameras_set->memories_scrollbar_adjustment, adjustment_value);
+			}
 		} else if (event->direction == GDK_SCROLL_DOWN) {
-			gtk_adjustment_set_value (current_cameras_set->scrolled_window_vadjustment, gtk_adjustment_get_value (current_cameras_set->scrolled_window_vadjustment) + 50);
+			if (cameras_set_orientation) {
+				gtk_adjustment_set_value (current_cameras_set->scrolled_window_adjustment, gtk_adjustment_get_value (current_cameras_set->scrolled_window_adjustment) + 50);
+			} else {
+				adjustment_value = gtk_adjustment_get_value (current_cameras_set->memories_scrolled_window_adjustment) + 50;
+
+				gtk_adjustment_set_value (current_cameras_set->entry_scrolled_window_adjustment, adjustment_value);
+				gtk_adjustment_set_value (current_cameras_set->memories_scrolled_window_adjustment, adjustment_value);
+				gtk_adjustment_set_value (current_cameras_set->label_scrolled_window_adjustment, adjustment_value);
+				gtk_adjustment_set_value (current_cameras_set->memories_scrollbar_adjustment, adjustment_value);
+			}
 		}
 	}
 
@@ -578,13 +535,6 @@ void create_main_window (void)
 			gtk_style_context_add_provider (gtk_widget_get_style_context (widget), GTK_STYLE_PROVIDER (css_provider_button), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
 			gtk_button_set_use_underline (GTK_BUTTON (widget), TRUE);
 			g_signal_connect (G_OBJECT (widget), "clicked", G_CALLBACK (show_exit_confirmation_window), NULL);
-		gtk_box_pack_end (GTK_BOX (box2), widget, FALSE, FALSE, 0);
-
-			widget = gtk_button_new_with_label (about_txt);
-			gtk_widget_set_margin_end (widget, 6);
-			gtk_style_context_add_provider (gtk_widget_get_style_context (widget), GTK_STYLE_PROVIDER (css_provider_button), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
-			gtk_button_set_use_underline (GTK_BUTTON (widget), TRUE);
-			g_signal_connect (G_OBJECT (widget), "clicked", G_CALLBACK (show_about_window), NULL);
 		gtk_box_pack_end (GTK_BOX (box2), widget, FALSE, FALSE, 0);
 
 			box3 = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
