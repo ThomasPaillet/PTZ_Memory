@@ -29,6 +29,7 @@ void init_ptz (ptz_t *ptz)
 	int i;
 
 	ptz->active = TRUE;
+	ptz->is_on = FALSE;
 	ptz->ip_address[0] = '\0';
 	ptz->ip_address_is_valid = FALSE;
 
@@ -96,6 +97,8 @@ void init_ptz (ptz_t *ptz)
 
 gboolean ptz_is_on (ptz_t *ptz)
 {
+	ptz->is_on = TRUE;
+
 	gtk_widget_set_sensitive (ptz->name_grid, TRUE);
 	gtk_widget_set_sensitive (ptz->memories_grid, TRUE);
 
@@ -104,6 +107,8 @@ gboolean ptz_is_on (ptz_t *ptz)
 
 gboolean ptz_is_off (ptz_t *ptz)
 {
+	ptz->is_on = FALSE;
+
 	if (ptz->control_window.is_on_screen) {
 		ptz->control_window.is_on_screen = FALSE;
 		gtk_widget_hide (ptz->control_window.window);
