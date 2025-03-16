@@ -368,9 +368,9 @@ void cameras_set_orientation_check_button_toggled (GtkToggleButton *togglebutton
 			g_object_ref (G_OBJECT (cameras_set_itr->ptz_ptr_array[i]->memories_grid));
 		}
 
-		gtk_widget_destroy (cameras_set->page_box);
+		gtk_widget_destroy (cameras_set_itr->page_box);
 
-		fill_cameras_set_page (cameras_set);
+		fill_cameras_set_page (cameras_set_itr);
 
 		for (i = 0; i < cameras_set_itr->number_of_cameras; i++) {
 			g_object_unref (G_OBJECT (cameras_set_itr->ptz_ptr_array[i]->name_separator));
@@ -379,10 +379,10 @@ void cameras_set_orientation_check_button_toggled (GtkToggleButton *togglebutton
 			g_object_unref (G_OBJECT (cameras_set_itr->ptz_ptr_array[i]->memories_grid));
 		}
 
-		gtk_widget_show_all (cameras_set->page);
+		gtk_widget_show_all (cameras_set_itr->page);
 
-		if (!show_linked_memories_names_entries) gtk_widget_hide (cameras_set->linked_memories_names_entries);
-		if (!show_linked_memories_names_labels) gtk_widget_hide (cameras_set->linked_memories_names_labels);
+		if (!show_linked_memories_names_entries) gtk_widget_hide (cameras_set_itr->linked_memories_names_entries);
+		if (!show_linked_memories_names_labels) gtk_widget_hide (cameras_set_itr->linked_memories_names_labels);
 	}
 
 	backup_needed = TRUE;
@@ -428,38 +428,18 @@ void show_linked_memories_names_labels_check_button_toggled (GtkToggleButton *to
 
 void memories_button_vertical_margins_value_changed (GtkRange *range)
 {
-	int i, j;
-	ptz_t *ptz;
-
 	memories_button_vertical_margins = gtk_range_get_value (range);
 	current_cameras_set->memories_button_vertical_margins = memories_button_vertical_margins;
 
-	for (i = 0; i < current_cameras_set->number_of_cameras; i++) {
-		ptz = current_cameras_set->ptz_ptr_array[i];
-
-		for (j = 0; j < MAX_MEMORIES; j++) {
-			gtk_widget_set_margin_start (ptz->memories[j].button, memories_button_vertical_margins);
-			gtk_widget_set_margin_end (ptz->memories[j].button, memories_button_vertical_margins);
-		}
-	}
+	update_current_cameras_set_vertical_margins ();
 }
 
 void memories_button_horizontal_margins_value_changed (GtkRange *range)
 {
-	int i, j;
-	ptz_t *ptz;
-
 	memories_button_horizontal_margins = gtk_range_get_value (range);
 	current_cameras_set->memories_button_horizontal_margins = memories_button_horizontal_margins;
 
-	for (i = 0; i < current_cameras_set->number_of_cameras; i++) {
-		ptz = current_cameras_set->ptz_ptr_array[i];
-
-		for (j = 0; j < MAX_MEMORIES; j++) {
-			gtk_widget_set_margin_top (ptz->memories[j].button, memories_button_horizontal_margins);
-			gtk_widget_set_margin_bottom (ptz->memories[j].button, memories_button_horizontal_margins);
-		}
-	}
+	update_current_cameras_set_horizontal_margins ();
 }
 
 void create_settings_window (void)
@@ -817,7 +797,8 @@ void create_settings_window (void)
 				gtk_widget_set_margin_start (box3, MARGIN_VALUE);
 				gtk_widget_set_margin_end (box3, MARGIN_VALUE);
 				gtk_widget_set_margin_bottom (box3, MARGIN_VALUE);
-					widget = gtk_scale_new_with_range (GTK_ORIENTATION_HORIZONTAL, 1.0, 20.0, 1.0);
+					widget = gtk_scale_new_with_range (GTK_ORIENTATION_HORIZONTAL, 0.0, 20.0, 1.0);
+					gtk_scale_set_value_pos (GTK_SCALE (widget), GTK_POS_RIGHT);
 					gtk_scale_set_draw_value (GTK_SCALE (widget), TRUE);
 					gtk_scale_set_has_origin (GTK_SCALE (widget), FALSE);
 					//gtk_widget_set_size_request (thumbnail_size_scale, 200, 10);
@@ -839,7 +820,8 @@ void create_settings_window (void)
 				gtk_widget_set_margin_start (box3, MARGIN_VALUE);
 				gtk_widget_set_margin_end (box3, MARGIN_VALUE);
 				gtk_widget_set_margin_bottom (box3, MARGIN_VALUE);
-					widget = gtk_scale_new_with_range (GTK_ORIENTATION_HORIZONTAL, 1.0, 20.0, 1.0);
+					widget = gtk_scale_new_with_range (GTK_ORIENTATION_HORIZONTAL, 0.0, 20.0, 1.0);
+					gtk_scale_set_value_pos (GTK_SCALE (widget), GTK_POS_RIGHT);
 					gtk_scale_set_draw_value (GTK_SCALE (widget), TRUE);
 					gtk_scale_set_has_origin (GTK_SCALE (widget), FALSE);
 					//gtk_widget_set_size_request (thumbnail_size_scale, 200, 10);
@@ -853,12 +835,14 @@ void create_settings_window (void)
 				gtk_box_pack_start (GTK_BOX (box3), widget, FALSE, FALSE, 0);
 			gtk_box_pack_start (GTK_BOX (box2), box3, FALSE, FALSE, 0);
 
-				widget = gtk_button_new_with_label (about_txt);
-				//gtk_widget_set_margin_end (widget, 6);
-				//gtk_style_context_add_provider (gtk_widget_get_style_context (widget), GTK_STYLE_PROVIDER (css_provider_button), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
-				//gtk_button_set_use_underline (GTK_BUTTON (widget), TRUE);
-				g_signal_connect (G_OBJECT (widget), "clicked", G_CALLBACK (show_about_window), NULL);
-			gtk_box_pack_end (GTK_BOX (box2), widget, FALSE, FALSE, 0);
+				box3 = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
+					widget = gtk_button_new_with_label (about_txt);
+					//gtk_widget_set_margin_end (widget, 6);
+					//gtk_style_context_add_provider (gtk_widget_get_style_context (widget), GTK_STYLE_PROVIDER (css_provider_button), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+					//gtk_button_set_use_underline (GTK_BUTTON (widget), TRUE);
+					g_signal_connect (G_OBJECT (widget), "clicked", G_CALLBACK (show_about_window), NULL);
+				gtk_box_set_center_widget (GTK_BOX (box3), widget);
+			gtk_box_pack_end (GTK_BOX (box2), box3, FALSE, FALSE, 0);
 		gtk_container_add (GTK_CONTAINER (frame), box2);
 	gtk_box_pack_start (GTK_BOX (box1), frame, FALSE, FALSE, 0);
 	gtk_container_add (GTK_CONTAINER (settings_window), box1);
