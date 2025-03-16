@@ -237,9 +237,6 @@ gpointer get_camera_screen_shot (ptz_thread_t *ptz_thread)
 
 void main_window_notebook_switch_page (GtkNotebook *notebook, GtkWidget *page, guint page_num)
 {
-	int i, j;
-	ptz_t *ptz;
-
 	g_mutex_lock (&cameras_sets_mutex);
 
 	for (current_cameras_set = cameras_sets; current_cameras_set != NULL; current_cameras_set = current_cameras_set->next) {
@@ -251,27 +248,13 @@ void main_window_notebook_switch_page (GtkNotebook *notebook, GtkWidget *page, g
 	if (current_cameras_set->memories_button_vertical_margins != memories_button_vertical_margins) {
 		current_cameras_set->memories_button_vertical_margins = memories_button_vertical_margins;
 	
-		for (i = 0; i < current_cameras_set->number_of_cameras; i++) {
-			ptz = current_cameras_set->ptz_ptr_array[i];
-	
-			for (j = 0; j < MAX_MEMORIES; j++) {
-				gtk_widget_set_margin_start (ptz->memories[j].button, memories_button_vertical_margins);
-				gtk_widget_set_margin_end (ptz->memories[j].button, memories_button_vertical_margins);
-			}
-		}
+		update_current_cameras_set_vertical_margins ();
 	}
 
 	if (current_cameras_set->memories_button_horizontal_margins != memories_button_horizontal_margins) {
 		current_cameras_set->memories_button_horizontal_margins = memories_button_horizontal_margins;
 	
-		for (i = 0; i < current_cameras_set->number_of_cameras; i++) {
-			ptz = current_cameras_set->ptz_ptr_array[i];
-	
-			for (j = 0; j < MAX_MEMORIES; j++) {
-				gtk_widget_set_margin_top (ptz->memories[j].button, memories_button_horizontal_margins);
-				gtk_widget_set_margin_bottom (ptz->memories[j].button, memories_button_horizontal_margins);
-			}
-		}
+		update_current_cameras_set_horizontal_margins ();
 	}
 
 	g_mutex_unlock (&cameras_sets_mutex);
