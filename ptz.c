@@ -288,8 +288,6 @@ name_grid                                       memories_grid
 	GtkWidget *memory_name_window;
 	GtkWidget *memory_name_entry;
 
-	create_control_window (ptz);
-
 	ptz->name_separator = gtk_separator_new (GTK_ORIENTATION_HORIZONTAL);
 
 	ptz->name_grid = gtk_grid_new ();
@@ -403,8 +401,6 @@ memories_grid
 	int i;
 	GtkWidget *memory_name_window;
 	GtkWidget *memory_name_entry;
-
-	create_control_window (ptz);
 
 	ptz->name_separator = gtk_separator_new (GTK_ORIENTATION_VERTICAL);
 
