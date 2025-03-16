@@ -119,6 +119,8 @@ typedef struct {
 	char name[3];
 	int index;
 	gboolean active;
+	gboolean is_on;
+
 	char ip_address[16];
 	char new_ip_address[16];
 	gboolean ip_address_is_valid;
