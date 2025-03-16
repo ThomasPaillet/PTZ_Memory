@@ -361,23 +361,19 @@ void cameras_set_orientation_check_button_toggled (GtkToggleButton *togglebutton
 	cameras_set_orientation = gtk_toggle_button_get_active (togglebutton);
 
 	for (cameras_set_itr = cameras_sets; cameras_set_itr != NULL; cameras_set_itr = cameras_set_itr->next) {
-		for (i = 0; i < cameras_set_itr->number_of_cameras; i++) {
-			g_object_ref (G_OBJECT (cameras_set_itr->ptz_ptr_array[i]->name_separator));
-			g_object_ref (G_OBJECT (cameras_set_itr->ptz_ptr_array[i]->name_grid));
-			g_object_ref (G_OBJECT (cameras_set_itr->ptz_ptr_array[i]->memories_separator));
-			g_object_ref (G_OBJECT (cameras_set_itr->ptz_ptr_array[i]->memories_grid));
-		}
-
 		gtk_widget_destroy (cameras_set_itr->page_box);
 
-		fill_cameras_set_page (cameras_set_itr);
-
 		for (i = 0; i < cameras_set_itr->number_of_cameras; i++) {
-			g_object_unref (G_OBJECT (cameras_set_itr->ptz_ptr_array[i]->name_separator));
-			g_object_unref (G_OBJECT (cameras_set_itr->ptz_ptr_array[i]->name_grid));
-			g_object_unref (G_OBJECT (cameras_set_itr->ptz_ptr_array[i]->memories_separator));
-			g_object_unref (G_OBJECT (cameras_set_itr->ptz_ptr_array[i]->memories_grid));
+			if (cameras_set_itr->ptz_ptr_array[i]->active) {
+				if (cameras_set_orientation) create_ptz_widgets_horizontal (cameras_set_itr->ptz_ptr_array[i]);
+				else create_ptz_widgets_vertical (cameras_set_itr->ptz_ptr_array[i]);
+			} else {
+				if (cameras_set_orientation) create_ghost_ptz_widgets_horizontal (cameras_set_itr->ptz_ptr_array[i]);
+				else create_ghost_ptz_widgets_vertical (cameras_set_itr->ptz_ptr_array[i]);
+			}
 		}
+
+		fill_cameras_set_page (cameras_set_itr);
 
 		gtk_widget_show_all (cameras_set_itr->page);
 
