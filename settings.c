@@ -30,6 +30,8 @@ gboolean backup_needed = FALSE;
 
 const char settings_txt[] = "_Paramètres";
 const char about_txt[] = "A propos";
+const char pixel_txt[] = "pixel";
+const char pixels_txt[] = "pixels";
 
 GtkWidget *settings_window = NULL;
 
@@ -438,17 +440,27 @@ void show_linked_memories_names_labels_check_button_toggled (GtkToggleButton *to
 	backup_needed = TRUE;
 }
 
-void memories_button_vertical_margins_value_changed (GtkRange *range)
+void memories_button_vertical_margins_value_changed (GtkRange *range, GtkLabel *label)
 {
-	memories_button_vertical_margins = gtk_range_get_value (range);
+	int new_memories_button_vertical_margins = gtk_range_get_value (range);
+
+	if ((new_memories_button_vertical_margins <= 1) && (memories_button_vertical_margins > 1))  gtk_label_set_text (label, pixel_txt);
+	else if ((new_memories_button_vertical_margins > 1) && (memories_button_vertical_margins <= 1)) gtk_label_set_text (label, pixels_txt);
+
+	memories_button_vertical_margins = new_memories_button_vertical_margins;
 	current_cameras_set->memories_button_vertical_margins = memories_button_vertical_margins;
 
 	update_current_cameras_set_vertical_margins ();
 }
 
-void memories_button_horizontal_margins_value_changed (GtkRange *range)
+void memories_button_horizontal_margins_value_changed (GtkRange *range, GtkLabel *label)
 {
-	memories_button_horizontal_margins = gtk_range_get_value (range);
+	int new_memories_button_horizontal_margins = gtk_range_get_value (range);
+
+	if ((new_memories_button_horizontal_margins <= 1) && (memories_button_horizontal_margins > 1)) gtk_label_set_text (label, pixel_txt);
+	else if ((new_memories_button_horizontal_margins > 1) && (memories_button_horizontal_margins <= 1)) gtk_label_set_text (label, pixels_txt);
+
+	memories_button_horizontal_margins = new_memories_button_horizontal_margins;
 	current_cameras_set->memories_button_horizontal_margins = memories_button_horizontal_margins;
 
 	update_current_cameras_set_horizontal_margins ();
@@ -456,7 +468,7 @@ void memories_button_horizontal_margins_value_changed (GtkRange *range)
 
 void create_settings_window (void)
 {
-	GtkWidget *box1, *frame, *box2, *box3, *box4, *widget, *controller_ip_address_box;
+	GtkWidget *box1, *frame, *box2, *box3, *box4, *widget, *controller_ip_address_box, *label;
 	cameras_set_t *cameras_set_itr;
 	gint current_page;
 	int i, l, k;
@@ -801,57 +813,61 @@ void create_settings_window (void)
 				gtk_box_pack_end (GTK_BOX (box3), widget, FALSE, FALSE, 0);
 			gtk_box_pack_start (GTK_BOX (box2), box3, FALSE, FALSE, 0);
 
-				widget =  gtk_label_new ("Taille des marges gauche/droite des boutons de mémoires :");
-			gtk_box_pack_start (GTK_BOX (box2), widget, FALSE, FALSE, 0);
+				box3 = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
+				gtk_widget_set_margin_top (box3, MARGIN_VALUE);
+				gtk_widget_set_margin_start (box3, MARGIN_VALUE);
+				gtk_widget_set_margin_end (box3, MARGIN_VALUE);
+					widget =  gtk_label_new ("Taille des marges gauche/droite des boutons de mémoires :");
+				gtk_box_pack_start (GTK_BOX (box3), widget, FALSE, FALSE, 0);
+			gtk_box_pack_start (GTK_BOX (box2), box3, FALSE, FALSE, 0);
 
 				box3 = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
 				gtk_widget_set_margin_top (box3, MARGIN_VALUE);
 				gtk_widget_set_margin_start (box3, MARGIN_VALUE);
 				gtk_widget_set_margin_end (box3, MARGIN_VALUE);
-				gtk_widget_set_margin_bottom (box3, MARGIN_VALUE);
+					if (memories_button_vertical_margins <= 1) label = gtk_label_new (pixel_txt);
+					else label = gtk_label_new (pixels_txt);
+					gtk_widget_set_margin_start (label, MARGIN_VALUE);
+				gtk_box_pack_end (GTK_BOX (box3), label, FALSE, FALSE, 0);
+
 					widget = gtk_scale_new_with_range (GTK_ORIENTATION_HORIZONTAL, 0.0, 20.0, 1.0);
 					gtk_scale_set_value_pos (GTK_SCALE (widget), GTK_POS_RIGHT);
 					gtk_scale_set_draw_value (GTK_SCALE (widget), TRUE);
 					gtk_scale_set_has_origin (GTK_SCALE (widget), FALSE);
-					//gtk_widget_set_size_request (thumbnail_size_scale, 200, 10);
-					//gtk_widget_set_margin_start (thumbnail_size_scale, 10);
-					//gtk_widget_set_margin_end (thumbnail_size_scale, 10);
 					gtk_range_set_value (GTK_RANGE (widget), memories_button_vertical_margins);
-					g_signal_connect (G_OBJECT (widget), "value-changed", G_CALLBACK (memories_button_vertical_margins_value_changed), NULL);
+					g_signal_connect (G_OBJECT (widget), "value-changed", G_CALLBACK (memories_button_vertical_margins_value_changed), label);
 				gtk_box_pack_start (GTK_BOX (box3), widget, TRUE, TRUE, 0);
-
-					widget = gtk_label_new ("pixels");
-				gtk_box_pack_start (GTK_BOX (box3), widget, FALSE, FALSE, 0);
 			gtk_box_pack_start (GTK_BOX (box2), box3, FALSE, FALSE, 0);
-
-				widget =  gtk_label_new ("Taille des marges haut/bas des boutons de mémoires :");
-			gtk_box_pack_start (GTK_BOX (box2), widget, FALSE, FALSE, 0);
 
 				box3 = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
 				gtk_widget_set_margin_top (box3, MARGIN_VALUE);
 				gtk_widget_set_margin_start (box3, MARGIN_VALUE);
 				gtk_widget_set_margin_end (box3, MARGIN_VALUE);
-				gtk_widget_set_margin_bottom (box3, MARGIN_VALUE);
-					widget = gtk_scale_new_with_range (GTK_ORIENTATION_HORIZONTAL, 0.0, 20.0, 1.0);
-					gtk_scale_set_value_pos (GTK_SCALE (widget), GTK_POS_RIGHT);
-					gtk_scale_set_draw_value (GTK_SCALE (widget), TRUE);
-					gtk_scale_set_has_origin (GTK_SCALE (widget), FALSE);
-					//gtk_widget_set_size_request (thumbnail_size_scale, 200, 10);
-					//gtk_widget_set_margin_start (thumbnail_size_scale, 10);
-					//gtk_widget_set_margin_end (thumbnail_size_scale, 10);
-					gtk_range_set_value (GTK_RANGE (widget), memories_button_horizontal_margins);
-					g_signal_connect (G_OBJECT (widget), "value-changed", G_CALLBACK (memories_button_horizontal_margins_value_changed), NULL);
-				gtk_box_pack_start (GTK_BOX (box3), widget, TRUE, TRUE, 0);
-
-					widget = gtk_label_new ("pixels");
+					widget =  gtk_label_new ("Taille des marges haut/bas des boutons de mémoires :");
 				gtk_box_pack_start (GTK_BOX (box3), widget, FALSE, FALSE, 0);
 			gtk_box_pack_start (GTK_BOX (box2), box3, FALSE, FALSE, 0);
 
 				box3 = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
+				gtk_widget_set_margin_top (box3, MARGIN_VALUE);
+				gtk_widget_set_margin_start (box3, MARGIN_VALUE);
+				gtk_widget_set_margin_end (box3, MARGIN_VALUE);
+					if (memories_button_horizontal_margins <= 1) label = gtk_label_new (pixel_txt);
+					else label = gtk_label_new (pixels_txt);
+					gtk_widget_set_margin_start (label, MARGIN_VALUE);
+				gtk_box_pack_end (GTK_BOX (box3), label, FALSE, FALSE, 0);
+
+					widget = gtk_scale_new_with_range (GTK_ORIENTATION_HORIZONTAL, 0.0, 20.0, 1.0);
+					gtk_scale_set_value_pos (GTK_SCALE (widget), GTK_POS_RIGHT);
+					gtk_scale_set_draw_value (GTK_SCALE (widget), TRUE);
+					gtk_scale_set_has_origin (GTK_SCALE (widget), FALSE);
+					gtk_range_set_value (GTK_RANGE (widget), memories_button_horizontal_margins);
+					g_signal_connect (G_OBJECT (widget), "value-changed", G_CALLBACK (memories_button_horizontal_margins_value_changed), label);
+				gtk_box_pack_start (GTK_BOX (box3), widget, TRUE, TRUE, 0);
+			gtk_box_pack_start (GTK_BOX (box2), box3, FALSE, FALSE, 0);
+
+				box3 = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
+				gtk_widget_set_margin_bottom (box3, MARGIN_VALUE);
 					widget = gtk_button_new_with_label (about_txt);
-					//gtk_widget_set_margin_end (widget, 6);
-					//gtk_style_context_add_provider (gtk_widget_get_style_context (widget), GTK_STYLE_PROVIDER (css_provider_button), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
-					//gtk_button_set_use_underline (GTK_BUTTON (widget), TRUE);
 					g_signal_connect (G_OBJECT (widget), "clicked", G_CALLBACK (show_about_window), NULL);
 				gtk_box_set_center_widget (GTK_BOX (box3), widget);
 			gtk_box_pack_end (GTK_BOX (box2), box3, FALSE, FALSE, 0);
