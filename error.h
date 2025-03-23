@@ -21,13 +21,6 @@
 #define __ERROR_H
 
 
-#ifdef _WIN32
-	#include <winsock2.h>
-#elif defined (__linux)
-	#include <sys/socket.h>
-	#include <netinet/in.h>
-#endif
-
 #include "ptz.h"
 
 
