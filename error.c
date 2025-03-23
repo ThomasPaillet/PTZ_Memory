@@ -17,7 +17,7 @@
  * along with PTZ-Memory. If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include "ptz.h"
+#include "error.h"
 
 #include <stdio.h>
 
@@ -38,10 +38,11 @@
 		for (i = 0; i < cameras_set_itr->number_of_cameras; i++) { \
 			if (cameras_set_itr->ptz_ptr_array[i]->address.sin_addr.s_addr == src_in_addr->s_addr) { \
 				if (ptz == NULL) { \
-					ptz = cameras_set_itr->ptz_ptr_array[i]; \
+					ptz = cameras_set_itr->cameras[i]; \
  \
 					gettimeofday (&current_time, NULL); \
 					time = localtime (&current_time.tv_sec); \
+ \
 					fprintf (error_log_file, "%02dh %02dm %02ds: Camera %s (%s) -> %s\n", time->tm_hour, time->tm_min, time->tm_sec, ptz->name, ptz->ip_address, s); \
 				} else ptz = cameras_set_itr->ptz_ptr_array[i]; \
  \
@@ -77,10 +78,11 @@
 		for (i = 0; i < cameras_set_itr->number_of_cameras; i++) { \
 			if (cameras_set_itr->ptz_ptr_array[i]->address.sin_addr.s_addr == src_in_addr->s_addr) { \
 				if (ptz == NULL) { \
-					ptz = cameras_set_itr->ptz_ptr_array[i]; \
+					ptz = cameras_set_itr->cameras[i]; \
  \
 					gettimeofday (&current_time, NULL); \
 					time = localtime (&current_time.tv_sec); \
+ \
 					fprintf (error_log_file, "%02dh %02dm %02ds: Camera %s (%s) -> %s\n", time->tm_hour, time->tm_min, time->tm_sec, ptz->name, ptz->ip_address, s); \
 				} else ptz = cameras_set_itr->ptz_ptr_array[i]; \
  \
@@ -137,10 +139,11 @@ gboolean clear_ptz_error (struct in_addr *src_in_addr)
 		for (i = 0; i < cameras_set_itr->number_of_cameras; i++) {
 			if (cameras_set_itr->ptz_ptr_array[i]->address.sin_addr.s_addr == src_in_addr->s_addr) {
 				if (ptz == NULL) {
-					ptz = cameras_set_itr->ptz_ptr_array[i];
+					ptz = cameras_set_itr->cameras[i];
 
 					gettimeofday (&current_time, NULL);
 					time = localtime (&current_time.tv_sec);
+
 					fprintf (error_log_file, "%02dh %02dm %02ds: Camera %s (%s) -> Normal\n", time->tm_hour, time->tm_min, time->tm_sec, ptz->name, ptz->ip_address);
 				} else ptz = cameras_set_itr->ptz_ptr_array[i];
 
