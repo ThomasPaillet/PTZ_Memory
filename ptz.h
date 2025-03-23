@@ -179,10 +179,6 @@ typedef struct {
 } ptz_thread_t;
 
 
-extern int memories_button_vertical_margins;
-extern int memories_button_horizontal_margins;
-
-
 void init_ptz (ptz_t *ptz);
 
 gboolean ptz_is_on (ptz_t *ptz);
@@ -216,14 +212,24 @@ typedef struct cameras_set_s {
 	char name[CAMERAS_SET_NAME_LENGTH + 1];
 
 	int number_of_cameras;
-	ptz_t **ptz_ptr_array;
+	ptz_t *cameras[MAX_CAMERAS];
 
 	int number_of_ghost_cameras;
+
+	gboolean orientation;
+
+	gdouble thumbnail_size;
+	int thumbnail_width, thumbnail_height;
+
+	int memories_button_vertical_margins;
+	int memories_button_horizontal_margins;
 
 	GtkWidget *linked_memories_names_entries;
 	GtkWidget *entry_widgets_padding;
 	GtkWidget *entry_widgets[MAX_MEMORIES];
 	GtkAdjustment *entry_scrolled_window_adjustment;
+
+	gboolean show_linked_memories_names_entries;
 
 	GtkWidget *name_grid_box;
 
@@ -235,6 +241,8 @@ typedef struct cameras_set_s {
 	GtkWidget *memories_labels[MAX_MEMORIES];
 	GtkAdjustment *label_scrolled_window_adjustment;
 
+	gboolean show_linked_memories_names_labels;
+
 	GtkWidget *memories_scrollbar_padding;
 	GtkAdjustment *memories_scrollbar_adjustment;
 
@@ -245,10 +253,6 @@ typedef struct cameras_set_s {
 	GtkWidget *page_box;
 
 	GtkWidget *list_box_row;
-
-	int thumbnail_width;
-	int memories_button_vertical_margins;
-	int memories_button_horizontal_margins;
 
 	struct cameras_set_s *next;
 } cameras_set_t;
@@ -265,11 +269,6 @@ extern cameras_set_t *cameras_sets;
 extern cameras_set_t *current_cameras_set;
 extern cameras_set_t *new_cameras_set;
 extern cameras_set_t *cameras_set_with_error;
-
-extern gboolean cameras_set_orientation;
-
-extern gboolean show_linked_memories_names_entries;
-extern gboolean show_linked_memories_names_labels;
 
 
 void show_cameras_set_configuration_window (void);
@@ -524,9 +523,6 @@ extern GtkWidget *link_toggle_button;
 
 extern GtkWidget *switch_cameras_on_button;
 extern GtkWidget *switch_cameras_off_button;
-
-extern gdouble thumbnail_size;
-extern int thumbnail_width, thumbnail_height;
 
 extern GdkSeat *seat;
 extern GdkDevice *mouse;
