@@ -19,6 +19,14 @@
 
 #include "ptz.h"
 
+#include "controller.h"
+#include "error.h"
+#include "main_window.h"
+#include "protocol.h"
+#include "settings.h"
+#include "sw_p_08.h"
+#include "tally.h"
+
 
 int memories_button_vertical_margins = 0;
 int memories_button_horizontal_margins = 0;
@@ -301,7 +309,7 @@ void memory_name_entry_activate (GtkEntry *entry, memory_t *memory)
 	backup_needed = TRUE;
 }
 
-void create_ptz_widgets_horizontal (ptz_t *ptz)
+void create_ptz_widgets_horizontal (ptz_t *ptz, int thumbnail_width, int thumbnail_height)
 {
 /*
 name_grid                                       memories_grid
@@ -404,7 +412,7 @@ name_grid                                       memories_grid
 	gtk_grid_attach (GTK_GRID (ptz->memories_grid), ptz->tally[5], MAX_MEMORIES, 0, 1, 3);
 }
 
-void create_ptz_widgets_vertical (ptz_t *ptz)
+void create_ptz_widgets_vertical (ptz_t *ptz, int thumbnail_width, int thumbnail_height)
 {
 /*
 name_grid
@@ -526,7 +534,7 @@ gboolean ghost_body_draw (GtkWidget *widget, cairo_t *cr)
 	return GDK_EVENT_PROPAGATE;
 }
 
-void create_ghost_ptz_widgets_horizontal (ptz_t *ptz)
+void create_ghost_ptz_widgets_horizontal (ptz_t *ptz, int thumbnail_width, int thumbnail_height)
 {
 /*
 name_grid                    memories_grid
@@ -586,7 +594,7 @@ name_grid                    memories_grid
 	gtk_grid_attach (GTK_GRID (ptz->memories_grid), ptz->tally[5], MAX_MEMORIES, 0, 1, 3);
 }
 
-void create_ghost_ptz_widgets_vertical (ptz_t *ptz)
+void create_ghost_ptz_widgets_vertical (ptz_t *ptz, int thumbnail_width, int thumbnail_height)
 {
 /*
 name_grid
