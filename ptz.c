@@ -212,6 +212,30 @@ gpointer switch_ptz_off (ptz_thread_t *ptz_thread)
 	return NULL;
 }
 
+void show_control_window (ptz_t *ptz)
+{
+	g_signal_handler_block (ptz->control_window.auto_focus_toggle_button, ptz->control_window.auto_focus_handler_id);
+	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (ptz->control_window.auto_focus_toggle_button), ptz->auto_focus);
+	g_signal_handler_unblock (ptz->control_window.auto_focus_toggle_button, ptz->control_window.auto_focus_handler_id);
+
+	gtk_widget_set_sensitive (ptz->control_window.focus_box, !ptz->auto_focus);
+
+	gtk_widget_show_all (ptz->control_window.window);
+	current_ptz_control_window = ptz;
+	ptz->control_window.is_on_screen = TRUE;
+}
+
+gboolean update_auto_focus_toggle_button (ptz_t *ptz)
+{
+	g_signal_handler_block (ptz->control_window.auto_focus_toggle_button, ptz->control_window.auto_focus_handler_id);
+	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (ptz->control_window.auto_focus_toggle_button), ptz->auto_focus);
+	g_signal_handler_unblock (ptz->control_window.auto_focus_toggle_button, ptz->control_window.auto_focus_handler_id);
+
+	gtk_widget_set_sensitive (ptz->control_window.focus_box, !ptz->auto_focus);
+
+	return G_SOURCE_REMOVE;
+}
+
 gboolean name_drawing_area_button_press_event (GtkButton *widget, GdkEventButton *event, ptz_t *ptz)
 {
 	ptz_thread_t *controller_thread;
