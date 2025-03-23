@@ -175,6 +175,7 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 			gtk_widget_set_sensitive (switch_cameras_on_button, TRUE);
 			gtk_widget_set_sensitive (switch_cameras_off_button, TRUE);
 		}
+
 		if (number_of_cameras_sets == 1) gtk_notebook_set_show_tabs (GTK_NOTEBOOK (main_window_notebook), TRUE);
 
 		number_of_cameras_sets++;
@@ -187,10 +188,11 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 					if (cameras_set == cameras_set_itr) continue;
 
 					for (j = 0; j < cameras_set_itr->number_of_cameras; j++) {
-						if (strcmp (cameras_set_itr->ptz_ptr_array[j]->ip_address, ptz->ip_address) == 0) break;
+						if (strcmp (cameras_set_itr->cameras[j]->ip_address, ptz->ip_address) == 0) break;
 					}
 					if (j < cameras_set_itr->number_of_cameras) break;
 				}
+
 				if (cameras_set_itr == NULL) {
 					send_ptz_control_command (ptz, "#LPC0", TRUE);
 					send_update_stop_cmd (ptz);
@@ -204,13 +206,14 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 				gtk_widget_destroy (ptz->name_grid);
 				gtk_widget_destroy (ptz->memories_separator);
 				gtk_widget_destroy (ptz->memories_grid);
+
 				if (ptz->active) {
 					gtk_widget_destroy (ptz->control_window.window);
 
 					for (j = 0; j < MAX_MEMORIES; j++) {
 						if (!ptz->memories[j].empty) {
 							g_object_unref (G_OBJECT (ptz->memories[j].full_pixbuf));
-							if (thumbnail_width != 320) g_object_unref (G_OBJECT (ptz->memories[j].scaled_pixbuf));
+							if (cameras_set->thumbnail_width != 320) g_object_unref (G_OBJECT (ptz->memories[j].scaled_pixbuf));
 						}
 					}
 				}
@@ -295,10 +298,12 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 						if (cameras_set == cameras_set_itr) continue;
 
 						for (j = 0; j < cameras_set_itr->number_of_cameras; j++) {
-							if (strcmp (cameras_set_itr->ptz_ptr_array[j]->ip_address, ptz->ip_address) == 0) break;
+							if (strcmp (cameras_set_itr->cameras[j]->ip_address, ptz->ip_address) == 0) break;
 						}
+
 						if (j < cameras_set_itr->number_of_cameras) break;
 					}
+
 					if (cameras_set_itr == NULL) {
 						send_ptz_control_command (ptz, "#LPC0", TRUE);
 						send_update_stop_cmd (ptz);
@@ -316,7 +321,7 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 					for (j = 0; j < MAX_MEMORIES; j++) {
 						if (!ptz->memories[j].empty) {
 							g_object_unref (G_OBJECT (ptz->memories[j].full_pixbuf));
-							if (thumbnail_width != 320) g_object_unref (G_OBJECT (ptz->memories[j].scaled_pixbuf));
+							if (cameras_set->thumbnail_width != 320) g_object_unref (G_OBJECT (ptz->memories[j].scaled_pixbuf));
 						}
 					}
 				}
@@ -365,7 +370,7 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 							if (cameras_set == cameras_set_itr) continue;
 
 							for (k = 0; k < cameras_set_itr->number_of_cameras; k++) {
-								if (strcmp (cameras_set_itr->ptz_ptr_array[k]->ip_address, ptz->ip_address) == 0) break;
+								if (strcmp (cameras_set_itr->cameras[k]->ip_address, ptz->ip_address) == 0) break;
 							}
 							if (k < cameras_set_itr->number_of_cameras) break;
 						}
@@ -788,7 +793,7 @@ void delete_cameras_set (void)
 					if (other_cameras_set == cameras_set_itr) continue;
 
 					for (j = 0; j < other_cameras_set->number_of_cameras; j++) {
-						if (strcmp (other_cameras_set->ptz_ptr_array[j]->ip_address, ptz->ip_address) == 0) break;
+						if (strcmp (other_cameras_set->cameras[j]->ip_address, ptz->ip_address) == 0) break;
 					}
 					if (j < other_cameras_set->number_of_cameras) break;
 				}
@@ -804,7 +809,7 @@ void delete_cameras_set (void)
 			for (j = 0; j < MAX_MEMORIES; j++) {
 				if (!ptz->memories[j].empty) {
 					g_object_unref (G_OBJECT (ptz->memories[j].full_pixbuf));
-					if (thumbnail_width != 320) g_object_unref (G_OBJECT (ptz->memories[j].scaled_pixbuf));
+					if (cameras_set_itr->thumbnail_width != 320) g_object_unref (G_OBJECT (ptz->memories[j].scaled_pixbuf));
 				}
 			}
 
@@ -887,7 +892,7 @@ void create_horizontal_linked_memories_names_entries (cameras_set_t *cameras_set
 
 	cameras_set->linked_memories_names_entries = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
 		cameras_set->entry_widgets_padding = gtk_drawing_area_new ();
-		gtk_widget_set_size_request (cameras_set->entry_widgets_padding, thumbnail_height + 12, 34);
+		gtk_widget_set_size_request (cameras_set->entry_widgets_padding, cameras_set->thumbnail_height + 12, 34);
 	gtk_box_pack_start (GTK_BOX (cameras_set->linked_memories_names_entries), cameras_set->entry_widgets_padding, FALSE, FALSE, 0);
 
 		scrolled_window = gtk_scrolled_window_new (NULL, NULL);
@@ -898,9 +903,9 @@ void create_horizontal_linked_memories_names_entries (cameras_set_t *cameras_set
 			box = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
 				for (i = 0; i < MAX_MEMORIES; i++) {
 					cameras_set->entry_widgets[i] = gtk_entry_new ();
-					gtk_widget_set_size_request (cameras_set->entry_widgets[i], thumbnail_width + 6, 34);
-					gtk_widget_set_margin_start (cameras_set->entry_widgets[i], 2 + memories_button_vertical_margins);
-					gtk_widget_set_margin_end (cameras_set->entry_widgets[i], 2 + memories_button_vertical_margins);
+					gtk_widget_set_size_request (cameras_set->entry_widgets[i], cameras_set->thumbnail_width + 6, 34);
+					gtk_widget_set_margin_start (cameras_set->entry_widgets[i], 2 + cameras_set->memories_button_vertical_margins);
+					gtk_widget_set_margin_end (cameras_set->entry_widgets[i], 2 + cameras_set->memories_button_vertical_margins);
 					gtk_entry_set_max_length (GTK_ENTRY (cameras_set->entry_widgets[i]), MEMORIES_NAME_LENGTH);
 					gtk_entry_set_width_chars (GTK_ENTRY (cameras_set->entry_widgets[i]), MEMORIES_NAME_LENGTH);
 					gtk_entry_set_alignment (GTK_ENTRY (cameras_set->entry_widgets[i]), 0.5);
@@ -921,7 +926,7 @@ void create_vertical_linked_memories_names_entries (cameras_set_t *cameras_set)
 
 	cameras_set->linked_memories_names_entries = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
 		cameras_set->entry_widgets_padding = gtk_drawing_area_new ();
-		gtk_widget_set_size_request (cameras_set->entry_widgets_padding, 34, thumbnail_height + 12);
+		gtk_widget_set_size_request (cameras_set->entry_widgets_padding, 34, cameras_set->thumbnail_height + 12);
 	gtk_box_pack_start (GTK_BOX (cameras_set->linked_memories_names_entries), cameras_set->entry_widgets_padding, FALSE, FALSE, 0);
 
 		scrolled_window = gtk_scrolled_window_new (NULL, NULL);
@@ -932,9 +937,9 @@ void create_vertical_linked_memories_names_entries (cameras_set_t *cameras_set)
 			box = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
 				for (i = 0; i < MAX_MEMORIES; i++) {
 					cameras_set->entry_widgets[i] = gtk_entry_new ();
-					gtk_widget_set_size_request (cameras_set->entry_widgets[i], 34, thumbnail_height + 10);
-					gtk_widget_set_margin_top (cameras_set->entry_widgets[i], memories_button_horizontal_margins);
-					gtk_widget_set_margin_bottom (cameras_set->entry_widgets[i], memories_button_horizontal_margins);
+					gtk_widget_set_size_request (cameras_set->entry_widgets[i], 34, cameras_set->thumbnail_height + 10);
+					gtk_widget_set_margin_top (cameras_set->entry_widgets[i], cameras_set->memories_button_horizontal_margins);
+					gtk_widget_set_margin_bottom (cameras_set->entry_widgets[i], cameras_set->memories_button_horizontal_margins);
 					gtk_entry_set_max_length (GTK_ENTRY (cameras_set->entry_widgets[i]), MEMORIES_NAME_LENGTH);
 					gtk_entry_set_width_chars (GTK_ENTRY (cameras_set->entry_widgets[i]), MEMORIES_NAME_LENGTH);
 					gtk_entry_set_alignment (GTK_ENTRY (cameras_set->entry_widgets[i]), 0.5);
@@ -955,7 +960,7 @@ void create_horizontal_linked_memories_names_labels (cameras_set_t *cameras_set)
 
 	cameras_set->linked_memories_names_labels = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
 		cameras_set->memories_labels_padding = gtk_drawing_area_new ();
-		gtk_widget_set_size_request (cameras_set->memories_labels_padding, thumbnail_height + 12, 20);
+		gtk_widget_set_size_request (cameras_set->memories_labels_padding, cameras_set->thumbnail_height + 12, 20);
 	gtk_box_pack_start (GTK_BOX (cameras_set->linked_memories_names_labels), cameras_set->memories_labels_padding, FALSE, FALSE, 0);
 
 		scrolled_window = gtk_scrolled_window_new (NULL, NULL);
@@ -966,9 +971,9 @@ void create_horizontal_linked_memories_names_labels (cameras_set_t *cameras_set)
 			box = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
 				for (i = 0; i < MAX_MEMORIES; i++) {
 					cameras_set->memories_labels[i] = gtk_label_new (NULL);
-					gtk_widget_set_size_request (cameras_set->memories_labels[i], thumbnail_width + 10, 20);
-					gtk_widget_set_margin_start (cameras_set->memories_labels[i], memories_button_vertical_margins);
-					gtk_widget_set_margin_end (cameras_set->memories_labels[i], memories_button_vertical_margins);
+					gtk_widget_set_size_request (cameras_set->memories_labels[i], cameras_set->thumbnail_width + 10, 20);
+					gtk_widget_set_margin_start (cameras_set->memories_labels[i], cameras_set->memories_button_vertical_margins);
+					gtk_widget_set_margin_end (cameras_set->memories_labels[i], cameras_set->memories_button_vertical_margins);
 					gtk_label_set_xalign (GTK_LABEL (cameras_set->memories_labels[i]), 0.5);
 					gtk_box_pack_start (GTK_BOX (box), cameras_set->memories_labels[i], FALSE, FALSE, 0);
 					g_signal_connect (G_OBJECT (cameras_set->entry_widgets[i]), "activate", G_CALLBACK (entry_activate), cameras_set->memories_labels[i]);
@@ -988,7 +993,7 @@ void create_vertical_linked_memories_names_labels (cameras_set_t *cameras_set)
 
 	cameras_set->linked_memories_names_labels = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
 		cameras_set->memories_labels_padding = gtk_drawing_area_new ();
-		gtk_widget_set_size_request (cameras_set->memories_labels_padding, 20, thumbnail_height + 12);
+		gtk_widget_set_size_request (cameras_set->memories_labels_padding, 20, cameras_set->thumbnail_height + 12);
 	gtk_box_pack_start (GTK_BOX (cameras_set->linked_memories_names_labels), cameras_set->memories_labels_padding, FALSE, FALSE, 0);
 
 		scrolled_window = gtk_scrolled_window_new (NULL, NULL);
@@ -1000,9 +1005,9 @@ void create_vertical_linked_memories_names_labels (cameras_set_t *cameras_set)
 				for (i = 0; i < MAX_MEMORIES; i++) {
 					cameras_set->memories_labels[i] = gtk_label_new (NULL);
 					gtk_label_set_angle (GTK_LABEL (cameras_set->memories_labels[i]), 270);
-					gtk_widget_set_size_request (cameras_set->memories_labels[i], 20, thumbnail_height + 10);
-					gtk_widget_set_margin_top (cameras_set->memories_labels[i], memories_button_horizontal_margins);
-					gtk_widget_set_margin_bottom (cameras_set->memories_labels[i], memories_button_horizontal_margins);
+					gtk_widget_set_size_request (cameras_set->memories_labels[i], 20, cameras_set->thumbnail_height + 10);
+					gtk_widget_set_margin_top (cameras_set->memories_labels[i], cameras_set->memories_button_horizontal_margins);
+					gtk_widget_set_margin_bottom (cameras_set->memories_labels[i], cameras_set->memories_button_horizontal_margins);
 					gtk_label_set_xalign (GTK_LABEL (cameras_set->memories_labels[i]), 0.5);
 					gtk_box_pack_start (GTK_BOX (box), cameras_set->memories_labels[i], FALSE, FALSE, 0);
 					g_signal_connect (G_OBJECT (cameras_set->entry_widgets[i]), "activate", G_CALLBACK (entry_activate), cameras_set->memories_labels[i]);
@@ -1021,7 +1026,7 @@ GtkWidget *create_horizontal_memories_scrollbar (cameras_set_t *cameras_set)
 
 	box = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
 		cameras_set->memories_scrollbar_padding = gtk_drawing_area_new ();
-		gtk_widget_set_size_request (cameras_set->memories_scrollbar_padding, thumbnail_height + 12, 10);
+		gtk_widget_set_size_request (cameras_set->memories_scrollbar_padding, cameras_set->thumbnail_height + 12, 10);
 	gtk_box_pack_start (GTK_BOX (box), cameras_set->memories_scrollbar_padding, FALSE, FALSE, 0);
 
 		cameras_set->memories_scrollbar_adjustment = gtk_adjustment_new (0, 0, 0, 0, 0, 0);
@@ -1038,7 +1043,7 @@ GtkWidget *create_vertical_memories_scrollbar (cameras_set_t *cameras_set)
 
 	box = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
 		cameras_set->memories_scrollbar_padding = gtk_drawing_area_new ();
-		gtk_widget_set_size_request (cameras_set->memories_scrollbar_padding, 10, thumbnail_height + 12);
+		gtk_widget_set_size_request (cameras_set->memories_scrollbar_padding, 10, cameras_set->thumbnail_height + 12);
 	gtk_box_pack_start (GTK_BOX (box), cameras_set->memories_scrollbar_padding, FALSE, FALSE, 0);
 
 		cameras_set->memories_scrollbar_adjustment = gtk_adjustment_new (0, 0, 0, 0, 0, 0);
