@@ -17,7 +17,29 @@
  * along with PTZ-Memory. If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include "ptz.h"
+#ifdef _WIN32
+	#include <winsock2.h>
+
+	#define SHUT_RD SD_RECEIVE
+
+	void WSAInit (void);
+
+	void timersub (const struct timeval* tvp, const struct timeval* uvp, struct timeval* vvp);
+
+#elif defined (__linux)
+	#include <sys/socket.h>
+	#include <netinet/in.h>
+	#include <arpa/inet.h>
+	#include <netdb.h>
+
+	#define SOCKET int
+	#define INVALID_SOCKET -1
+	#define closesocket close
+	#define WSAInit()
+	#define WSACleanup()
+#endif
+
+#include "protocol.h"
 
 #include <string.h>
 #include <stdio.h>
