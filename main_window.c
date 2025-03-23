@@ -17,7 +17,9 @@
  * along with PTZ-Memory. If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include "ptz.h"
+#include "main_window.h"
+
+#include "cameras_set.h"
 
 
 #ifdef _WIN32
@@ -241,20 +243,6 @@ void main_window_notebook_switch_page (GtkNotebook *notebook, GtkWidget *page, g
 
 	for (current_cameras_set = cameras_sets; current_cameras_set != NULL; current_cameras_set = current_cameras_set->next) {
 		if (current_cameras_set->page == page) break;
-	}
-
-	if (current_cameras_set->thumbnail_width != thumbnail_width) thumbnail_size_value_changed (GTK_RANGE (thumbnail_size_scale));
-
-	if (current_cameras_set->memories_button_vertical_margins != memories_button_vertical_margins) {
-		current_cameras_set->memories_button_vertical_margins = memories_button_vertical_margins;
-	
-		update_current_cameras_set_vertical_margins ();
-	}
-
-	if (current_cameras_set->memories_button_horizontal_margins != memories_button_horizontal_margins) {
-		current_cameras_set->memories_button_horizontal_margins = memories_button_horizontal_margins;
-	
-		update_current_cameras_set_horizontal_margins ();
 	}
 
 	g_mutex_unlock (&cameras_sets_mutex);
@@ -496,6 +484,7 @@ void create_main_window (void)
 
 		box2 = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
 			widget = gtk_button_new_with_label (settings_txt);
+			gtk_widget_set_margin_end (widget, 6);
 			gtk_style_context_add_provider (gtk_widget_get_style_context (widget), GTK_STYLE_PROVIDER (css_provider_button), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
 			gtk_button_set_use_underline (GTK_BUTTON (widget), TRUE);
 			g_signal_connect (G_OBJECT (widget), "clicked", G_CALLBACK (create_settings_window), NULL);
@@ -521,6 +510,7 @@ void create_main_window (void)
 
 			box3 = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
 				store_toggle_button = gtk_toggle_button_new_with_label ("_Enregister");
+				gtk_widget_set_margin_start (store_toggle_button, 6);
 				gtk_style_context_add_provider (gtk_widget_get_style_context (store_toggle_button), GTK_STYLE_PROVIDER (css_provider_toggle_button_red), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
 				gtk_button_set_use_underline (GTK_BUTTON (store_toggle_button), TRUE);
 				g_signal_connect (G_OBJECT (store_toggle_button), "toggled", G_CALLBACK (store_toggle_button_clicked), NULL);
@@ -535,12 +525,14 @@ void create_main_window (void)
 			gtk_box_pack_start (GTK_BOX (box3), delete_toggle_button, FALSE, FALSE, 0);
 
 				link_toggle_button = gtk_toggle_button_new_with_label ("_Lier");
+				gtk_widget_set_margin_end (link_toggle_button, 6);
 				gtk_style_context_add_provider (gtk_widget_get_style_context (link_toggle_button), GTK_STYLE_PROVIDER (css_provider_toggle_button_blue), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
 				gtk_button_set_use_underline (GTK_BUTTON (link_toggle_button), TRUE);
 			gtk_box_pack_start (GTK_BOX (box3), link_toggle_button, FALSE, FALSE, 0);
 		gtk_box_set_center_widget (GTK_BOX (box2), box3);
 
 			widget = gtk_button_new_with_label ("_Quitter");
+			gtk_widget_set_margin_start (widget, 6);
 			gtk_style_context_add_provider (gtk_widget_get_style_context (widget), GTK_STYLE_PROVIDER (css_provider_button), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
 			gtk_button_set_use_underline (GTK_BUTTON (widget), TRUE);
 			g_signal_connect (G_OBJECT (widget), "clicked", G_CALLBACK (show_exit_confirmation_window), NULL);
