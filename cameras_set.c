@@ -144,7 +144,7 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 			strcpy (ptz->name, entry_buffer_text);
 
 			if (ptz->active) {
-				create_control_window (ptz);
+				create_control_window (&ptz->control_window);
 
 				if (cameras_set_orientation) create_ptz_widgets_horizontal (ptz);
 				else create_ptz_widgets_vertical (ptz);
@@ -230,7 +230,7 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 			ptz->active = gtk_switch_get_active (GTK_SWITCH (cameras_configuration_widgets[i].camera_switch));
 
 			if (ptz->active) {
-				create_control_window (ptz);
+				create_control_window (&ptz->control_window);
 
 				if (cameras_set_orientation) create_ptz_widgets_horizontal (ptz);
 				else create_ptz_widgets_vertical (ptz);
@@ -278,7 +278,7 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 					gtk_widget_destroy (ptz->memories_grid);
 				}
 
-				create_control_window (ptz);
+				create_control_window (&ptz->control_window);
 
 				if (cameras_set_orientation) create_ptz_widgets_horizontal (ptz);
 				else create_ptz_widgets_vertical (ptz);
