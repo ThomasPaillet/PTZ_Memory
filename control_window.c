@@ -50,19 +50,6 @@ gboolean get_control_window_position_and_size (GtkWidget *window, gpointer cr, p
 	return GDK_EVENT_PROPAGATE;
 }
 
-void show_control_window (ptz_t *ptz)
-{
-	g_signal_handler_block (ptz->control_window.auto_focus_toggle_button, ptz->control_window.auto_focus_handler_id);
-	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (ptz->control_window.auto_focus_toggle_button), ptz->auto_focus);
-	g_signal_handler_unblock (ptz->control_window.auto_focus_toggle_button, ptz->control_window.auto_focus_handler_id);
-
-	gtk_widget_set_sensitive (ptz->control_window.focus_box, !ptz->auto_focus);
-
-	gtk_widget_show_all (ptz->control_window.window);
-	current_ptz_control_window = ptz;
-	ptz->control_window.is_on_screen = TRUE;
-}
-
 gboolean hide_control_window (GtkWidget *window, GdkEvent *event, ptz_t *ptz)
 {
 	ptz->control_window.is_on_screen = FALSE;
@@ -321,17 +308,6 @@ gboolean control_window_button_release (GtkWidget *window, GdkEventButton *event
 	}
 
 	return GDK_EVENT_PROPAGATE;
-}
-
-gboolean update_auto_focus_toggle_button (ptz_t *ptz)
-{
-	g_signal_handler_block (ptz->control_window.auto_focus_toggle_button, ptz->control_window.auto_focus_handler_id);
-	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (ptz->control_window.auto_focus_toggle_button), ptz->auto_focus);
-	g_signal_handler_unblock (ptz->control_window.auto_focus_toggle_button, ptz->control_window.auto_focus_handler_id);
-
-	gtk_widget_set_sensitive (ptz->control_window.focus_box, !ptz->auto_focus);
-
-	return G_SOURCE_REMOVE;
 }
 
 void auto_focus_toggle_button_clicked (GtkToggleButton *auto_focus_toggle_button, ptz_t *ptz)
@@ -1219,7 +1195,7 @@ gboolean zoom_speed_button_released (GtkButton *button, GdkEventButton *event, p
 	return FALSE;
 }
 
-void create_control_window (ptz_t *ptz)
+void create_control_window (control_window_t *control_window, gpointer ptz)
 {
 	GtkWidget *main_grid, *grid, *box, *widget, *image, *event_box;
 
@@ -1237,30 +1213,30 @@ void create_control_window (ptz_t *ptz)
 	g_signal_connect (G_OBJECT (widget), "key-release-event", G_CALLBACK (control_window_key_release), ptz);
 	g_signal_connect (G_OBJECT (widget), "focus-out-event", G_CALLBACK (hide_control_window), ptz);
 	g_signal_connect (G_OBJECT (widget), "delete-event", G_CALLBACK (hide_control_window), ptz);
-	ptz->control_window.window = widget;
+	control_window->window = widget;
 
 	main_grid = gtk_grid_new ();
-		ptz->control_window.tally[0] = gtk_drawing_area_new ();
-		gtk_widget_set_size_request (ptz->control_window.tally[0], 4, 4);
-		g_signal_connect (G_OBJECT (ptz->control_window.tally[0]), "draw", G_CALLBACK (control_window_tally_draw), ptz);
-	gtk_grid_attach (GTK_GRID (main_grid), ptz->control_window.tally[0], 0, 0, 7, 1);
+		control_window->tally[0] = gtk_drawing_area_new ();
+		gtk_widget_set_size_request (control_window->tally[0], 4, 4);
+		g_signal_connect (G_OBJECT (control_window->tally[0]), "draw", G_CALLBACK (control_window_tally_draw), ptz);
+	gtk_grid_attach (GTK_GRID (main_grid), control_window->tally[0], 0, 0, 7, 1);
 
-		ptz->control_window.tally[1] = gtk_drawing_area_new ();
-		gtk_widget_set_size_request (ptz->control_window.tally[1], 4, 4);
-		gtk_widget_set_margin_end (ptz->control_window.tally[1], MARGIN_VALUE);
-		g_signal_connect (G_OBJECT (ptz->control_window.tally[1]), "draw", G_CALLBACK (control_window_tally_draw), ptz);
-	gtk_grid_attach (GTK_GRID (main_grid), ptz->control_window.tally[1], 0, 1, 1, 3);
+		control_window->tally[1] = gtk_drawing_area_new ();
+		gtk_widget_set_size_request (control_window->tally[1], 4, 4);
+		gtk_widget_set_margin_end (control_window->tally[1], MARGIN_VALUE);
+		g_signal_connect (G_OBJECT (control_window->tally[1]), "draw", G_CALLBACK (control_window_tally_draw), ptz);
+	gtk_grid_attach (GTK_GRID (main_grid), control_window->tally[1], 0, 1, 1, 3);
 
-		ptz->control_window.tally[2] = gtk_drawing_area_new ();
-		gtk_widget_set_size_request (ptz->control_window.tally[2], 4, 4);
-		gtk_widget_set_margin_start (ptz->control_window.tally[2], MARGIN_VALUE);
-		g_signal_connect (G_OBJECT (ptz->control_window.tally[2]), "draw", G_CALLBACK (control_window_tally_draw), ptz);
-	gtk_grid_attach (GTK_GRID (main_grid), ptz->control_window.tally[2], 6, 1, 1, 3);
+		control_window->tally[2] = gtk_drawing_area_new ();
+		gtk_widget_set_size_request (control_window->tally[2], 4, 4);
+		gtk_widget_set_margin_start (control_window->tally[2], MARGIN_VALUE);
+		g_signal_connect (G_OBJECT (control_window->tally[2]), "draw", G_CALLBACK (control_window_tally_draw), ptz);
+	gtk_grid_attach (GTK_GRID (main_grid), control_window->tally[2], 6, 1, 1, 3);
 
-		ptz->control_window.tally[3] = gtk_drawing_area_new ();
-		gtk_widget_set_size_request (ptz->control_window.tally[3], 4, 4);
-		g_signal_connect (G_OBJECT (ptz->control_window.tally[3]), "draw", G_CALLBACK (control_window_tally_draw), ptz);
-	gtk_grid_attach (GTK_GRID (main_grid), ptz->control_window.tally[3], 0, 4, 7, 1);
+		control_window->tally[3] = gtk_drawing_area_new ();
+		gtk_widget_set_size_request (control_window->tally[3], 4, 4);
+		g_signal_connect (G_OBJECT (control_window->tally[3]), "draw", G_CALLBACK (control_window_tally_draw), ptz);
+	gtk_grid_attach (GTK_GRID (main_grid), control_window->tally[3], 0, 4, 7, 1);
 
 		widget = gtk_label_new ("Focus");
 	gtk_grid_attach (GTK_GRID (main_grid), widget, 1, 1, 1, 1);
@@ -1268,13 +1244,13 @@ void create_control_window (ptz_t *ptz)
 		grid = gtk_grid_new ();
 		gtk_grid_set_row_homogeneous (GTK_GRID (grid), TRUE);
 		gtk_widget_set_margin_bottom (grid, MARGIN_VALUE);
-			ptz->control_window.auto_focus_toggle_button = gtk_toggle_button_new_with_label ("Auto");
-			ptz->control_window.auto_focus_handler_id = g_signal_connect (G_OBJECT (ptz->control_window.auto_focus_toggle_button), "toggled", G_CALLBACK (auto_focus_toggle_button_clicked), ptz);
-		gtk_grid_attach (GTK_GRID (grid), ptz->control_window.auto_focus_toggle_button, 0, 0, 1, 1);
+			control_window->auto_focus_toggle_button = gtk_toggle_button_new_with_label ("Auto");
+			control_window->auto_focus_handler_id = g_signal_connect (G_OBJECT (control_window->auto_focus_toggle_button), "toggled", G_CALLBACK (auto_focus_toggle_button_clicked), ptz);
+		gtk_grid_attach (GTK_GRID (grid), control_window->auto_focus_toggle_button, 0, 0, 1, 1);
 
 			box = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
-			ptz->control_window.focus_box = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
-			gtk_widget_set_margin_bottom (ptz->control_window.focus_box, 50);
+			control_window->focus_box = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
+			gtk_widget_set_margin_bottom (control_window->focus_box, 50);
 #ifdef _WIN32
 				image = gtk_image_new_from_pixbuf (pixbuf_up);
 #elif defined (__linux)
@@ -1285,11 +1261,11 @@ void create_control_window (ptz_t *ptz)
 				gtk_widget_set_margin_bottom (widget, MARGIN_VALUE);
 				g_signal_connect (G_OBJECT (widget), "button_press_event", G_CALLBACK (focus_far_button_pressed), ptz);
 				g_signal_connect (G_OBJECT (widget), "button_release_event", G_CALLBACK (focus_speed_button_released), ptz);
-			gtk_box_pack_start (GTK_BOX (ptz->control_window.focus_box), widget, FALSE, FALSE, 0);
+			gtk_box_pack_start (GTK_BOX (control_window->focus_box), widget, FALSE, FALSE, 0);
 
-				ptz->control_window.otaf_button = gtk_button_new_with_label ("OTAF");
-				g_signal_connect (G_OBJECT (ptz->control_window.otaf_button), "button_press_event", G_CALLBACK (one_touch_auto_focus_button_pressed), ptz);
-			gtk_box_pack_start (GTK_BOX (ptz->control_window.focus_box), ptz->control_window.otaf_button, FALSE, FALSE, 0);
+				control_window->otaf_button = gtk_button_new_with_label ("OTAF");
+				g_signal_connect (G_OBJECT (control_window->otaf_button), "button_press_event", G_CALLBACK (one_touch_auto_focus_button_pressed), ptz);
+			gtk_box_pack_start (GTK_BOX (control_window->focus_box), control_window->otaf_button, FALSE, FALSE, 0);
 
 #ifdef _WIN32
 				image = gtk_image_new_from_pixbuf (pixbuf_down);
@@ -1301,23 +1277,23 @@ void create_control_window (ptz_t *ptz)
 				gtk_widget_set_margin_top (widget, MARGIN_VALUE);
 				g_signal_connect (G_OBJECT (widget), "button_press_event", G_CALLBACK (focus_near_button_pressed), ptz);
 				g_signal_connect (G_OBJECT (widget), "button_release_event", G_CALLBACK (focus_speed_button_released), ptz);
-			gtk_box_pack_start (GTK_BOX (ptz->control_window.focus_box), widget, FALSE, FALSE, 0);
-		gtk_box_set_center_widget (GTK_BOX (box), ptz->control_window.focus_box);
+			gtk_box_pack_start (GTK_BOX (control_window->focus_box), widget, FALSE, FALSE, 0);
+		gtk_box_set_center_widget (GTK_BOX (box), control_window->focus_box);
 		gtk_grid_attach (GTK_GRID (grid), box, 0, 1, 1, 6);
 
-			ptz->control_window.focus_level_bar_drawing_area = gtk_drawing_area_new ();
-			gtk_widget_set_size_request (ptz->control_window.focus_level_bar_drawing_area, 5, 273);
-			gtk_widget_set_margin_start (ptz->control_window.focus_level_bar_drawing_area, MARGIN_VALUE);
-			g_signal_connect (G_OBJECT (ptz->control_window.focus_level_bar_drawing_area), "draw", G_CALLBACK (focus_level_bar_draw), ptz);
-		gtk_grid_attach (GTK_GRID (grid), ptz->control_window.focus_level_bar_drawing_area, 1, 0, 1, 7);
+			control_window->focus_level_bar_drawing_area = gtk_drawing_area_new ();
+			gtk_widget_set_size_request (control_window->focus_level_bar_drawing_area, 5, 273);
+			gtk_widget_set_margin_start (control_window->focus_level_bar_drawing_area, MARGIN_VALUE);
+			g_signal_connect (G_OBJECT (control_window->focus_level_bar_drawing_area), "draw", G_CALLBACK (focus_level_bar_draw), ptz);
+		gtk_grid_attach (GTK_GRID (grid), control_window->focus_level_bar_drawing_area, 1, 0, 1, 7);
 	gtk_grid_attach (GTK_GRID (main_grid), grid, 1, 2, 1, 2);
 
-		ptz->control_window.name_drawing_area = gtk_drawing_area_new ();
-		gtk_widget_set_size_request (ptz->control_window.name_drawing_area, 60, 40);
-		gtk_widget_set_margin_top (ptz->control_window.name_drawing_area, MARGIN_VALUE);
-		gtk_widget_set_halign (ptz->control_window.name_drawing_area, GTK_ALIGN_CENTER);
-		g_signal_connect (G_OBJECT (ptz->control_window.name_drawing_area), "draw", G_CALLBACK (control_window_name_draw), ptz);
-	gtk_grid_attach (GTK_GRID (main_grid), ptz->control_window.name_drawing_area, 3, 1, 1, 1);
+		control_window->name_drawing_area = gtk_drawing_area_new ();
+		gtk_widget_set_size_request (control_window->name_drawing_area, 60, 40);
+		gtk_widget_set_margin_top (control_window->name_drawing_area, MARGIN_VALUE);
+		gtk_widget_set_halign (control_window->name_drawing_area, GTK_ALIGN_CENTER);
+		g_signal_connect (G_OBJECT (control_window->name_drawing_area), "draw", G_CALLBACK (control_window_name_draw), ptz);
+	gtk_grid_attach (GTK_GRID (main_grid), control_window->name_drawing_area, 3, 1, 1, 1);
 
 		event_box = gtk_event_box_new ();
 		gtk_widget_set_events (event_box, GDK_BUTTON_PRESS_MASK | GDK_POINTER_MOTION_MASK | GDK_BUTTON_RELEASE_MASK);
@@ -1342,11 +1318,11 @@ void create_control_window (ptz_t *ptz)
 
 		grid = gtk_grid_new ();
 		gtk_widget_set_margin_bottom (grid, MARGIN_VALUE);
-			ptz->control_window.zoom_level_bar_drawing_area = gtk_drawing_area_new ();
-			gtk_widget_set_size_request (ptz->control_window.zoom_level_bar_drawing_area, 5, 273);
-			gtk_widget_set_margin_end (ptz->control_window.zoom_level_bar_drawing_area, MARGIN_VALUE);
-			g_signal_connect (G_OBJECT (ptz->control_window.zoom_level_bar_drawing_area), "draw", G_CALLBACK (zoom_level_bar_draw), ptz);
-		gtk_grid_attach (GTK_GRID (grid), ptz->control_window.zoom_level_bar_drawing_area, 0, 0, 1, 6);
+			control_window->zoom_level_bar_drawing_area = gtk_drawing_area_new ();
+			gtk_widget_set_size_request (control_window->zoom_level_bar_drawing_area, 5, 273);
+			gtk_widget_set_margin_end (control_window->zoom_level_bar_drawing_area, MARGIN_VALUE);
+			g_signal_connect (G_OBJECT (control_window->zoom_level_bar_drawing_area), "draw", G_CALLBACK (zoom_level_bar_draw), ptz);
+		gtk_grid_attach (GTK_GRID (grid), control_window->zoom_level_bar_drawing_area, 0, 0, 1, 6);
 
 #ifdef _WIN32
 			image = gtk_image_new_from_pixbuf (pixbuf_up);
@@ -1359,7 +1335,7 @@ void create_control_window (ptz_t *ptz)
 			gtk_widget_set_margin_bottom (widget, MARGIN_VALUE);
 			g_signal_connect (G_OBJECT (widget), "button_press_event", G_CALLBACK (zoom_tele_button_pressed), ptz);
 			g_signal_connect (G_OBJECT (widget), "button_release_event", G_CALLBACK (zoom_speed_button_released), ptz);
-			ptz->control_window.zoom_tele_button = widget;
+			control_window->zoom_tele_button = widget;
 		gtk_grid_attach (GTK_GRID (grid), widget, 1, 2, 1, 1);
 
 #ifdef _WIN32
@@ -1373,12 +1349,13 @@ void create_control_window (ptz_t *ptz)
 			gtk_widget_set_margin_top (widget, MARGIN_VALUE);
 			g_signal_connect (G_OBJECT (widget), "button_press_event", G_CALLBACK (zoom_wide_button_pressed), ptz);
 			g_signal_connect (G_OBJECT (widget), "button_release_event", G_CALLBACK (zoom_speed_button_released), ptz);
-			ptz->control_window.zoom_wide_button = widget;
+			control_window->zoom_wide_button = widget;
 		gtk_grid_attach (GTK_GRID (grid), widget, 1, 3, 1, 1);
 	gtk_grid_attach (GTK_GRID (main_grid), grid, 5, 2, 1, 2);
 
-	gtk_container_add (GTK_CONTAINER (ptz->control_window.window), main_grid);
+	gtk_container_add (GTK_CONTAINER (control_window->window), main_grid);
 
-	gtk_widget_realize (ptz->control_window.window);
-	ptz->control_window.gdk_window = gtk_widget_get_window (ptz->control_window.window);
+	gtk_widget_realize (control_window->window);
+	control_window->gdk_window = gtk_widget_get_window (control_window->window);
 }
+
