@@ -21,7 +21,7 @@
 #define __TALLY_H
 
 
-#include "tally.h"
+#include "ptz.h"
 
 
 #define TSL_UMD_V5_UDP_PORT 8900
