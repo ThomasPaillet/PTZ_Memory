@@ -21,9 +21,18 @@
 #define __PTZ_H
 
 
+#ifdef _WIN32
+	#include <winsock2.h>
+#elif defined (__linux)
+	#include <sys/socket.h>
+    #include <netinet/in.h>
+#endif
+
 #include <gtk/gtk.h>
+#include <sys/time.h>
 
 #include "memory.h"
+#include "control_window.h"
 
 
 #define AW_HE130 0
@@ -110,6 +119,12 @@ gpointer switch_ptz_on (ptz_thread_t *ptz_thread);
 
 gpointer switch_ptz_off (ptz_thread_t *ptz_thread);
 
+void show_control_window (ptz_t *ptz);
+
+gboolean update_auto_focus_toggle_button (ptz_t *ptz);
+
+void create_control_window (ptz_t *ptz);
+
 void create_ptz_widgets_horizontal (ptz_t *ptz);
 
 void create_ptz_widgets_vertical (ptz_t *ptz);
@@ -118,6 +133,8 @@ void create_ghost_ptz_widgets_horizontal (ptz_t *ptz);
 
 void create_ghost_ptz_widgets_vertical (ptz_t *ptz);
 
+
+extern ptz_t *current_ptz_control_window;
 
 //cameras_set.h
 #define MAX_CAMERAS_SET 8
