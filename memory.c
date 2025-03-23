@@ -20,6 +20,12 @@
 #include "ptz.h"
 
 
+typedef struct {
+	memory_t *memory_ptr;
+	GThread *thread;
+} memory_thread_t;
+
+
 gboolean free_memory_thread (memory_thread_t *memory_thread)
 {
 	g_thread_join (memory_thread->thread);
