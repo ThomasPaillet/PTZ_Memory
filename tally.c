@@ -19,6 +19,9 @@
 
 #include "tally.h"
 
+#include "cameras_set.h"
+#include "protocol.h"
+
 
 typedef struct {
 	guint16 total_byte_count;
@@ -263,7 +266,7 @@ gpointer receive_tsl_umd_v5_msg (gpointer data)
 	while ((msg_len = recv (tsl_umd_v5_socket, (char*)&packet, 2048, 0)) > 1) {
 		if (current_cameras_set != NULL) {
 			if (packet.index < current_cameras_set->number_of_cameras) {
-				ptz = current_cameras_set->ptz_ptr_array[packet.index];
+				ptz = current_cameras_set->cameras[packet.index];
 				ptz->tally_data = packet.control;
 
 				if ((packet.control & 0x80) && (packet.control & 0x40)) ptz->tally_brightness = 1.0;
