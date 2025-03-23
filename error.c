@@ -112,12 +112,13 @@ gboolean camera_is_unreachable (ptz_t *ptz)
 	struct tm *time;
 
 	ptz_is_off (ptz);
+
 	gtk_widget_queue_draw (ptz->error_drawing_area);
 	gtk_widget_set_tooltip_text (ptz->error_drawing_area, "La caméra n'est pas connectée au réseau");
 
 	gettimeofday (&current_time, NULL);
-
 	time = localtime (&current_time.tv_sec);
+
 	fprintf (error_log_file, "%02dh %02dm %02ds: La caméra %s (%s) n'est pas connectée au réseau\n", time->tm_hour, time->tm_min, time->tm_sec, ptz->name, ptz->ip_address);
 
 	return G_SOURCE_REMOVE;
@@ -227,6 +228,7 @@ void start_error_log (void)
 
 	gettimeofday (&current_time, NULL);
 	time = localtime (&current_time.tv_sec);
+
 	sprintf (error_log_file_name, "20%02d-%02d-%02d_Errors.log", time->tm_year - 100, time->tm_mon + 1, time->tm_mday);
 	error_log_file = fopen (error_log_file_name, "a");
 }
