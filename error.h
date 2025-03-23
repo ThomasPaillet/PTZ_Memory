@@ -17,6 +17,10 @@
  * along with PTZ-Memory. If not, see <https://www.gnu.org/licenses/>.
 */
 
+#ifndef __ERROR_H
+#define __ERROR_H
+
+
 #include "ptz.h"
 
 
@@ -73,4 +77,7 @@ gboolean error_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz);
 void start_error_log (void);
 
 void stop_error_log (void);
+
+
+#endif
 
