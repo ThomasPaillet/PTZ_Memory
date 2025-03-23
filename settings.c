@@ -738,7 +738,7 @@ void load_config_file (void)
 			fread (&ptz->active, sizeof (gboolean), 1, config_file);
 
 			if (ptz->active) {
-				create_control_window (ptz);
+				create_control_window (&ptz->control_window);
 
 				if (cameras_set_orientation) create_ptz_widgets_horizontal (ptz);
 				else create_ptz_widgets_vertical (ptz);
