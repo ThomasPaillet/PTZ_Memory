@@ -23,10 +23,26 @@
 
 #ifdef _WIN32
 	#include <winsock2.h>
+
+	#define SHUT_RD SD_RECEIVE
+
+	void WSAInit (void);
+
+	void timersub (const struct timeval* tvp, const struct timeval* uvp, struct timeval* vvp);
+
 #elif defined (__linux)
 	#include <sys/socket.h>
-    #include <netinet/in.h>
+	#include <netinet/in.h>
+	#include <arpa/inet.h>
+	#include <netdb.h>
+
+	#define SOCKET int
+	#define INVALID_SOCKET -1
+	#define closesocket close
+	#define WSAInit()
+	#define WSACleanup()
 #endif
+
 
 #include <gtk/gtk.h>
 #include <sys/time.h>
@@ -133,6 +149,8 @@ void create_ghost_ptz_widgets_vertical (ptz_t *ptz);
 
 
 extern ptz_t *current_ptz_control_window;
+
+extern gdouble thumbnail_size;
 
 //cameras_set.h
 #define MAX_CAMERAS_SET 8
