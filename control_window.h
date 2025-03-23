@@ -21,7 +21,7 @@
 #define __CONTROL_WINDOW_H
 
 
-#include "ptz.h"
+#include <gtk/gtk.h>
 
 
 typedef struct {
@@ -64,15 +64,6 @@ extern char focus_far_speed_cmd[5];
 
 extern char zoom_wide_speed_cmd[5];
 extern char zoom_tele_speed_cmd[5];
-
-extern ptz_t *current_ptz_control_window;
-
-
-void show_control_window (ptz_t *ptz);
-
-gboolean update_auto_focus_toggle_button (ptz_t *ptz);
-
-void create_control_window (ptz_t *ptz);
 
 
 #endif
