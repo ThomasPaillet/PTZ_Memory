@@ -34,11 +34,6 @@ cameras_set_t *current_cameras_set = NULL;
 cameras_set_t *new_cameras_set = NULL;
 cameras_set_t *cameras_set_with_error = NULL;
 
-gboolean cameras_set_orientation = TRUE;
-
-gboolean show_linked_memories_names_entries = TRUE;
-gboolean show_linked_memories_names_labels = TRUE;
-
 //cameras_set_configuration_window
 GtkWidget *cameras_set_configuration_window;
 GtkEntryBuffer *cameras_set_configuration_name_entry_buffer;
@@ -141,7 +136,7 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 
 	if (new_cameras_set != NULL) {
 		for (i = 0; ((i < cameras_set->number_of_cameras) && (i < new_number_of_cameras)); i++) {
-			ptz = cameras_set->ptz_ptr_array[i];
+			ptz = cameras_set->cameras[i];
 
 			ptz->active = gtk_switch_get_active (GTK_SWITCH (cameras_configuration_widgets[i].camera_switch));
 
@@ -181,7 +176,7 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 		number_of_cameras_sets++;
 	} else {
 		for (i = new_number_of_cameras; i < cameras_set->number_of_cameras; i++) {
-			ptz = cameras_set->ptz_ptr_array[i];
+			ptz = cameras_set->cameras[i];
 
 			if ((ptz->ip_address_is_valid) && (ptz->error_code != 0x30)) {
 				for (cameras_set_itr = cameras_sets; cameras_set_itr != NULL; cameras_set_itr = cameras_set_itr->next) {
@@ -222,11 +217,9 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 	}
 
 	if (new_number_of_cameras > cameras_set->number_of_cameras) {
-		cameras_set->ptz_ptr_array = g_realloc (cameras_set->ptz_ptr_array, new_number_of_cameras * sizeof (ptz_t*));
-
 		for (i = cameras_set->number_of_cameras; i < new_number_of_cameras; i++) {
 			ptz = g_malloc (sizeof (ptz_t));
-			cameras_set->ptz_ptr_array[i] = ptz;
+			cameras_set->cameras[i] = ptz;
 
 			entry_buffer_text = gtk_entry_buffer_get_text (cameras_configuration_widgets[i].name_entry_buffer);
 			strcpy (ptz->name, entry_buffer_text);
@@ -271,7 +264,7 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 	ip_addresss_list = NULL;
 
 	for (i = 0; i < new_number_of_cameras; i++) {
-		ptz = cameras_set->ptz_ptr_array[i];
+		ptz = cameras_set->cameras[i];
 
 		camera_is_active = gtk_switch_get_active (GTK_SWITCH (cameras_configuration_widgets[i].camera_switch));
 
@@ -424,9 +417,8 @@ void cameras_set_configuration_window_cancel (void)
 	g_free (cameras_configuration_widgets);
 
 	if (new_cameras_set != NULL) {
-		for (i = 0; i < 5; i++) g_free (new_cameras_set->ptz_ptr_array[i]);
+		for (i = 0; i < 5; i++) g_free (new_cameras_set->cameras[i]);
 
-		g_free (new_cameras_set->ptz_ptr_array);
 		g_free (new_cameras_set);
 		new_cameras_set = NULL;
 	}
@@ -527,7 +519,7 @@ void show_cameras_set_configuration_window (void)
 		old_number_of_cameras = cameras_set->number_of_cameras;
 
 		for (i = 0, j = 1; i < cameras_set->number_of_cameras; i++, j++) {
-			ptz = cameras_set->ptz_ptr_array[i];
+			ptz = cameras_set->cameras[i];
 
 			widget = gtk_switch_new ();
 			gtk_switch_set_active (GTK_SWITCH (widget), ptz->active);
@@ -731,13 +723,12 @@ void add_cameras_set (void)
 	new_cameras_set = g_malloc (sizeof (cameras_set_t));
 	new_cameras_set->name[0] = '\0';
 	new_cameras_set->number_of_cameras = 5;
-	new_cameras_set->ptz_ptr_array = g_malloc (5 * sizeof (ptz_t*));
 	new_cameras_set->number_of_ghost_cameras = 0;
 	new_cameras_set->thumbnail_width = thumbnail_width;
 
 	for (i = 0; i < 5; i++) {
 		ptz = g_malloc (sizeof (ptz_t));
-		new_cameras_set->ptz_ptr_array[i] = ptz;
+		new_cameras_set->cameras[i] = ptz;
 		sprintf (ptz->name, "%d", i + 1);
 		ptz->index = i;
 		init_ptz (ptz);
@@ -781,7 +772,7 @@ void delete_cameras_set (void)
 		g_mutex_unlock (&cameras_sets_mutex);
 
 		for (i = 0; i < cameras_set_itr->number_of_cameras; i++) {
-			ptz = cameras_set_itr->ptz_ptr_array[i];
+			ptz = cameras_set_itr->cameras[i];
 
 			if ((ptz->ip_address_is_valid) && (ptz->error_code != 0x30)) {
 				for (other_cameras_set = cameras_sets; other_cameras_set != NULL; other_cameras_set = other_cameras_set->next) {
@@ -810,7 +801,6 @@ void delete_cameras_set (void)
 
 			g_free (ptz);
 		}
-		g_free (cameras_set_itr->ptz_ptr_array);
 
 		gtk_notebook_remove_page (GTK_NOTEBOOK (main_window_notebook), cameras_set_itr->page_num);
 
@@ -1069,24 +1059,28 @@ void fill_cameras_set_page (cameras_set_t *cameras_set)
 	int i;
 	GtkWidget *box, *scrolled_window, *memories_scrolled_window, *scrollbar;
 
-	if (cameras_set_orientation) {
+	if (cameras_set->orientation) {
 /*
-cameras_set->page_box
-+-----------------------------------------------------------------------------------------+
-|                        cameras_set->linked_memories_names_entries                       |
-+-----------------------------------------------------------------------------------------+
-|                                scrolled_window (vertical)                               |
-|+----------------------------------------+----------------------------------------------+|
-||                                        |    memories_scrolled_window (horizontal)     ||
-||                                        |+--------------------------------------------+||
-||                                        ||                                            |||
-||cameras_set->ptz_ptr_array[i]->name_grid||cameras_set->ptz_ptr_array[i]->memories_grid|||
-||                                        ||                                            |||
-||                                        |+--------------------------------------------+||
-|+----------------------------------------+----------------------------------------------+|
-+-----------------------------------------------------------------------------------------+
-|                        cameras_set->linked_memories_names_entries                       |
-+-----------------------------------------------------------------------------------------+
+cameras_set->page_box (vertical)
++---------------------------------------------------------------------------------------------------+
+|                                                  cameras_set->linked_memories_names_entries       |
++---------------------------------------------------------------------------------------------------+
+|scrolled_window (vertical) + box (horizontal)                                                      |
+|+------------------------------------------+------------------------------------------------------+|
+||box (vertical)                            |memories_scrolled_window (horizontal) + box (vertical)||
+||+----------------------------------------+|+----------------------------------------------------+||
+|||                                        |||                                                    |||
+||                                          |                                                      ||
+|||   cameras_set->cameras[i]->name_grid   |||      cameras_set->cameras[i]->memories_grid        |||
+||                                          |                                                      ||
+|||                                        |||                                                    |||
+||+----------------------------------------+|+----------------------------------------------------+||
+|+------------------------------------------+------------------------------------------------------+|
++---------------------------------------------------------------------------------------------------+
+|                                                   cameras_set->linked_memories_names_labels       |
++---------------------------------------------------------------------------------------------------+
+|                                                                   scrollbar                       |
++---------------------------------------------------------------------------------------------------+
 */
 		cameras_set->page_box = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
 		create_horizontal_linked_memories_names_entries (cameras_set);
@@ -1101,14 +1095,14 @@ cameras_set->page_box
 				gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (memories_scrolled_window), GTK_POLICY_EXTERNAL, GTK_POLICY_EXTERNAL);
 				g_signal_connect_after (G_OBJECT (memories_scrolled_window), "draw", G_CALLBACK (configure_memories_scrollbar_adjustment), cameras_set);
 					cameras_set->memories_grid_box = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
-						gtk_box_pack_start (GTK_BOX (cameras_set->name_grid_box), cameras_set->ptz_ptr_array[0]->name_grid, FALSE, FALSE, 0);
-						gtk_box_pack_start (GTK_BOX (cameras_set->memories_grid_box), cameras_set->ptz_ptr_array[0]->memories_grid, FALSE, FALSE, 0);
+						gtk_box_pack_start (GTK_BOX (cameras_set->name_grid_box), cameras_set->cameras[0]->name_grid, FALSE, FALSE, 0);
+						gtk_box_pack_start (GTK_BOX (cameras_set->memories_grid_box), cameras_set->cameras[0]->memories_grid, FALSE, FALSE, 0);
 
 						for (i = 1; i < cameras_set->number_of_cameras; i++) {
-							gtk_box_pack_start (GTK_BOX (cameras_set->name_grid_box), cameras_set->ptz_ptr_array[i]->name_separator, FALSE, FALSE, 0);
-							gtk_box_pack_start (GTK_BOX (cameras_set->name_grid_box), cameras_set->ptz_ptr_array[i]->name_grid, FALSE, FALSE, 0);
-							gtk_box_pack_start (GTK_BOX (cameras_set->memories_grid_box), cameras_set->ptz_ptr_array[i]->memories_separator, FALSE, FALSE, 0);
-							gtk_box_pack_start (GTK_BOX (cameras_set->memories_grid_box), cameras_set->ptz_ptr_array[i]->memories_grid, FALSE, FALSE, 0);
+							gtk_box_pack_start (GTK_BOX (cameras_set->name_grid_box), cameras_set->cameras[i]->name_separator, FALSE, FALSE, 0);
+							gtk_box_pack_start (GTK_BOX (cameras_set->name_grid_box), cameras_set->cameras[i]->name_grid, FALSE, FALSE, 0);
+							gtk_box_pack_start (GTK_BOX (cameras_set->memories_grid_box), cameras_set->cameras[i]->memories_separator, FALSE, FALSE, 0);
+							gtk_box_pack_start (GTK_BOX (cameras_set->memories_grid_box), cameras_set->cameras[i]->memories_grid, FALSE, FALSE, 0);
 						}
 				gtk_container_add (GTK_CONTAINER (memories_scrolled_window), cameras_set->memories_grid_box);
 				cameras_set->memories_scrolled_window_adjustment = gtk_scrolled_window_get_hadjustment (GTK_SCROLLED_WINDOW (memories_scrolled_window));
@@ -1128,10 +1122,21 @@ cameras_set->page_box
 		gtk_box_pack_start (GTK_BOX (cameras_set->page), cameras_set->page_box, TRUE, TRUE, 0);
 	} else {
 /*
-cameras_set->page_box
-+-----------------------------------------------------------------------------------------+
-|cameras_set->linked_memories_names_entries|scrolled_window (horizontal)
-+-----------------------------------------------------------------------------------------+
+cameras_set->page_box (horizontal)
++---------------+--------------------------------------------------------+---------------+---------+
+|               |scrolled_window (horizontal) + box (vertical)           |               |         |
+|               |+------------------------------------------------------+|               |         |
+|               ||box (horizontal)                                      ||               |         |
+|               ||+----                                            ----+||               |         |
+|               |||         cameras_set->cameras[i]->name_grid         |||               |         |
+|               ||+----                                            ----+||               |         |
+|               |+------------------------------------------------------+|               |         |
+|               ||memories_scrolled_window (vertical) + box (horizontal)||               |         |
+|cameras_set->  ||+----                                            ----+||cameras_set->  |         |
+|linked_memories|||       cameras_set->cameras[i]->memories_grid       |||linked_memories|scrollbar|
+|_names_entries ||+----                                            ----+||_names_labels  |         |
+|               |+------------------------------------------------------+|               |         |
++---------------+--------------------------------------------------------+---------------+---------+
 */
 		cameras_set->page_box = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
 
@@ -1147,14 +1152,14 @@ cameras_set->page_box
 				gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (memories_scrolled_window), GTK_POLICY_EXTERNAL, GTK_POLICY_EXTERNAL);
 				g_signal_connect_after (G_OBJECT (memories_scrolled_window), "draw", G_CALLBACK (configure_memories_scrollbar_adjustment), cameras_set);
 					cameras_set->memories_grid_box = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
-						gtk_box_pack_start (GTK_BOX (cameras_set->name_grid_box), cameras_set->ptz_ptr_array[0]->name_grid, FALSE, FALSE, 0);
-						gtk_box_pack_start (GTK_BOX (cameras_set->memories_grid_box), cameras_set->ptz_ptr_array[0]->memories_grid, FALSE, FALSE, 0);
+						gtk_box_pack_start (GTK_BOX (cameras_set->name_grid_box), cameras_set->cameras[0]->name_grid, FALSE, FALSE, 0);
+						gtk_box_pack_start (GTK_BOX (cameras_set->memories_grid_box), cameras_set->cameras[0]->memories_grid, FALSE, FALSE, 0);
 
 						for (i = 1; i < cameras_set->number_of_cameras; i++) {
-							gtk_box_pack_start (GTK_BOX (cameras_set->name_grid_box), cameras_set->ptz_ptr_array[i]->name_separator, FALSE, FALSE, 0);
-							gtk_box_pack_start (GTK_BOX (cameras_set->name_grid_box), cameras_set->ptz_ptr_array[i]->name_grid, FALSE, FALSE, 0);
-							gtk_box_pack_start (GTK_BOX (cameras_set->memories_grid_box), cameras_set->ptz_ptr_array[i]->memories_separator, FALSE, FALSE, 0);
-							gtk_box_pack_start (GTK_BOX (cameras_set->memories_grid_box), cameras_set->ptz_ptr_array[i]->memories_grid, FALSE, FALSE, 0);
+							gtk_box_pack_start (GTK_BOX (cameras_set->name_grid_box), cameras_set->cameras[i]->name_separator, FALSE, FALSE, 0);
+							gtk_box_pack_start (GTK_BOX (cameras_set->name_grid_box), cameras_set->cameras[i]->name_grid, FALSE, FALSE, 0);
+							gtk_box_pack_start (GTK_BOX (cameras_set->memories_grid_box), cameras_set->cameras[i]->memories_separator, FALSE, FALSE, 0);
+							gtk_box_pack_start (GTK_BOX (cameras_set->memories_grid_box), cameras_set->cameras[i]->memories_grid, FALSE, FALSE, 0);
 						}
 				gtk_container_add (GTK_CONTAINER (memories_scrolled_window), cameras_set->memories_grid_box);
 				cameras_set->memories_scrolled_window_adjustment = gtk_scrolled_window_get_vadjustment (GTK_SCROLLED_WINDOW (memories_scrolled_window));
@@ -1199,7 +1204,7 @@ void update_current_cameras_set_vertical_margins (void)
 	ptz_t *ptz;
 
 	for (i = 0; i < current_cameras_set->number_of_cameras; i++) {
-		ptz = current_cameras_set->ptz_ptr_array[i];
+		ptz = current_cameras_set->cameras[i];
 
 		if (ptz->active) {
 			for (j = 0; j < MAX_MEMORIES; j++) {
@@ -1230,7 +1235,7 @@ void update_current_cameras_set_horizontal_margins (void)
 	ptz_t *ptz;
 
 	for (i = 0; i < current_cameras_set->number_of_cameras; i++) {
-		ptz = current_cameras_set->ptz_ptr_array[i];
+		ptz = current_cameras_set->cameras[i];
 
 		if (ptz->active) {
 			for (j = 0; j < MAX_MEMORIES; j++) {
