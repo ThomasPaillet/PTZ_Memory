@@ -17,7 +17,13 @@
  * along with PTZ-Memory. If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include "ptz.h"
+#include "settings.h"
+
+#include "cameras_set.h"
+#include "controller.h"
+#include "sw_p_08.h"
+#include "tally.h"
+#include "update_notification.h"
 
 #include <string.h>
 #include <stdio.h>
