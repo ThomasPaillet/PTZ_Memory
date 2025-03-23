@@ -59,6 +59,9 @@ typedef struct {
 } control_window_t;
 
 
+void create_control_window (control_window_t *control_window, gpointer ptz);
+
+
 extern char focus_near_speed_cmd[5];
 extern char focus_far_speed_cmd[5];
 
