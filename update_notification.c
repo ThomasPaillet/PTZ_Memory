@@ -17,7 +17,11 @@
  * along with PTZ-Memory. If not, see <https://www.gnu.org/licenses/>.
 */
 
+#include "update_notification.h"
+
 #include "cameras_set.h"
+#include "protocol.h"
+#include "error.h"
 
 #include <unistd.h>
 
@@ -61,8 +65,8 @@ gpointer receive_update_notification (gpointer data)
 
 				for (cameras_set_itr = cameras_sets; cameras_set_itr != NULL; cameras_set_itr = cameras_set_itr->next) {
 					for (i = 0; i < cameras_set_itr->number_of_cameras; i++) {
-						if (cameras_set_itr->ptz_ptr_array[i]->address.sin_addr.s_addr == src_addr.sin_addr.s_addr) {
-							g_idle_add ((GSourceFunc)ptz_is_off, cameras_set_itr->ptz_ptr_array[i]);
+						if (cameras_set_itr->cameras[i]->address.sin_addr.s_addr == src_addr.sin_addr.s_addr) {
+							g_idle_add ((GSourceFunc)ptz_is_off, cameras_set_itr->cameras[i]);
 
 							break;
 						}
@@ -77,9 +81,9 @@ gpointer receive_update_notification (gpointer data)
 
 				for (cameras_set_itr = cameras_sets; cameras_set_itr != NULL; cameras_set_itr = cameras_set_itr->next) {
 					for (i = 0; i < cameras_set_itr->number_of_cameras; i++) {
-						if (cameras_set_itr->ptz_ptr_array[i]->address.sin_addr.s_addr == src_addr.sin_addr.s_addr) {
+						if (cameras_set_itr->cameras[i]->address.sin_addr.s_addr == src_addr.sin_addr.s_addr) {
 							if (ptz == NULL) {
-								ptz = cameras_set_itr->ptz_ptr_array[i];
+								ptz = cameras_set_itr->cameras[i];
 
 								send_cam_request_command (ptz, "QAF", &response);
 								if (response == 1) ptz->auto_focus = TRUE;
@@ -114,7 +118,7 @@ gpointer receive_update_notification (gpointer data)
 
 								g_idle_add ((GSourceFunc)ptz_is_on, ptz);
 							} else {
-								other_ptz = cameras_set_itr->ptz_ptr_array[i];
+								other_ptz = cameras_set_itr->cameras[i];
 
 								other_ptz->auto_focus = ptz->auto_focus;
 
@@ -151,9 +155,9 @@ gpointer receive_update_notification (gpointer data)
 
 			for (cameras_set_itr = cameras_sets; cameras_set_itr != NULL; cameras_set_itr = cameras_set_itr->next) {
 				for (i = 0; i < cameras_set_itr->number_of_cameras; i++) {
-					if (cameras_set_itr->ptz_ptr_array[i]->address.sin_addr.s_addr == src_addr.sin_addr.s_addr) {
+					if (cameras_set_itr->cameras[i]->address.sin_addr.s_addr == src_addr.sin_addr.s_addr) {
 						if (ptz == NULL) {
-							ptz = cameras_set_itr->ptz_ptr_array[i];
+							ptz = cameras_set_itr->cameras[i];
 
 							g_mutex_lock (&ptz->lens_information_mutex);
 
@@ -187,7 +191,7 @@ gpointer receive_update_notification (gpointer data)
 								if (ptz->control_window.is_on_screen) gtk_widget_queue_draw (ptz->control_window.focus_level_bar_drawing_area);
 							}
 						} else {
-							other_ptz = cameras_set_itr->ptz_ptr_array[i];
+							other_ptz = cameras_set_itr->cameras[i];
 
 							g_mutex_lock (&other_ptz->lens_information_mutex);
 
@@ -225,7 +229,7 @@ gpointer receive_update_notification (gpointer data)
 
 			for (cameras_set_itr = cameras_sets; cameras_set_itr != NULL; cameras_set_itr = cameras_set_itr->next) {
 				for (i = 0; i < cameras_set_itr->number_of_cameras; i++) {
-					ptz = cameras_set_itr->ptz_ptr_array[i];
+					ptz = cameras_set_itr->cameras[i];
 
 					if (ptz->address.sin_addr.s_addr == src_addr.sin_addr.s_addr) {
 						if (buffer[34] == '1') {
@@ -345,9 +349,9 @@ void stop_update_notification (void)
 
 	for (cameras_set_itr = cameras_sets; cameras_set_itr != NULL; cameras_set_itr = cameras_set_itr->next) {
 		for (i = 0; i < cameras_set_itr->number_of_cameras; i++) {
-			if (cameras_set_itr->ptz_ptr_array[i]->ip_address_is_valid && (cameras_set_itr->ptz_ptr_array[i]->error_code != 0x30)) {
-//				send_ptz_control_command (cameras_set_itr->ptz_ptr_array[i], "#LPC0", TRUE);
-				send_update_stop_cmd (cameras_set_itr->ptz_ptr_array[i]);
+			if (cameras_set_itr->cameras[i]->ip_address_is_valid && (cameras_set_itr->cameras[i]->error_code != 0x30)) {
+//				send_ptz_control_command (cameras_set_itr->cameras[i], "#LPC0", TRUE);
+				send_update_stop_cmd (cameras_set_itr->cameras[i]);
 			}
 		}
 	}
