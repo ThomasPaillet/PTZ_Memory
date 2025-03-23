@@ -19,6 +19,11 @@
 
 #include "sw_p_08.h"
 
+#include "cameras_set.h"
+#include "main_window.h"
+#include "protocol.h"
+#include "settings.h"
+
 #include <string.h>
 
 
@@ -510,7 +515,7 @@ gpointer receive_message_from_remote_device (remote_device_t *remote_device)
 							g_mutex_lock (&cameras_sets_mutex);
 
 							if ((current_cameras_set != NULL) && (buffer[3] < current_cameras_set->number_of_cameras)) {
-								ptz = current_cameras_set->ptz_ptr_array[(int)buffer[3]];
+								ptz = current_cameras_set->cameras[(int)buffer[3]];
 
 								g_mutex_unlock (&cameras_sets_mutex);
 
