@@ -17,8 +17,8 @@
  * along with PTZ-Memory. If not, see <https://www.gnu.org/licenses/>.
 */
 
-#ifndef __TALLY_H
-#define __TALLY_H
+#ifndef __SW_P_08_H
+#define __SW_P_08_H
 
 
 #ifdef _WIN32
