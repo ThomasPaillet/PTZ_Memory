@@ -17,7 +17,7 @@
  * along with PTZ-Memory. If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include "ptz.h"
+#include "tally.h"
 
 
 typedef struct {
