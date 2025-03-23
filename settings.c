@@ -24,6 +24,11 @@
 #include <unistd.h>
 
 
+#ifdef _WIN32
+extern GdkPixbuf *pixbuf_logo;
+#endif
+
+
 const char config_file_name[] = "PTZ-Memory.dat";
 
 gboolean backup_needed = FALSE;
@@ -893,21 +898,6 @@ void load_config_file (void)
 	config_file = fopen (config_file_name, "rb");
 	if (config_file == NULL) return;
 
-	fread (&thumbnail_size, sizeof (gdouble), 1, config_file);
-	if (thumbnail_size < 0.5) thumbnail_size = 0.5;
-	else if (thumbnail_size > 1.0) thumbnail_size = 1.0;
-
-	thumbnail_width = 320 * thumbnail_size;
-	thumbnail_height = 180 * thumbnail_size;
-
-	fread (&cameras_set_orientation, sizeof (gboolean), 1, config_file);
-
-	fread (&memories_button_vertical_margins, sizeof (int), 1, config_file);
-	if ((memories_button_vertical_margins < 0) || (memories_button_vertical_margins > 50)) memories_button_vertical_margins = 0;
-
-	fread (&memories_button_horizontal_margins, sizeof (int), 1, config_file);
-	if ((memories_button_horizontal_margins < 0) || (memories_button_horizontal_margins > 50)) memories_button_horizontal_margins = 0;
-
 	fread (&number_of_cameras_sets, sizeof (int), 1, config_file);
 
 	if (number_of_cameras_sets < 0) number_of_cameras_sets = 0;
@@ -920,23 +910,32 @@ void load_config_file (void)
 		cameras_set_tmp->next = cameras_sets;
 		cameras_sets = cameras_set_tmp;
 
-		cameras_set_tmp->number_of_ghost_cameras = 0;
-
-		cameras_set_tmp->thumbnail_width = thumbnail_width;
-		cameras_set_tmp->memories_button_vertical_margins = memories_button_vertical_margins;
-		cameras_set_tmp->memories_button_horizontal_margins = memories_button_horizontal_margins;
-
 		fread (cameras_set_tmp->name, sizeof (char), CAMERAS_SET_NAME_LENGTH, config_file);
 		cameras_set_tmp->name[CAMERAS_SET_NAME_LENGTH] = '\0';
 
 		fread (&cameras_set_tmp->number_of_cameras, sizeof (int), 1, config_file);
 		if ((cameras_set_tmp->number_of_cameras < 1) || (cameras_set_tmp->number_of_cameras > MAX_CAMERAS)) cameras_set_tmp->number_of_cameras = 5;
 
-		cameras_set_tmp->ptz_ptr_array = g_malloc (cameras_set_tmp->number_of_cameras * sizeof (ptz_t*));
+		cameras_set_tmp->number_of_ghost_cameras = 0;
+
+		fread (&cameras_set_tmp->orientation, sizeof (gboolean), 1, config_file);
+
+		fread (&cameras_set_tmp->thumbnail_size, sizeof (gdouble), 1, config_file);
+		if (cameras_set_tmp->thumbnail_size < 0.5) cameras_set_tmp->thumbnail_size = 0.5;
+		else if (cameras_set_tmp->thumbnail_size > 1.0) cameras_set_tmp->thumbnail_size = 1.0;
+
+		cameras_set_tmp->thumbnail_width = 320 * cameras_set_tmp->thumbnail_size;
+		cameras_set_tmp->thumbnail_height = 180 * cameras_set_tmp->thumbnail_size;
+
+		fread (&cameras_set_tmp->memories_button_vertical_margins, sizeof (int), 1, config_file);
+		if ((cameras_set_tmp->memories_button_vertical_margins < 0) || (cameras_set_tmp->memories_button_vertical_margins > 50)) cameras_set_tmp->memories_button_vertical_margins = 0;
+
+		fread (&cameras_set_tmp->memories_button_horizontal_margins, sizeof (int), 1, config_file);
+		if ((cameras_set_tmp->memories_button_horizontal_margins < 0) || (cameras_set_tmp->memories_button_horizontal_margins > 50)) cameras_set_tmp->memories_button_horizontal_margins = 0;
 
 		for (j = 0; j < cameras_set_tmp->number_of_cameras; j++) {
 			ptz = g_malloc (sizeof (ptz_t));
-			cameras_set_tmp->ptz_ptr_array[j] = ptz;
+			cameras_set_tmp->cameras[j] = ptz;
 
 			fread (ptz->name, sizeof (char), 2, config_file);
 			ptz->name[2] = '\0';
@@ -1007,6 +1006,10 @@ void load_config_file (void)
 			memories_name[j][MEMORIES_NAME_LENGTH] = '\0';
 		}
 
+		fread (&cameras_set_tmp->show_linked_memories_names_entries, sizeof (gboolean), 1, config_file);
+
+		fread (&cameras_set_tmp->show_linked_memories_names_labels, sizeof (gboolean), 1, config_file);
+
 		add_cameras_set_to_main_window_notebook (cameras_set_tmp);
 
 		for (j = 0; j < MAX_MEMORIES; j++) {
@@ -1053,10 +1056,6 @@ void load_config_file (void)
 	fread (&tsl_umd_v5_address.sin_port, sizeof (guint16), 1, config_file);
 	if (ntohs (tsl_umd_v5_address.sin_port) < 1024) tsl_umd_v5_address.sin_port = htons (TSL_UMD_V5_UDP_PORT);
 
-	fread (&show_linked_memories_names_entries, sizeof (gboolean), 1, config_file);
-
-	fread (&show_linked_memories_names_labels, sizeof (gboolean), 1, config_file);
-
 	fclose (config_file);
 }
 
@@ -1071,14 +1070,6 @@ void save_config_file (void)
 
 	config_file = fopen (config_file_name, "wb");
 
-	fwrite (&thumbnail_size, sizeof (gdouble), 1, config_file);
-
-	fwrite (&cameras_set_orientation, sizeof (gboolean), 1, config_file);
-
-	fwrite (&memories_button_vertical_margins, sizeof (int), 1, config_file);
-
-	fwrite (&memories_button_horizontal_margins, sizeof (int), 1, config_file);
-
 	fwrite (&number_of_cameras_sets, sizeof (int), 1, config_file);
 
 	for (i = 0; i < number_of_cameras_sets; i++)
@@ -1089,8 +1080,16 @@ void save_config_file (void)
 		fwrite (cameras_set_itr->name, sizeof (char), CAMERAS_SET_NAME_LENGTH, config_file);
 		fwrite (&cameras_set_itr->number_of_cameras, sizeof (int), 1, config_file);
 
+		fwrite (&cameras_set_itr->orientation, sizeof (gboolean), 1, config_file);
+
+		fwrite (&cameras_set_itr->thumbnail_size, sizeof (gdouble), 1, config_file);
+
+		fwrite (&cameras_set_itr->memories_button_vertical_margins, sizeof (int), 1, config_file);
+
+		fwrite (&cameras_set_itr->memories_button_horizontal_margins, sizeof (int), 1, config_file);
+
 		for (j = 0; j < cameras_set_itr->number_of_cameras; j++) {
-			ptz = cameras_set_itr->ptz_ptr_array[j];
+			ptz = cameras_set_itr->cameras[j];
 
 			fwrite (ptz->name, sizeof (char), 2, config_file);
 			fwrite (&ptz->active, sizeof (gboolean), 1, config_file);
@@ -1121,6 +1120,10 @@ void save_config_file (void)
 		for (j = 0; j < MAX_MEMORIES; j++) {
 			fwrite (gtk_label_get_text (GTK_LABEL (cameras_set_itr->memories_labels[j])), sizeof (char), MEMORIES_NAME_LENGTH, config_file);
 		}
+
+		fwrite (&cameras_set_itr->show_linked_memories_names_entries, sizeof (gboolean), 1, config_file);
+
+		fwrite (&cameras_set_itr->show_linked_memories_names_labels, sizeof (gboolean), 1, config_file);
 	}
 
 	fwrite (&controller_is_used, sizeof (gboolean), 1, config_file);
@@ -1138,10 +1141,6 @@ void save_config_file (void)
 	fwrite (&sw_p_08_address.sin_port, sizeof (guint16), 1, config_file);
 
 	fwrite (&tsl_umd_v5_address.sin_port, sizeof (guint16), 1, config_file);
-
-	fwrite (&show_linked_memories_names_entries, sizeof (gboolean), 1, config_file);
-
-	fwrite (&show_linked_memories_names_labels, sizeof (gboolean), 1, config_file);
 
 	fclose (config_file);
 }
