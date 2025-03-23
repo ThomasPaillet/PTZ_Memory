@@ -19,6 +19,8 @@
 
 #include "controller.h"
 
+#include "protocol.h"
+
 
 gboolean controller_is_used = FALSE;
 
@@ -72,3 +74,4 @@ void init_controller (void)
 
 	controller_cmd_size = sprintf (controller_cmd, "%sXPT:00%s%s%s%s%s%s", http_cam_cmd, http_cam_ptz_header, http_header_1, my_ip_address, http_header_2, my_ip_address, http_header_3);
 }
+
