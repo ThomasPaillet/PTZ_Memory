@@ -19,6 +19,8 @@
 
 #include "error.h"
 
+#include "cameras_set.h"
+
 #include <stdio.h>
 
 
@@ -36,7 +38,7 @@
  \
 	for (cameras_set_itr = cameras_sets; cameras_set_itr != NULL; cameras_set_itr = cameras_set_itr->next) { \
 		for (i = 0; i < cameras_set_itr->number_of_cameras; i++) { \
-			if (cameras_set_itr->ptz_ptr_array[i]->address.sin_addr.s_addr == src_in_addr->s_addr) { \
+			if (cameras_set_itr->cameras[i]->address.sin_addr.s_addr == src_in_addr->s_addr) { \
 				if (ptz == NULL) { \
 					ptz = cameras_set_itr->cameras[i]; \
  \
@@ -44,7 +46,7 @@
 					time = localtime (&current_time.tv_sec); \
  \
 					fprintf (error_log_file, "%02dh %02dm %02ds: Camera %s (%s) -> %s\n", time->tm_hour, time->tm_min, time->tm_sec, ptz->name, ptz->ip_address, s); \
-				} else ptz = cameras_set_itr->ptz_ptr_array[i]; \
+				} else ptz = cameras_set_itr->cameras[i]; \
  \
 				ptz->error_code = c; \
 				gtk_widget_queue_draw (ptz->error_drawing_area); \
@@ -76,7 +78,7 @@
  \
 	for (cameras_set_itr = cameras_sets; cameras_set_itr != NULL; cameras_set_itr = cameras_set_itr->next) { \
 		for (i = 0; i < cameras_set_itr->number_of_cameras; i++) { \
-			if (cameras_set_itr->ptz_ptr_array[i]->address.sin_addr.s_addr == src_in_addr->s_addr) { \
+			if (cameras_set_itr->cameras[i]->address.sin_addr.s_addr == src_in_addr->s_addr) { \
 				if (ptz == NULL) { \
 					ptz = cameras_set_itr->cameras[i]; \
  \
@@ -84,7 +86,7 @@
 					time = localtime (&current_time.tv_sec); \
  \
 					fprintf (error_log_file, "%02dh %02dm %02ds: Camera %s (%s) -> %s\n", time->tm_hour, time->tm_min, time->tm_sec, ptz->name, ptz->ip_address, s); \
-				} else ptz = cameras_set_itr->ptz_ptr_array[i]; \
+				} else ptz = cameras_set_itr->cameras[i]; \
  \
 				ptz->error_code = c; \
 				gtk_widget_queue_draw (ptz->error_drawing_area); \
@@ -138,7 +140,7 @@ gboolean clear_ptz_error (struct in_addr *src_in_addr)
 
 	for (cameras_set_itr = cameras_sets; cameras_set_itr != NULL; cameras_set_itr = cameras_set_itr->next) {
 		for (i = 0; i < cameras_set_itr->number_of_cameras; i++) {
-			if (cameras_set_itr->ptz_ptr_array[i]->address.sin_addr.s_addr == src_in_addr->s_addr) {
+			if (cameras_set_itr->cameras[i]->address.sin_addr.s_addr == src_in_addr->s_addr) {
 				if (ptz == NULL) {
 					ptz = cameras_set_itr->cameras[i];
 
@@ -146,7 +148,7 @@ gboolean clear_ptz_error (struct in_addr *src_in_addr)
 					time = localtime (&current_time.tv_sec);
 
 					fprintf (error_log_file, "%02dh %02dm %02ds: Camera %s (%s) -> Normal\n", time->tm_hour, time->tm_min, time->tm_sec, ptz->name, ptz->ip_address);
-				} else ptz = cameras_set_itr->ptz_ptr_array[i];
+				} else ptz = cameras_set_itr->cameras[i];
 
 				ptz->error_code = 0x00;
 				gtk_widget_queue_draw (ptz->error_drawing_area);
