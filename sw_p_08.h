@@ -21,12 +21,6 @@
 #define __SW_P_08_H
 
 
-#ifdef _WIN32
-	#include <winsock2.h>
-#elif defined (__linux)
-	#include <sys/socket.h>
-#endif
-
 #include "ptz.h"
 
 
