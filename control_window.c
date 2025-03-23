@@ -17,7 +17,14 @@
  * along with PTZ-Memory. If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include "ptz.h"
+#include "control_window.h"
+
+#include "cameras_set.h"
+#include "controller.h"
+#include "main_window.h"
+#include "protocol.h"
+#include "sw_p_08.h"
+#include "tally.h"
 
 
 #ifdef _WIN32
@@ -133,7 +140,7 @@ gboolean control_window_key_press (GtkWidget *window, GdkEventKey *event, ptz_t 
 				ptz->control_window.is_on_screen = FALSE;
 				gtk_widget_hide (ptz->control_window.window);
 
-				new_ptz = current_cameras_set->ptz_ptr_array[i];
+				new_ptz = current_cameras_set->cameras[i];
 
 				if (new_ptz->active && gtk_widget_get_sensitive (new_ptz->name_grid)) {
 					gtk_window_set_position (GTK_WINDOW (new_ptz->control_window.window), GTK_WIN_POS_CENTER);
