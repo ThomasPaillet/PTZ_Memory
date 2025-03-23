@@ -150,13 +150,13 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 			if (ptz->active) {
 				create_control_window (&ptz->control_window, ptz);
 
-				if (cameras_set->orientation) create_ptz_widgets_horizontal (ptz);
-				else create_ptz_widgets_vertical (ptz);
+				if (cameras_set->orientation) create_ptz_widgets_horizontal (ptz, cameras_set->thumbnail_width, cameras_set->thumbnail_height);
+				else create_ptz_widgets_vertical (ptz, cameras_set->thumbnail_width, cameras_set->thumbnail_height);
 			} else {
 				cameras_set->number_of_ghost_cameras++;
 
-				if (cameras_set->orientation) create_ghost_ptz_widgets_horizontal (ptz);
-				else create_ghost_ptz_widgets_vertical (ptz);
+				if (cameras_set->orientation) create_ghost_ptz_widgets_horizontal (ptz, cameras_set->thumbnail_width, cameras_set->thumbnail_height);
+				else create_ghost_ptz_widgets_vertical (ptz, cameras_set->thumbnail_width, cameras_set->thumbnail_height);
 			}
 		}
 
@@ -239,13 +239,13 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 			if (ptz->active) {
 				create_control_window (&ptz->control_window, ptz);
 
-				if (cameras_set->orientation) create_ptz_widgets_horizontal (ptz);
-				else create_ptz_widgets_vertical (ptz);
+				if (cameras_set->orientation) create_ptz_widgets_horizontal (ptz, cameras_set->thumbnail_width, cameras_set->thumbnail_height);
+				else create_ptz_widgets_vertical (ptz, cameras_set->thumbnail_width, cameras_set->thumbnail_height);
 			} else {
 				cameras_set->number_of_ghost_cameras++;
 
-				if (cameras_set->orientation) create_ghost_ptz_widgets_horizontal (ptz);
-				else create_ghost_ptz_widgets_vertical (ptz);
+				if (cameras_set->orientation) create_ghost_ptz_widgets_horizontal (ptz, cameras_set->thumbnail_width, cameras_set->thumbnail_height);
+				else create_ghost_ptz_widgets_vertical (ptz, cameras_set->thumbnail_width, cameras_set->thumbnail_height);
 			}
 
 			gtk_widget_show (ptz->name_separator);
@@ -287,8 +287,8 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 
 				create_control_window (&ptz->control_window, ptz);
 
-				if (cameras_set->orientation) create_ptz_widgets_horizontal (ptz);
-				else create_ptz_widgets_vertical (ptz);
+				if (cameras_set->orientation) create_ptz_widgets_horizontal (ptz, cameras_set->thumbnail_width, cameras_set->thumbnail_height);
+				else create_ptz_widgets_vertical (ptz, cameras_set->thumbnail_width, cameras_set->thumbnail_height);
 			} else {
 				ptz->active = FALSE;
 				cameras_set->number_of_ghost_cameras++;
@@ -326,8 +326,8 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 					}
 				}
 
-				if (cameras_set->orientation) create_ghost_ptz_widgets_horizontal (ptz);
-				else create_ghost_ptz_widgets_vertical (ptz);
+				if (cameras_set->orientation) create_ghost_ptz_widgets_horizontal (ptz, cameras_set->thumbnail_width, cameras_set->thumbnail_height);
+				else create_ghost_ptz_widgets_vertical (ptz, cameras_set->thumbnail_width, cameras_set->thumbnail_height);
 			}
 
 			gtk_widget_show_all (ptz->name_grid);
