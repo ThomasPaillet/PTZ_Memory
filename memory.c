@@ -17,7 +17,13 @@
  * along with PTZ-Memory. If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include "ptz.h"
+#include "memory.h"
+
+#include "cameras_set.h"
+#include "controller.h"
+#include "main_window.h"
+#include "protocol.h"
+#include "settings.h"
 
 
 typedef struct {
