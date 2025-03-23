@@ -17,7 +17,7 @@
  * along with PTZ-Memory. If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include "ptz.h"
+#include "controller.h"
 
 
 gboolean controller_is_used = FALSE;
