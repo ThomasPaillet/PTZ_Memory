@@ -214,70 +214,10 @@ void memories_button_horizontal_margins_value_changed (GtkRange *range)
 	backup_needed = TRUE;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*
-
-
-gboolean hide_popup_window (GtkWidget *window)
-{
-	gtk_widget_hide (window);
-	popup_window = NULL;
-
-	gtk_event_box_set_above_child (GTK_EVENT_BOX (rcp_vision->event_box), FALSE);
-	gtk_event_box_set_above_child (GTK_EVENT_BOX (((cameras_set_t*)(rcp_vision->current_cameras_set))->master_rcp.root_widget), FALSE);
-
-	return GDK_EVENT_STOP;
-}
-
-gboolean popup_window_key_press (GtkWidget *window, GdkEventKey *event)
-{
-	if (event->keyval == GDK_KEY_Escape) hide_popup_window (window);
-
-	return GDK_EVENT_STOP;
-}
-
-				box4 = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
-					widget = gtk_label_new ("-");
-				gtk_box_pack_start (GTK_BOX (box4), widget, FALSE, FALSE, 0);
-
-					thumbnail_size_scale = gtk_scale_new_with_range (GTK_ORIENTATION_HORIZONTAL, 0.5, 1.0, 0.1);
-					gtk_scale_set_draw_value (GTK_SCALE (thumbnail_size_scale), FALSE);
-					gtk_scale_set_has_origin (GTK_SCALE (thumbnail_size_scale), FALSE);
-//					gtk_widget_set_size_request (thumbnail_size_scale, 200, 10);
-					gtk_widget_set_margin_start (thumbnail_size_scale, 10);
-					gtk_widget_set_margin_end (thumbnail_size_scale, 10);
-				gtk_box_pack_start (GTK_BOX (box4), thumbnail_size_scale, FALSE, FALSE, 0);
-
-					widget = gtk_label_new ("+");
-				gtk_box_pack_start (GTK_BOX (box4), widget, FALSE, FALSE, 0);
-
-					widget = gtk_scale_new_with_range (GTK_ORIENTATION_HORIZONTAL, 0.0, 20.0, 1.0);
-					gtk_scale_set_value_pos (GTK_SCALE (widget), GTK_POS_RIGHT);
-					gtk_scale_set_draw_value (GTK_SCALE (widget), TRUE);
-					gtk_scale_set_has_origin (GTK_SCALE (widget), FALSE);
-					gtk_range_set_value (GTK_RANGE (widget), memories_button_vertical_margins);
-					g_signal_connect (G_OBJECT (widget), "value-changed", G_CALLBACK (memories_button_vertical_margins_value_changed), label);
-				gtk_box_pack_start (GTK_BOX (box3), widget, TRUE, TRUE, 0);
-*/
-
 void show_interface_settings_window (void)
 {
 	g_signal_handler_block (orientation_check_button, orientation_check_button_handler_id);
-    gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (orientation_check_button), current_cameras_set->orientation);
+	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (orientation_check_button), current_cameras_set->orientation);
 	g_signal_handler_unblock (orientation_check_button, orientation_check_button_handler_id);
 
 	g_signal_handler_block (show_linked_memories_names_entries_check_button, show_linked_memories_names_entries_check_button_handler_id);
@@ -394,7 +334,15 @@ void create_interface_settings_window (void)
 				gtk_box_pack_end (GTK_BOX (box3), show_linked_memories_names_labels_check_button, FALSE, FALSE, 0);
 			gtk_box_pack_start (GTK_BOX (box2), box3, FALSE, FALSE, 0);
 
-    			box3 = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
+				box3 = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
+				gtk_widget_set_margin_top (box3, MARGIN_VALUE);
+				gtk_widget_set_margin_start (box3, MARGIN_VALUE);
+				gtk_widget_set_margin_end (box3, MARGIN_VALUE);
+					widget =  gtk_label_new ("Taille des vignettes mémoire :");
+				gtk_box_pack_start (GTK_BOX (box3), widget, FALSE, FALSE, 0);
+			gtk_box_pack_start (GTK_BOX (box2), box3, FALSE, FALSE, 0);
+
+				box3 = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
 				gtk_widget_set_margin_top (box3, MARGIN_VALUE);
 				gtk_widget_set_margin_start (box3, MARGIN_VALUE);
 				gtk_widget_set_margin_end (box3, MARGIN_VALUE);
@@ -460,16 +408,6 @@ void create_interface_settings_window (void)
 		gtk_container_add (GTK_CONTAINER (frame), box2);
 	gtk_box_pack_start (GTK_BOX (box1), frame, FALSE, FALSE, 0);
 
-
-/*	box1 = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
-		frame = gtk_frame_new ("Mémoire");
-		gtk_frame_set_label_align (GTK_FRAME (frame), 0.5, 0.5);
-		gtk_container_set_border_width (GTK_CONTAINER (frame), MARGIN_VALUE);
-			box2 = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);*/
-
-
-//		gtk_container_add (GTK_CONTAINER (frame), box2);
-//	gtk_box_pack_start (GTK_BOX (box1), frame, FALSE, FALSE, 0);
 	gtk_container_add (GTK_CONTAINER (interface_settings_window), box1);
 
 	gtk_window_set_resizable (GTK_WINDOW (interface_settings_window), FALSE);
