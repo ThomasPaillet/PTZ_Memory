@@ -740,8 +740,8 @@ void load_config_file (void)
 			if (ptz->active) {
 				create_control_window (&ptz->control_window, ptz);
 
-				if (cameras_set_tmp->orientation) create_ptz_widgets_horizontal (ptz, cameras_set_tmp->thumbnail_width, cameras_set_tmp->thumbnail_height);
-				else create_ptz_widgets_vertical (ptz, cameras_set_tmp->thumbnail_width, cameras_set_tmp->thumbnail_height);
+				if (cameras_set_tmp->orientation) create_ptz_widgets_horizontal (ptz, cameras_set_tmp->thumbnail_width, cameras_set_tmp->thumbnail_height, cameras_set_tmp->memories_button_vertical_margins, cameras_set_tmp->memories_button_horizontal_margins);
+				else create_ptz_widgets_vertical (ptz, cameras_set_tmp->thumbnail_width, cameras_set_tmp->thumbnail_height, cameras_set_tmp->memories_button_vertical_margins, cameras_set_tmp->memories_button_horizontal_margins);
 
 				fread (ptz->ip_address, sizeof (char), 16, config_file);
 				ptz->ip_address[15] = '\0';
@@ -788,8 +788,8 @@ void load_config_file (void)
 			} else {
 				cameras_set_tmp->number_of_ghost_cameras++;
 
-				if (cameras_set_tmp->orientation) create_ghost_ptz_widgets_horizontal (ptz, cameras_set_tmp->thumbnail_width, cameras_set_tmp->thumbnail_height);
-				else create_ghost_ptz_widgets_vertical (ptz, cameras_set_tmp->thumbnail_width, cameras_set_tmp->thumbnail_height);
+				if (cameras_set_tmp->orientation) create_ghost_ptz_widgets_horizontal (ptz, cameras_set_tmp->thumbnail_width, cameras_set_tmp->thumbnail_height, cameras_set_tmp->memories_button_vertical_margins, cameras_set_tmp->memories_button_horizontal_margins);
+				else create_ghost_ptz_widgets_vertical (ptz, cameras_set_tmp->thumbnail_width, cameras_set_tmp->thumbnail_height, cameras_set_tmp->memories_button_vertical_margins, cameras_set_tmp->memories_button_horizontal_margins);
 			}
 		}
 
