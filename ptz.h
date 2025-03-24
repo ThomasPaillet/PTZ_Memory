@@ -139,13 +139,13 @@ void show_control_window (ptz_t *ptz);
 
 gboolean update_auto_focus_toggle_button (ptz_t *ptz);
 
-void create_ptz_widgets_horizontal (ptz_t *ptz, int thumbnail_width, int thumbnail_height);
+void create_ptz_widgets_horizontal (ptz_t *ptz, int thumbnail_width, int thumbnail_height, int memories_button_vertical_margins, int memories_button_horizontal_margins);
 
-void create_ptz_widgets_vertical (ptz_t *ptz, int thumbnail_width, int thumbnail_height);
+void create_ptz_widgets_vertical (ptz_t *ptz, int thumbnail_width, int thumbnail_height, int memories_button_vertical_margins, int memories_button_horizontal_margins);
 
-void create_ghost_ptz_widgets_horizontal (ptz_t *ptz, int thumbnail_width, int thumbnail_height);
+void create_ghost_ptz_widgets_horizontal (ptz_t *ptz, int thumbnail_width, int thumbnail_height, int memories_button_vertical_margins, int memories_button_horizontal_margins);
 
-void create_ghost_ptz_widgets_vertical (ptz_t *ptz, int thumbnail_width, int thumbnail_height);
+void create_ghost_ptz_widgets_vertical (ptz_t *ptz, int thumbnail_width, int thumbnail_height, int memories_button_vertical_margins, int memories_button_horizontal_margins);
 
 
 extern ptz_t *current_ptz_control_window;
