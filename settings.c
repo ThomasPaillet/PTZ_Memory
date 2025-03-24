@@ -43,8 +43,6 @@ gboolean backup_needed = FALSE;
 
 const char settings_txt[] = "_Paramètres";
 const char about_txt[] = "A propos";
-const char pixel_txt[] = "pixel";
-const char pixels_txt[] = "pixels";
 
 GtkWidget *settings_window = NULL;
 
