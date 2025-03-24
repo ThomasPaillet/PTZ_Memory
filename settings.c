@@ -21,6 +21,8 @@
 
 #include "cameras_set.h"
 #include "controller.h"
+#include "main_window.h"
+#include "protocol.h"
 #include "sw_p_08.h"
 #include "tally.h"
 #include "update_notification.h"
@@ -318,8 +320,8 @@ void update_notification_tcp_port_entry_activate (GtkEntry *entry, GtkEntryBuffe
 
 	for (cameras_set_itr = cameras_sets; cameras_set_itr != NULL; cameras_set_itr = cameras_set_itr->next) {
 		for (i = 0; i < cameras_set_itr->number_of_cameras; i++) {
-			if ((cameras_set_itr->ptz_ptr_array[i]->ip_address_is_valid) && (cameras_set_itr->ptz_ptr_array[i]->error_code != 0x30))
-				send_update_start_cmd (cameras_set_itr->ptz_ptr_array[i]);
+			if ((cameras_set_itr->cameras[i]->ip_address_is_valid) && (cameras_set_itr->cameras[i]->error_code != 0x30))
+				send_update_start_cmd (cameras_set_itr->cameras[i]);
 		}
 	}
 
@@ -368,7 +370,7 @@ void tsl_umd_v5_udp_port_entry_activate (GtkEntry *entry, GtkEntryBuffer *entry_
 
 void create_settings_window (void)
 {
-	GtkWidget *box1, *frame, *box2, *box3, *box4, *widget, *controller_ip_address_box, *label;
+	GtkWidget *box1, *frame, *box2, *box3, *box4, *widget, *controller_ip_address_box;
 	cameras_set_t *cameras_set_itr;
 	gint current_page;
 	int i, l, k;
@@ -738,9 +740,9 @@ void load_config_file (void)
 			fread (&ptz->active, sizeof (gboolean), 1, config_file);
 
 			if (ptz->active) {
-				create_control_window (&ptz->control_window);
+				create_control_window (&ptz->control_window, ptz);
 
-				if (cameras_set_orientation) create_ptz_widgets_horizontal (ptz, cameras_set_tmp->thumbnail_width, cameras_set_tmp->thumbnail_height);
+				if (cameras_set_tmp->orientation) create_ptz_widgets_horizontal (ptz, cameras_set_tmp->thumbnail_width, cameras_set_tmp->thumbnail_height);
 				else create_ptz_widgets_vertical (ptz, cameras_set_tmp->thumbnail_width, cameras_set_tmp->thumbnail_height);
 
 				fread (ptz->ip_address, sizeof (char), 16, config_file);
@@ -774,10 +776,10 @@ void load_config_file (void)
 					fread (pixbuf_data, sizeof (guint8), pixbuf_byte_length, config_file);
 
 					ptz->memories[index].full_pixbuf = gdk_pixbuf_new_from_data (pixbuf_data, GDK_COLORSPACE_RGB, FALSE, 8, 320, 180, pixbuf_rowstride, (GdkPixbufDestroyNotify)g_free, NULL);
-					if (thumbnail_width == 320) {
+					if (cameras_set_tmp->thumbnail_width == 320) {
 						ptz->memories[index].image = gtk_image_new_from_pixbuf (ptz->memories[index].full_pixbuf);
 					} else {
-						ptz->memories[index].scaled_pixbuf = gdk_pixbuf_scale_simple (ptz->memories[index].full_pixbuf, thumbnail_width, thumbnail_height, GDK_INTERP_BILINEAR);
+						ptz->memories[index].scaled_pixbuf = gdk_pixbuf_scale_simple (ptz->memories[index].full_pixbuf, cameras_set_tmp->thumbnail_width, cameras_set_tmp->thumbnail_height, GDK_INTERP_BILINEAR);
 						ptz->memories[index].image = gtk_image_new_from_pixbuf (ptz->memories[index].scaled_pixbuf);
 					}
 					gtk_button_set_image (GTK_BUTTON (ptz->memories[index].button), ptz->memories[index].image);
@@ -788,7 +790,7 @@ void load_config_file (void)
 			} else {
 				cameras_set_tmp->number_of_ghost_cameras++;
 
-				if (cameras_set_orientation) create_ghost_ptz_widgets_horizontal (ptz, cameras_set_tmp->thumbnail_width, cameras_set_tmp->thumbnail_height);
+				if (cameras_set_tmp->orientation) create_ghost_ptz_widgets_horizontal (ptz, cameras_set_tmp->thumbnail_width, cameras_set_tmp->thumbnail_height);
 				else create_ghost_ptz_widgets_vertical (ptz, cameras_set_tmp->thumbnail_width, cameras_set_tmp->thumbnail_height);
 			}
 		}
