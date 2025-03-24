@@ -28,6 +28,9 @@
 #include "tally.h"
 
 
+gdouble thumbnail_size;
+
+
 void init_ptz (ptz_t *ptz)
 {
 	int i;
