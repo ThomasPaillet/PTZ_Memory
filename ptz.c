@@ -28,10 +28,6 @@
 #include "tally.h"
 
 
-int memories_button_vertical_margins = 0;
-int memories_button_horizontal_margins = 0;
-
-
 void init_ptz (ptz_t *ptz)
 {
 	int i;
@@ -58,6 +54,7 @@ void init_ptz (ptz_t *ptz)
 		ptz->memories[i].pan_tilt_position_cmd[12] = '\0';
 		ptz->memories[i].name[0] = '\0';
 	}
+
 	ptz->number_of_memories = 0;
 	ptz->previous_loaded_memory = NULL;
 
@@ -309,7 +306,7 @@ void memory_name_entry_activate (GtkEntry *entry, memory_t *memory)
 	backup_needed = TRUE;
 }
 
-void create_ptz_widgets_horizontal (ptz_t *ptz, int thumbnail_width, int thumbnail_height)
+void create_ptz_widgets_horizontal (ptz_t *ptz, int thumbnail_width, int thumbnail_height, int memories_button_vertical_margins, int memories_button_horizontal_margins)
 {
 /*
 name_grid                                       memories_grid
@@ -412,7 +409,7 @@ name_grid                                       memories_grid
 	gtk_grid_attach (GTK_GRID (ptz->memories_grid), ptz->tally[5], MAX_MEMORIES, 0, 1, 3);
 }
 
-void create_ptz_widgets_vertical (ptz_t *ptz, int thumbnail_width, int thumbnail_height)
+void create_ptz_widgets_vertical (ptz_t *ptz, int thumbnail_width, int thumbnail_height, int memories_button_vertical_margins, int memories_button_horizontal_margins)
 {
 /*
 name_grid
@@ -534,7 +531,7 @@ gboolean ghost_body_draw (GtkWidget *widget, cairo_t *cr)
 	return GDK_EVENT_PROPAGATE;
 }
 
-void create_ghost_ptz_widgets_horizontal (ptz_t *ptz, int thumbnail_width, int thumbnail_height)
+void create_ghost_ptz_widgets_horizontal (ptz_t *ptz, int thumbnail_width, int thumbnail_height, int memories_button_vertical_margins, int memories_button_horizontal_margins)
 {
 /*
 name_grid                    memories_grid
@@ -594,7 +591,7 @@ name_grid                    memories_grid
 	gtk_grid_attach (GTK_GRID (ptz->memories_grid), ptz->tally[5], MAX_MEMORIES, 0, 1, 3);
 }
 
-void create_ghost_ptz_widgets_vertical (ptz_t *ptz, int thumbnail_width, int thumbnail_height)
+void create_ghost_ptz_widgets_vertical (ptz_t *ptz, int thumbnail_width, int thumbnail_height, int memories_button_vertical_margins, int memories_button_horizontal_margins)
 {
 /*
 name_grid
