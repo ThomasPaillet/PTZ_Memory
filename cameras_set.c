@@ -171,7 +171,10 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 		cameras_sets = cameras_set;
 
 		if (number_of_cameras_sets == 0) {
-			gtk_widget_set_sensitive (thumbnail_size_scale, TRUE);
+			gtk_widget_set_sensitive (interface_button, TRUE);
+			gtk_widget_set_sensitive (store_toggle_button, TRUE);
+			gtk_widget_set_sensitive (delete_toggle_button, TRUE);
+			gtk_widget_set_sensitive (link_toggle_button, TRUE);
 			gtk_widget_set_sensitive (switch_cameras_on_button, TRUE);
 			gtk_widget_set_sensitive (switch_cameras_off_button, TRUE);
 		}
@@ -734,19 +737,30 @@ void add_cameras_set (void)
 	new_cameras_set->name[0] = '\0';
 
 	new_cameras_set->number_of_cameras = 5;
-	new_cameras_set->number_of_ghost_cameras = 0;
-
-	new_cameras_set->thumbnail_size = 1.0;
-	new_cameras_set->thumbnail_width = 320;
-	new_cameras_set->thumbnail_height = 180;
 
 	for (i = 0; i < 5; i++) {
 		ptz = g_malloc (sizeof (ptz_t));
 		new_cameras_set->cameras[i] = ptz;
+
 		sprintf (ptz->name, "%d", i + 1);
 		ptz->index = i;
+
 		init_ptz (ptz);
 	}
+
+	new_cameras_set->number_of_ghost_cameras = 0;
+
+	new_cameras_set->orientation = TRUE;
+
+	new_cameras_set->thumbnail_size = 1.0;
+	new_cameras_set->thumbnail_width = 320;
+	new_cameras_set->thumbnail_height = 180;
+	
+	new_cameras_set->memories_button_vertical_margins = 0;
+	new_cameras_set->memories_button_horizontal_margins = 0;
+
+	new_cameras_set->show_linked_memories_names_entries = TRUE;
+	new_cameras_set->show_linked_memories_names_labels = TRUE;
 
 	show_cameras_set_configuration_window ();
 }
@@ -830,7 +844,11 @@ void delete_cameras_set (void)
 
 		if (number_of_cameras_sets == 0) {
 			current_cameras_set = NULL;
-			gtk_widget_set_sensitive (thumbnail_size_scale, FALSE);
+
+			gtk_widget_set_sensitive (interface_button, FALSE);
+			gtk_widget_set_sensitive (store_toggle_button, FALSE);
+			gtk_widget_set_sensitive (delete_toggle_button, FALSE);
+			gtk_widget_set_sensitive (link_toggle_button, FALSE);
 			gtk_widget_set_sensitive (switch_cameras_on_button, FALSE);
 			gtk_widget_set_sensitive (switch_cameras_off_button, FALSE);
 		}
