@@ -32,7 +32,7 @@ extern const char warning_txt[];
 extern GtkWidget *main_window;
 extern GtkWidget *main_window_notebook;
 
-extern GtkWidget *thumbnail_size_scale;
+extern GtkWidget *interface_button;
 
 extern GtkWidget *store_toggle_button;
 extern GtkWidget *delete_toggle_button;
