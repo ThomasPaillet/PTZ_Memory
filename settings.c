@@ -41,7 +41,7 @@ const char config_file_name[] = "PTZ-Memory.dat";
 
 gboolean backup_needed = FALSE;
 
-const char settings_txt[] = "_Paramètres";
+const char settings_txt[] = "_Système";
 const char about_txt[] = "A propos";
 
 GtkWidget *settings_window = NULL;
@@ -716,6 +716,7 @@ void load_config_file (void)
 		if (cameras_set_tmp->thumbnail_size < 0.5) cameras_set_tmp->thumbnail_size = 0.5;
 		else if (cameras_set_tmp->thumbnail_size > 1.0) cameras_set_tmp->thumbnail_size = 1.0;
 
+		thumbnail_size = cameras_set_tmp->thumbnail_size;
 		cameras_set_tmp->thumbnail_width = 320 * cameras_set_tmp->thumbnail_size;
 		cameras_set_tmp->thumbnail_height = 180 * cameras_set_tmp->thumbnail_size;
 
