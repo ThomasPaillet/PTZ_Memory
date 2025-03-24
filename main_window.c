@@ -20,7 +20,14 @@
 #include "main_window.h"
 
 #include "cameras_set.h"
+#include "controller.h"
+#include "error.h"
 #include "interface.h"
+#include "protocol.h"
+#include "settings.h"
+#include "sw_p_08.h"
+#include "tally.h"
+#include "update_notification.h"
 
 
 #ifdef _WIN32
@@ -256,7 +263,7 @@ gboolean main_window_key_press (GtkWidget *widget, GdkEventKey *event)
 		}
 	} else if (current_cameras_set != NULL) {
 		if (event->keyval == GDK_KEY_Left) {
-			if (cameras_set_orientation) {
+			if (current_cameras_set->orientation) {
 				adjustment_value = gtk_adjustment_get_value (current_cameras_set->memories_scrolled_window_adjustment) - 50;
 
 				gtk_adjustment_set_value (current_cameras_set->entry_scrolled_window_adjustment, adjustment_value);
@@ -269,7 +276,7 @@ gboolean main_window_key_press (GtkWidget *widget, GdkEventKey *event)
 
 			return GDK_EVENT_STOP;
 		} else if (event->keyval == GDK_KEY_Right) {
-			if (cameras_set_orientation) {
+			if (current_cameras_set->orientation) {
 				adjustment_value = gtk_adjustment_get_value (current_cameras_set->memories_scrolled_window_adjustment) + 50;
 
 				gtk_adjustment_set_value (current_cameras_set->entry_scrolled_window_adjustment, adjustment_value);
@@ -282,7 +289,7 @@ gboolean main_window_key_press (GtkWidget *widget, GdkEventKey *event)
 
 			return GDK_EVENT_STOP;
 		} else if (event->keyval == GDK_KEY_Up) {
-			if (cameras_set_orientation) {
+			if (current_cameras_set->orientation) {
 				gtk_adjustment_set_value (current_cameras_set->scrolled_window_adjustment, gtk_adjustment_get_value (current_cameras_set->scrolled_window_adjustment) - 50);
 			} else {
 				adjustment_value = gtk_adjustment_get_value (current_cameras_set->memories_scrolled_window_adjustment) - 50;
@@ -295,7 +302,7 @@ gboolean main_window_key_press (GtkWidget *widget, GdkEventKey *event)
 
 			return GDK_EVENT_STOP;
 		} else if (event->keyval == GDK_KEY_Down) {
-			if (cameras_set_orientation) {
+			if (current_cameras_set->orientation) {
 				gtk_adjustment_set_value (current_cameras_set->scrolled_window_adjustment, gtk_adjustment_get_value (current_cameras_set->scrolled_window_adjustment) + 50);
 			} else {
 				adjustment_value = gtk_adjustment_get_value (current_cameras_set->memories_scrolled_window_adjustment) + 50;
