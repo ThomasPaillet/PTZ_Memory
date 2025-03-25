@@ -28,6 +28,10 @@ const char interface_settings_txt[] = "_Interface";
 const char pixel_txt[] = "pixel";
 const char pixels_txt[] = "pixels";
 
+char ptz_name_font[17] = "Courier Bold 100";
+char ghost_ptz_name_font[17] = "Courier Bold 100";
+char memory_name_font[17] = "Courier Bold 100";
+
 GtkWidget *interface_settings_window;
 
 GtkWidget *orientation_check_button;
@@ -44,7 +48,8 @@ gulong thumbnail_size_scale_handler_id;
 gulong memories_button_vertical_margins_scale_handler_id;
 gulong memories_button_horizontal_margins_scale_handler_id;
 
-//GtkWidget *memories_name_red_scale, *horizontal_margins_label;
+GtkWidget *memories_name_color_scale_red, *memories_name_color_scale_green, *memories_name_color_scale_blue;
+GtkWidget *memories_name_backdrop_color_scale_red, *memories_name_backdrop_color_scale_green, *memories_name_backdrop_color_scale_blue, *memories_name_backdrop_color_scale_alpha;
 
 
 void orientation_check_button_toggled (GtkToggleButton *togglebutton)
@@ -88,7 +93,6 @@ void orientation_check_button_toggled (GtkToggleButton *togglebutton)
 	if (!current_cameras_set->show_linked_memories_names_entries) gtk_widget_hide (current_cameras_set->linked_memories_names_entries);
 	if (!current_cameras_set->show_linked_memories_names_labels) gtk_widget_hide (current_cameras_set->linked_memories_names_labels);
 
-
 	backup_needed = TRUE;
 }
 
@@ -97,7 +101,7 @@ void show_linked_memories_names_entries_check_button_toggled (GtkToggleButton *t
 	current_cameras_set->show_linked_memories_names_entries = gtk_toggle_button_get_active (togglebutton);
 
 	if (current_cameras_set->show_linked_memories_names_entries) gtk_widget_show (current_cameras_set->linked_memories_names_entries);
-    else gtk_widget_hide (current_cameras_set->linked_memories_names_entries);
+	else gtk_widget_hide (current_cameras_set->linked_memories_names_entries);
 
 	backup_needed = TRUE;
 }
@@ -107,7 +111,7 @@ void show_linked_memories_names_labels_check_button_toggled (GtkToggleButton *to
 	current_cameras_set->show_linked_memories_names_labels = gtk_toggle_button_get_active (togglebutton);
 
 	if (current_cameras_set->show_linked_memories_names_labels) gtk_widget_show (current_cameras_set->linked_memories_names_labels);
-    else gtk_widget_hide (current_cameras_set->linked_memories_names_labels);
+	else gtk_widget_hide (current_cameras_set->linked_memories_names_labels);
 
 	backup_needed = TRUE;
 }
@@ -118,11 +122,15 @@ void thumbnail_size_value_changed (GtkRange *range)
 	int i, j;
 	ptz_t *ptz;
 
-    old_thumbnail_width = current_cameras_set->thumbnail_width;
+	old_thumbnail_width = current_cameras_set->thumbnail_width;
 
 	current_cameras_set->thumbnail_size = gtk_range_get_value (range);
 	current_cameras_set->thumbnail_width = 320 * current_cameras_set->thumbnail_size;
 	current_cameras_set->thumbnail_height = 180 * current_cameras_set->thumbnail_size;
+
+	sprintf (ptz_name_font + 13, "%d", (int)(100.0 * current_cameras_set->thumbnail_size));
+	sprintf (ghost_ptz_name_font + 13, "%d", (int)(80.0 * current_cameras_set->thumbnail_size));
+	sprintf (memory_name_font + 13, "%d", (int)(20.0 * current_cameras_set->thumbnail_size));
 
 	for (i = 0; i < current_cameras_set->number_of_cameras; i++) {
 		ptz = current_cameras_set->cameras[i];
