@@ -720,6 +720,34 @@ void load_config_file (void)
 		cameras_set_tmp->thumbnail_width = 320 * cameras_set_tmp->thumbnail_size;
 		cameras_set_tmp->thumbnail_height = 180 * cameras_set_tmp->thumbnail_size;
 
+		fread (&cameras_set_tmp->memories_name_color_red, sizeof (double), 1, config_file);
+		if (cameras_set_tmp->memories_name_color_red < 0.0) cameras_set_tmp->memories_name_color_red = 0.0;
+		else if (cameras_set_tmp->memories_name_color_red > 1.0) cameras_set_tmp->memories_name_color_red = 1.0;
+
+		fread (&cameras_set_tmp->memories_name_color_green, sizeof (double), 1, config_file);
+		if (cameras_set_tmp->memories_name_color_green < 0.0) cameras_set_tmp->memories_name_color_green = 0.0;
+		else if (cameras_set_tmp->memories_name_color_green > 1.0) cameras_set_tmp->memories_name_color_green = 1.0;
+
+		fread (&cameras_set_tmp->memories_name_color_blue, sizeof (double), 1, config_file);
+		if (cameras_set_tmp->memories_name_color_blue < 0.0) cameras_set_tmp->memories_name_color_blue = 0.0;
+		else if (cameras_set_tmp->memories_name_color_blue > 1.0) cameras_set_tmp->memories_name_color_blue = 1.0;
+
+		fread (&cameras_set_tmp->memories_name_backdrop_color_red, sizeof (double), 1, config_file);
+		if (cameras_set_tmp->memories_name_backdrop_color_red < 0.0) cameras_set_tmp->memories_name_backdrop_color_red = 0.0;
+		else if (cameras_set_tmp->memories_name_backdrop_color_red > 1.0) cameras_set_tmp->memories_name_backdrop_color_red = 1.0;
+
+		fread (&cameras_set_tmp->memories_name_backdrop_color_green, sizeof (double), 1, config_file);
+		if (cameras_set_tmp->memories_name_backdrop_color_green < 0.0) cameras_set_tmp->memories_name_backdrop_color_green = 0.0;
+		else if (cameras_set_tmp->memories_name_backdrop_color_green > 1.0) cameras_set_tmp->memories_name_backdrop_color_green = 1.0;
+
+		fread (&cameras_set_tmp->memories_name_backdrop_color_blue, sizeof (double), 1, config_file);
+		if (cameras_set_tmp->memories_name_backdrop_color_blue < 0.0) cameras_set_tmp->memories_name_backdrop_color_blue = 0.0;
+		else if (cameras_set_tmp->memories_name_backdrop_color_blue > 1.0) cameras_set_tmp->memories_name_backdrop_color_blue = 1.0;
+
+		fread (&cameras_set_tmp->memories_name_backdrop_color_alpha, sizeof (double), 1, config_file);
+		if (cameras_set_tmp->memories_name_backdrop_color_alpha < 0.0) cameras_set_tmp->memories_name_backdrop_color_alpha = 0.0;
+		else if (cameras_set_tmp->memories_name_backdrop_color_alpha > 1.0) cameras_set_tmp->memories_name_backdrop_color_alpha = 1.0;
+
 		fread (&cameras_set_tmp->memories_button_vertical_margins, sizeof (int), 1, config_file);
 		if ((cameras_set_tmp->memories_button_vertical_margins < 0) || (cameras_set_tmp->memories_button_vertical_margins > 50)) cameras_set_tmp->memories_button_vertical_margins = 0;
 
@@ -876,6 +904,15 @@ void save_config_file (void)
 		fwrite (&cameras_set_itr->orientation, sizeof (gboolean), 1, config_file);
 
 		fwrite (&cameras_set_itr->thumbnail_size, sizeof (gdouble), 1, config_file);
+
+		fwrite (&cameras_set_itr->memories_name_color_red, sizeof (double), 1, config_file);
+		fwrite (&cameras_set_itr->memories_name_color_green, sizeof (double), 1, config_file);
+		fwrite (&cameras_set_itr->memories_name_color_blue, sizeof (double), 1, config_file);
+
+		fwrite (&cameras_set_itr->memories_name_backdrop_color_red, sizeof (double), 1, config_file);
+		fwrite (&cameras_set_itr->memories_name_backdrop_color_green, sizeof (double), 1, config_file);
+		fwrite (&cameras_set_itr->memories_name_backdrop_color_blue, sizeof (double), 1, config_file);
+		fwrite (&cameras_set_itr->memories_name_backdrop_color_alpha, sizeof (double), 1, config_file);
 
 		fwrite (&cameras_set_itr->memories_button_vertical_margins, sizeof (int), 1, config_file);
 
