@@ -21,6 +21,7 @@
 
 #include "cameras_set.h"
 #include "controller.h"
+#include "interface.h"
 #include "main_window.h"
 #include "protocol.h"
 #include "settings.h"
@@ -294,8 +295,6 @@ gboolean memory_button_button_press_event (GtkButton *button, GdkEventButton *ev
 	return GDK_EVENT_PROPAGATE;
 }
 
-extern char *font;
-
 gboolean memory_name_draw (GtkWidget *widget, cairo_t *cr, char *name)
 {
 	PangoLayout *pl;
@@ -311,10 +310,8 @@ gboolean memory_name_draw (GtkWidget *widget, cairo_t *cr, char *name)
 
 		cairo_translate (cr, 5.0 + 16.0 * (10 - (strlen (name) / 2)) * current_cameras_set->thumbnail_size, current_cameras_set->thumbnail_height - (19.0 * current_cameras_set->thumbnail_size) + (1.0 - current_cameras_set->thumbnail_size) * 4.0);
 
-		sprintf (font + 13, "%d", (int)(20.0 * current_cameras_set->thumbnail_size));
-
 		pango_layout_set_text (pl, name, -1);
-		desc = pango_font_description_from_string (font);
+		desc = pango_font_description_from_string (memory_name_font);
 		pango_layout_set_font_description (pl, desc);
 		pango_font_description_free (desc);
 
