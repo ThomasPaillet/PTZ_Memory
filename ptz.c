@@ -28,9 +28,6 @@
 #include "tally.h"
 
 
-gdouble thumbnail_size;
-
-
 void init_ptz (ptz_t *ptz)
 {
 	int i;
@@ -330,12 +327,12 @@ name_grid                                       memories_grid
 	ptz->name_grid = gtk_grid_new ();
 		ptz->tally[0] = gtk_drawing_area_new ();
 		gtk_widget_set_size_request (ptz->tally[0], 4, 4);
-		g_signal_connect (G_OBJECT (ptz->tally[0]), "draw", G_CALLBACK (tally_draw), ptz);
+		g_signal_connect (G_OBJECT (ptz->tally[0]), "draw", G_CALLBACK (ptz_tally_draw), ptz);
 	gtk_grid_attach (GTK_GRID (ptz->name_grid), ptz->tally[0], 0, 0, 3, 1);
 
 		ptz->tally[1] = gtk_drawing_area_new ();
 		gtk_widget_set_size_request (ptz->tally[1], 4, 4);
-		g_signal_connect (G_OBJECT (ptz->tally[1]), "draw", G_CALLBACK (tally_draw), ptz);
+		g_signal_connect (G_OBJECT (ptz->tally[1]), "draw", G_CALLBACK (ptz_tally_draw), ptz);
 	gtk_grid_attach (GTK_GRID (ptz->name_grid), ptz->tally[1], 0, 1, 1, 1);
 
 		ptz->name_drawing_area = gtk_drawing_area_new ();
@@ -343,7 +340,7 @@ name_grid                                       memories_grid
 		gtk_widget_set_margin_top (ptz->name_drawing_area, memories_button_horizontal_margins);
 		gtk_widget_set_margin_bottom (ptz->name_drawing_area, memories_button_horizontal_margins);
 		gtk_widget_set_events (ptz->name_drawing_area, gtk_widget_get_events (ptz->name_drawing_area) | GDK_BUTTON_PRESS_MASK | GDK_ENTER_NOTIFY_MASK | GDK_LEAVE_NOTIFY_MASK);
-		g_signal_connect (G_OBJECT (ptz->name_drawing_area), "draw", G_CALLBACK (name_draw), ptz);
+		g_signal_connect (G_OBJECT (ptz->name_drawing_area), "draw", G_CALLBACK (ptz_name_draw), ptz);
 		g_signal_connect (G_OBJECT (ptz->name_drawing_area), "button-press-event", G_CALLBACK (name_drawing_area_button_press_event), ptz);
 		g_signal_connect (G_OBJECT (ptz->name_drawing_area), "enter-notify-event", G_CALLBACK (name_drawing_area_enter_notify_event), ptz);
 		g_signal_connect (G_OBJECT (ptz->name_drawing_area), "leave-notify-event", G_CALLBACK (name_drawing_area_leave_notify_event), ptz);
@@ -356,7 +353,7 @@ name_grid                                       memories_grid
 
 		ptz->tally[2] = gtk_drawing_area_new ();
 		gtk_widget_set_size_request (ptz->tally[2], 4, 4);
-		g_signal_connect (G_OBJECT (ptz->tally[2]), "draw", G_CALLBACK (tally_draw), ptz);
+		g_signal_connect (G_OBJECT (ptz->tally[2]), "draw", G_CALLBACK (ptz_tally_draw), ptz);
 	gtk_grid_attach (GTK_GRID (ptz->name_grid), ptz->tally[2], 0, 2, 3, 1);
 
 	ptz->memories_separator = gtk_separator_new (GTK_ORIENTATION_HORIZONTAL);
@@ -364,7 +361,7 @@ name_grid                                       memories_grid
 	ptz->memories_grid = gtk_grid_new ();
 		ptz->tally[3] = gtk_drawing_area_new ();
 		gtk_widget_set_size_request (ptz->tally[3], 4, 4);
-		g_signal_connect (G_OBJECT (ptz->tally[3]), "draw", G_CALLBACK (tally_draw), ptz);
+		g_signal_connect (G_OBJECT (ptz->tally[3]), "draw", G_CALLBACK (ptz_tally_draw), ptz);
 	gtk_grid_attach (GTK_GRID (ptz->memories_grid), ptz->tally[3], 0, 0, MAX_MEMORIES, 1);
 
 		for (i = 0; i < MAX_MEMORIES; i++) {
@@ -403,12 +400,12 @@ name_grid                                       memories_grid
 
 		ptz->tally[4] = gtk_drawing_area_new ();
 		gtk_widget_set_size_request (ptz->tally[4], 4, 4);
-		g_signal_connect (G_OBJECT (ptz->tally[4]), "draw", G_CALLBACK (tally_draw), ptz);
+		g_signal_connect (G_OBJECT (ptz->tally[4]), "draw", G_CALLBACK (ptz_tally_draw), ptz);
 	gtk_grid_attach (GTK_GRID (ptz->memories_grid), ptz->tally[4], 0, 2, MAX_MEMORIES, 1);
 
 		ptz->tally[5] = gtk_drawing_area_new ();
 		gtk_widget_set_size_request (ptz->tally[5], 4, 4);
-		g_signal_connect (G_OBJECT (ptz->tally[5]), "draw", G_CALLBACK (tally_draw), ptz);
+		g_signal_connect (G_OBJECT (ptz->tally[5]), "draw", G_CALLBACK (ptz_tally_draw), ptz);
 	gtk_grid_attach (GTK_GRID (ptz->memories_grid), ptz->tally[5], MAX_MEMORIES, 0, 1, 3);
 }
 
@@ -444,12 +441,12 @@ memories_grid
 	ptz->name_grid = gtk_grid_new ();
 		ptz->tally[0] = gtk_drawing_area_new ();
 		gtk_widget_set_size_request (ptz->tally[0], 4, 4);
-		g_signal_connect (G_OBJECT (ptz->tally[0]), "draw", G_CALLBACK (tally_draw), ptz);
+		g_signal_connect (G_OBJECT (ptz->tally[0]), "draw", G_CALLBACK (ptz_tally_draw), ptz);
 	gtk_grid_attach (GTK_GRID (ptz->name_grid), ptz->tally[0], 0, 0, 3, 1);
 
 		ptz->tally[1] = gtk_drawing_area_new ();
 		gtk_widget_set_size_request (ptz->tally[1], 4, 4);
-		g_signal_connect (G_OBJECT (ptz->tally[1]), "draw", G_CALLBACK (tally_draw), ptz);
+		g_signal_connect (G_OBJECT (ptz->tally[1]), "draw", G_CALLBACK (ptz_tally_draw), ptz);
 	gtk_grid_attach (GTK_GRID (ptz->name_grid), ptz->tally[1], 0, 1, 1, 2);
 
 		ptz->name_drawing_area = gtk_drawing_area_new ();
@@ -457,7 +454,7 @@ memories_grid
 		gtk_widget_set_margin_start (ptz->name_drawing_area, memories_button_vertical_margins);
 		gtk_widget_set_margin_end (ptz->name_drawing_area, memories_button_vertical_margins);
 		gtk_widget_set_events (ptz->name_drawing_area, gtk_widget_get_events (ptz->name_drawing_area) | GDK_BUTTON_PRESS_MASK | GDK_ENTER_NOTIFY_MASK | GDK_LEAVE_NOTIFY_MASK);
-		g_signal_connect (G_OBJECT (ptz->name_drawing_area), "draw", G_CALLBACK (name_draw), ptz);
+		g_signal_connect (G_OBJECT (ptz->name_drawing_area), "draw", G_CALLBACK (ptz_name_draw), ptz);
 		g_signal_connect (G_OBJECT (ptz->name_drawing_area), "button-press-event", G_CALLBACK (name_drawing_area_button_press_event), ptz);
 		g_signal_connect (G_OBJECT (ptz->name_drawing_area), "enter-notify-event", G_CALLBACK (name_drawing_area_enter_notify_event), ptz);
 		g_signal_connect (G_OBJECT (ptz->name_drawing_area), "leave-notify-event", G_CALLBACK (name_drawing_area_leave_notify_event), ptz);
@@ -470,7 +467,7 @@ memories_grid
 
 		ptz->tally[2] = gtk_drawing_area_new ();
 		gtk_widget_set_size_request (ptz->tally[2], 4, 4);
-		g_signal_connect (G_OBJECT (ptz->tally[2]), "draw", G_CALLBACK (tally_draw), ptz);
+		g_signal_connect (G_OBJECT (ptz->tally[2]), "draw", G_CALLBACK (ptz_tally_draw), ptz);
 	gtk_grid_attach (GTK_GRID (ptz->name_grid), ptz->tally[2], 2, 1, 1, 2);
 
 	ptz->memories_separator = gtk_separator_new (GTK_ORIENTATION_VERTICAL);
@@ -478,7 +475,7 @@ memories_grid
 	ptz->memories_grid = gtk_grid_new ();
 		ptz->tally[3] = gtk_drawing_area_new ();
 		gtk_widget_set_size_request (ptz->tally[3], 4, 4);
-		g_signal_connect (G_OBJECT (ptz->tally[3]), "draw", G_CALLBACK (tally_draw), ptz);
+		g_signal_connect (G_OBJECT (ptz->tally[3]), "draw", G_CALLBACK (ptz_tally_draw), ptz);
 	gtk_grid_attach (GTK_GRID (ptz->memories_grid), ptz->tally[3], 0, 0, 1, MAX_MEMORIES);
 
 		for (i = 0; i < MAX_MEMORIES; i++) {
@@ -517,12 +514,12 @@ memories_grid
 
 		ptz->tally[4] = gtk_drawing_area_new ();
 		gtk_widget_set_size_request (ptz->tally[4], 4, 4);
-		g_signal_connect (G_OBJECT (ptz->tally[4]), "draw", G_CALLBACK (tally_draw), ptz);
+		g_signal_connect (G_OBJECT (ptz->tally[4]), "draw", G_CALLBACK (ptz_tally_draw), ptz);
 	gtk_grid_attach (GTK_GRID (ptz->memories_grid), ptz->tally[4], 2, 0, 1, MAX_MEMORIES);
 
 		ptz->tally[5] = gtk_drawing_area_new ();
 		gtk_widget_set_size_request (ptz->tally[5], 4, 4);
-		g_signal_connect (G_OBJECT (ptz->tally[5]), "draw", G_CALLBACK (tally_draw), ptz);
+		g_signal_connect (G_OBJECT (ptz->tally[5]), "draw", G_CALLBACK (ptz_tally_draw), ptz);
 	gtk_grid_attach (GTK_GRID (ptz->memories_grid), ptz->tally[5], 0, MAX_MEMORIES, 3, 1);
 }
 
@@ -551,23 +548,23 @@ name_grid                    memories_grid
 	ptz->name_grid = gtk_grid_new ();
 		ptz->tally[0] = gtk_drawing_area_new ();
 		gtk_widget_set_size_request (ptz->tally[0], 4, 4);
-		g_signal_connect (G_OBJECT (ptz->tally[0]), "draw", G_CALLBACK (ghost_tally_draw), ptz);
+		g_signal_connect (G_OBJECT (ptz->tally[0]), "draw", G_CALLBACK (ghost_ptz_tally_draw), ptz);
 	gtk_grid_attach (GTK_GRID (ptz->name_grid), ptz->tally[0], 0, 0, 2, 1);
 
 		ptz->tally[1] = gtk_drawing_area_new ();
 		gtk_widget_set_size_request (ptz->tally[1], 4, 4);
-		g_signal_connect (G_OBJECT (ptz->tally[1]), "draw", G_CALLBACK (ghost_tally_draw), ptz);
+		g_signal_connect (G_OBJECT (ptz->tally[1]), "draw", G_CALLBACK (ghost_ptz_tally_draw), ptz);
 	gtk_grid_attach (GTK_GRID (ptz->name_grid), ptz->tally[1], 0, 1, 1, 1);
 
 		ptz->name_drawing_area = gtk_drawing_area_new ();
 		gtk_widget_set_size_request (ptz->name_drawing_area, thumbnail_height + 8, thumbnail_height / 2);
-		g_signal_connect (G_OBJECT (ptz->name_drawing_area), "draw", G_CALLBACK (ghost_name_draw), ptz);
+		g_signal_connect (G_OBJECT (ptz->name_drawing_area), "draw", G_CALLBACK (ghost_ptz_name_draw), ptz);
 		g_signal_connect (G_OBJECT (ptz->name_drawing_area), "button-press-event", G_CALLBACK (ghost_name_drawing_area_button_press_event), ptz);
 	gtk_grid_attach (GTK_GRID (ptz->name_grid), ptz->name_drawing_area, 1, 1, 1, 1);
 
 		ptz->tally[2] = gtk_drawing_area_new ();
 		gtk_widget_set_size_request (ptz->tally[2], 4, 4);
-		g_signal_connect (G_OBJECT (ptz->tally[2]), "draw", G_CALLBACK (ghost_tally_draw), ptz);
+		g_signal_connect (G_OBJECT (ptz->tally[2]), "draw", G_CALLBACK (ghost_ptz_tally_draw), ptz);
 	gtk_grid_attach (GTK_GRID (ptz->name_grid), ptz->tally[2], 0, 2, 2, 1);
 
 	ptz->memories_separator = gtk_separator_new (GTK_ORIENTATION_HORIZONTAL);
@@ -575,7 +572,7 @@ name_grid                    memories_grid
 	ptz->memories_grid = gtk_grid_new ();
 		ptz->tally[3] = gtk_drawing_area_new ();
 		gtk_widget_set_size_request (ptz->tally[3], 4, 4);
-		g_signal_connect (G_OBJECT (ptz->tally[3]), "draw", G_CALLBACK (ghost_tally_draw), ptz);
+		g_signal_connect (G_OBJECT (ptz->tally[3]), "draw", G_CALLBACK (ghost_ptz_tally_draw), ptz);
 	gtk_grid_attach (GTK_GRID (ptz->memories_grid), ptz->tally[3], 0, 0, MAX_MEMORIES, 1);
 
 		ptz->ghost_body = gtk_drawing_area_new ();
@@ -585,12 +582,12 @@ name_grid                    memories_grid
 
 		ptz->tally[4] = gtk_drawing_area_new ();
 		gtk_widget_set_size_request (ptz->tally[4], 4, 4);
-		g_signal_connect (G_OBJECT (ptz->tally[4]), "draw", G_CALLBACK (ghost_tally_draw), ptz);
+		g_signal_connect (G_OBJECT (ptz->tally[4]), "draw", G_CALLBACK (ghost_ptz_tally_draw), ptz);
 	gtk_grid_attach (GTK_GRID (ptz->memories_grid), ptz->tally[4], 0, 2, MAX_MEMORIES, 1);
 
 		ptz->tally[5] = gtk_drawing_area_new ();
 		gtk_widget_set_size_request (ptz->tally[5], 4, 4);
-		g_signal_connect (G_OBJECT (ptz->tally[5]), "draw", G_CALLBACK (ghost_tally_draw), ptz);
+		g_signal_connect (G_OBJECT (ptz->tally[5]), "draw", G_CALLBACK (ghost_ptz_tally_draw), ptz);
 	gtk_grid_attach (GTK_GRID (ptz->memories_grid), ptz->tally[5], MAX_MEMORIES, 0, 1, 3);
 }
 
@@ -620,23 +617,23 @@ memories_grid
 	ptz->name_grid = gtk_grid_new ();
 		ptz->tally[0] = gtk_drawing_area_new ();
 		gtk_widget_set_size_request (ptz->tally[0], 4, 4);
-		g_signal_connect (G_OBJECT (ptz->tally[0]), "draw", G_CALLBACK (ghost_tally_draw), ptz);
+		g_signal_connect (G_OBJECT (ptz->tally[0]), "draw", G_CALLBACK (ghost_ptz_tally_draw), ptz);
 	gtk_grid_attach (GTK_GRID (ptz->name_grid), ptz->tally[0], 0, 0, 3, 1);
 
 		ptz->tally[1] = gtk_drawing_area_new ();
 		gtk_widget_set_size_request (ptz->tally[1], 4, 4);
-		g_signal_connect (G_OBJECT (ptz->tally[1]), "draw", G_CALLBACK (ghost_tally_draw), ptz);
+		g_signal_connect (G_OBJECT (ptz->tally[1]), "draw", G_CALLBACK (ghost_ptz_tally_draw), ptz);
 	gtk_grid_attach (GTK_GRID (ptz->name_grid), ptz->tally[1], 0, 1, 1, 1);
 
 		ptz->name_drawing_area = gtk_drawing_area_new ();
 		gtk_widget_set_size_request (ptz->name_drawing_area, thumbnail_height / 2, thumbnail_height + 8);
-		g_signal_connect (G_OBJECT (ptz->name_drawing_area), "draw", G_CALLBACK (ghost_name_draw), ptz);
+		g_signal_connect (G_OBJECT (ptz->name_drawing_area), "draw", G_CALLBACK (ghost_ptz_name_draw), ptz);
 		g_signal_connect (G_OBJECT (ptz->name_drawing_area), "button-press-event", G_CALLBACK (ghost_name_drawing_area_button_press_event), ptz);
 	gtk_grid_attach (GTK_GRID (ptz->name_grid), ptz->name_drawing_area, 1, 1, 1, 1);
 
 		ptz->tally[2] = gtk_drawing_area_new ();
 		gtk_widget_set_size_request (ptz->tally[2], 4, 4);
-		g_signal_connect (G_OBJECT (ptz->tally[2]), "draw", G_CALLBACK (ghost_tally_draw), ptz);
+		g_signal_connect (G_OBJECT (ptz->tally[2]), "draw", G_CALLBACK (ghost_ptz_tally_draw), ptz);
 	gtk_grid_attach (GTK_GRID (ptz->name_grid), ptz->tally[2], 2, 1, 1, 1);
 
 	ptz->memories_separator = gtk_separator_new (GTK_ORIENTATION_VERTICAL);
@@ -644,7 +641,7 @@ memories_grid
 	ptz->memories_grid = gtk_grid_new ();
 		ptz->tally[3] = gtk_drawing_area_new ();
 		gtk_widget_set_size_request (ptz->tally[3], 4, 4);
-		g_signal_connect (G_OBJECT (ptz->tally[3]), "draw", G_CALLBACK (ghost_tally_draw), ptz);
+		g_signal_connect (G_OBJECT (ptz->tally[3]), "draw", G_CALLBACK (ghost_ptz_tally_draw), ptz);
 	gtk_grid_attach (GTK_GRID (ptz->memories_grid), ptz->tally[3], 0, 0, 1, MAX_MEMORIES);
 
 		ptz->ghost_body = gtk_drawing_area_new ();
@@ -654,12 +651,12 @@ memories_grid
 
 		ptz->tally[4] = gtk_drawing_area_new ();
 		gtk_widget_set_size_request (ptz->tally[4], 4, 4);
-		g_signal_connect (G_OBJECT (ptz->tally[4]), "draw", G_CALLBACK (ghost_tally_draw), ptz);
+		g_signal_connect (G_OBJECT (ptz->tally[4]), "draw", G_CALLBACK (ghost_ptz_tally_draw), ptz);
 	gtk_grid_attach (GTK_GRID (ptz->memories_grid), ptz->tally[4], 2, 0, 1, MAX_MEMORIES);
 
 		ptz->tally[5] = gtk_drawing_area_new ();
 		gtk_widget_set_size_request (ptz->tally[5], 4, 4);
-		g_signal_connect (G_OBJECT (ptz->tally[5]), "draw", G_CALLBACK (ghost_tally_draw), ptz);
+		g_signal_connect (G_OBJECT (ptz->tally[5]), "draw", G_CALLBACK (ghost_ptz_tally_draw), ptz);
 	gtk_grid_attach (GTK_GRID (ptz->memories_grid), ptz->tally[5], 0, MAX_MEMORIES, 3, 1);
 }
 
