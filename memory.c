@@ -301,11 +301,11 @@ gboolean memory_name_draw (GtkWidget *widget, cairo_t *cr, char *name)
 	PangoFontDescription *desc;
 
 	if (name[0] != '\0') {
-		cairo_set_source_rgba (cr, 1.0, 1.0, 1.0, 0.2);
+		cairo_set_source_rgba (cr, current_cameras_set->memories_name_backdrop_color_red, current_cameras_set->memories_name_backdrop_color_green, current_cameras_set->memories_name_backdrop_color_blue, current_cameras_set->memories_name_backdrop_color_alpha);
 		cairo_rectangle (cr, 5.0, current_cameras_set->thumbnail_height + 5.0 - (20.0 * current_cameras_set->thumbnail_size), current_cameras_set->thumbnail_width, 20.0 * current_cameras_set->thumbnail_size);
 		cairo_fill (cr);
 
-		cairo_set_source_rgb (cr, 0.0, 0.0, 0.0);
+		cairo_set_source_rgb (cr, current_cameras_set->memories_name_color_red, current_cameras_set->memories_name_color_green, current_cameras_set->memories_name_color_blue);
 		pl = pango_cairo_create_layout (cr);
 
 		cairo_translate (cr, 5.0 + 16.0 * (10 - (strlen (name) / 2)) * current_cameras_set->thumbnail_size, current_cameras_set->thumbnail_height - (19.0 * current_cameras_set->thumbnail_size) + (1.0 - current_cameras_set->thumbnail_size) * 4.0);
