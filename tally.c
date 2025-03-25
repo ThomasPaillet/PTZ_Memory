@@ -20,6 +20,7 @@
 #include "tally.h"
 
 #include "cameras_set.h"
+#include "interface.h"
 #include "protocol.h"
 
 
@@ -43,8 +44,6 @@ SOCKET tsl_umd_v5_socket;
 
 GThread *tsl_umd_v5_thread = NULL;
 
-char font[17] = "Courier Bold 100";
-
 
 gboolean g_source_ptz_tally_queue_draw (ptz_t *ptz)
 {
@@ -67,7 +66,7 @@ gboolean g_source_ptz_tally_queue_draw (ptz_t *ptz)
 	return G_SOURCE_REMOVE;
 }
 
-gboolean tally_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
+gboolean ptz_tally_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 {
 	if (ptz->tally_data & 0x30) {
 		if ((ptz->tally_data & 0x10) && !(ptz->tally_data & 0x20)) cairo_set_source_rgb (cr, ptz->tally_brightness, 0.0, 0.0);
@@ -89,7 +88,7 @@ gboolean tally_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 	return GDK_EVENT_PROPAGATE;
 }
 
-gboolean ghost_tally_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
+gboolean ghost_ptz_tally_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 {
 	if (ptz->tally_data & 0x30) {
 		if ((ptz->tally_data & 0x10) && !(ptz->tally_data & 0x20)) cairo_set_source_rgb (cr, ptz->tally_brightness, 0.0, 0.0);
@@ -127,7 +126,7 @@ gboolean control_window_tally_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 	return GDK_EVENT_PROPAGATE;
 }
 
-gboolean name_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
+gboolean ptz_name_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 {
 	PangoLayout *pl;
 	PangoFontDescription *desc;
@@ -157,10 +156,8 @@ gboolean name_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 	if (ptz->name[1] == '\0') cairo_translate (cr, 50 * current_cameras_set->thumbnail_size, 20 * current_cameras_set->thumbnail_size);
 	else cairo_translate (cr, 10 * current_cameras_set->thumbnail_size, 20 * current_cameras_set->thumbnail_size);
 
-	sprintf (font + 13, "%d", (int)(100.0 * current_cameras_set->thumbnail_size));
-
 	pango_layout_set_text (pl, ptz->name, -1);
-	desc = pango_font_description_from_string (font);
+	desc = pango_font_description_from_string (ptz_name_font);
 	pango_layout_set_font_description (pl, desc);
 	pango_font_description_free (desc);
 
@@ -171,7 +168,7 @@ gboolean name_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 	return GDK_EVENT_PROPAGATE;
 }
 
-gboolean ghost_name_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
+gboolean ghost_ptz_name_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 {
 	PangoLayout *pl;
 	PangoFontDescription *desc;
@@ -197,10 +194,8 @@ gboolean ghost_name_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 	if (ptz->name[1] == '\0') cairo_translate (cr, 60 * current_cameras_set->thumbnail_size, -10 * current_cameras_set->thumbnail_size);
 	else cairo_translate (cr, 30 * current_cameras_set->thumbnail_size, -10 * current_cameras_set->thumbnail_size);
 
-	sprintf (font + 13, "%d", (int)(80.0 * current_cameras_set->thumbnail_size));
-
 	pango_layout_set_text (pl, ptz->name, -1);
-	desc = pango_font_description_from_string (font);
+	desc = pango_font_description_from_string (ghost_ptz_name_font);
 	pango_layout_set_font_description (pl, desc);
 	pango_font_description_free (desc);
 
