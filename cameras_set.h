@@ -41,6 +41,15 @@ typedef struct cameras_set_s {
 	gdouble thumbnail_size;
 	int thumbnail_width, thumbnail_height;
 
+	double memories_name_color_red;
+	double memories_name_color_green;
+	double memories_name_color_blue;
+
+	double memories_name_backdrop_color_red;
+	double memories_name_backdrop_color_green;
+	double memories_name_backdrop_color_blue;
+	double memories_name_backdrop_color_alpha;
+
 	int memories_button_vertical_margins;
 	int memories_button_horizontal_margins;
 
