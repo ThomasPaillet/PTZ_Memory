@@ -23,6 +23,10 @@
 
 extern const char interface_settings_txt[];
 
+extern char ptz_name_font[];
+extern char ghost_ptz_name_font[];
+extern char memory_name_font[];
+
 
 void show_interface_settings_window (void);
 
