@@ -150,8 +150,6 @@ void create_ghost_ptz_widgets_vertical (ptz_t *ptz, int thumbnail_width, int thu
 
 extern ptz_t *current_ptz_control_window;
 
-extern gdouble thumbnail_size;
-
 //cameras_set.h
 #define MAX_CAMERAS_SET 8
 
