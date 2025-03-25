@@ -154,10 +154,10 @@ gboolean name_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 
 	pl = pango_cairo_create_layout (cr);
 
-	if (ptz->name[1] == '\0') cairo_translate (cr, 50 * thumbnail_size, 20 * thumbnail_size);
-	else cairo_translate (cr, 10 * thumbnail_size, 20 * thumbnail_size);
+	if (ptz->name[1] == '\0') cairo_translate (cr, 50 * current_cameras_set->thumbnail_size, 20 * current_cameras_set->thumbnail_size);
+	else cairo_translate (cr, 10 * current_cameras_set->thumbnail_size, 20 * current_cameras_set->thumbnail_size);
 
-	sprintf (font + 13, "%d", (int)(100.0 * thumbnail_size));
+	sprintf (font + 13, "%d", (int)(100.0 * current_cameras_set->thumbnail_size));
 
 	pango_layout_set_text (pl, ptz->name, -1);
 	desc = pango_font_description_from_string (font);
@@ -194,10 +194,10 @@ gboolean ghost_name_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 
 	pl = pango_cairo_create_layout (cr);
 
-	if (ptz->name[1] == '\0') cairo_translate (cr, 60 * thumbnail_size, -10 * thumbnail_size);
-	else cairo_translate (cr, 30 * thumbnail_size, -10 * thumbnail_size);
+	if (ptz->name[1] == '\0') cairo_translate (cr, 60 * current_cameras_set->thumbnail_size, -10 * current_cameras_set->thumbnail_size);
+	else cairo_translate (cr, 30 * current_cameras_set->thumbnail_size, -10 * current_cameras_set->thumbnail_size);
 
-	sprintf (font + 13, "%d", (int)(80.0 * thumbnail_size));
+	sprintf (font + 13, "%d", (int)(80.0 * current_cameras_set->thumbnail_size));
 
 	pango_layout_set_text (pl, ptz->name, -1);
 	desc = pango_font_description_from_string (font);
@@ -252,6 +252,7 @@ gboolean control_window_name_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 void init_tally (void)
 {
 	memset (&tsl_umd_v5_address, 0, sizeof (struct sockaddr_in));
+
 	tsl_umd_v5_address.sin_family = AF_INET;
 	tsl_umd_v5_address.sin_port = htons (TSL_UMD_V5_UDP_PORT);
 	tsl_umd_v5_address.sin_addr.s_addr = inet_addr (my_ip_address);
@@ -294,6 +295,7 @@ void start_tally (void)
 {
 	tsl_umd_v5_socket = socket (AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 	bind (tsl_umd_v5_socket, (struct sockaddr *)&tsl_umd_v5_address, sizeof (struct sockaddr_in));
+
 	tsl_umd_v5_thread = g_thread_new (NULL, receive_tsl_umd_v5_msg, NULL);
 }
 
