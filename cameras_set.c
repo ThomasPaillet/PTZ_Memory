@@ -755,7 +755,16 @@ void add_cameras_set (void)
 	new_cameras_set->thumbnail_size = 1.0;
 	new_cameras_set->thumbnail_width = 320;
 	new_cameras_set->thumbnail_height = 180;
-	
+
+	new_cameras_set->memories_name_color_red = 0.0;
+	new_cameras_set->memories_name_color_green = 0.0;
+	new_cameras_set->memories_name_color_blue = 0.0;
+
+	new_cameras_set->memories_name_backdrop_color_red = 1.0;
+	new_cameras_set->memories_name_backdrop_color_green = 1.0;
+	new_cameras_set->memories_name_backdrop_color_blue = 1.0;
+	new_cameras_set->memories_name_backdrop_color_alpha = 0.2;
+
 	new_cameras_set->memories_button_vertical_margins = 0;
 	new_cameras_set->memories_button_horizontal_margins = 0;
 
