@@ -32,15 +32,15 @@ extern gboolean send_ip_tally;
 extern struct sockaddr_in tsl_umd_v5_address;
 
 
-gboolean tally_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz);
+gboolean ptz_tally_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz);
 
-gboolean ghost_tally_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz);
+gboolean ghost_ptz_tally_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz);
 
 gboolean control_window_tally_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz);
 
-gboolean name_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz);
+gboolean ptz_name_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz);
 
-gboolean ghost_name_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz);
+gboolean ghost_ptz_name_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz);
 
 gboolean control_window_name_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz);
 
