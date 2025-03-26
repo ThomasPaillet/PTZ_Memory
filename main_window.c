@@ -44,7 +44,7 @@ void load_pixbufs (void);
 const char application_name_txt[] = "Mémoires Pan Tilt Zoom pour caméras PTZ Panasonic";
 const char warning_txt[] = "Attention !";
 
-GtkWidget *main_window, *main_window_notebook;
+GtkWidget *main_window, *main_event_box, *main_window_notebook;
 GtkWidget *interface_button;
 GtkWidget *store_toggle_button, *delete_toggle_button, *link_toggle_button;
 GtkWidget *switch_cameras_on_button, *switch_cameras_off_button;
@@ -375,6 +375,13 @@ gboolean main_window_scroll (GtkWidget *widget, GdkEventScroll *event)
 	return GDK_EVENT_STOP;
 }
 
+gboolean main_event_box_events (GtkWidget *window, GdkEventKey *event)
+{
+	if (current_ptz != NULL) hide_control_window (current_ptz->control_window.window, NULL, current_ptz);
+
+	return GDK_EVENT_STOP;
+}
+
 void create_main_window (void)
 {
 	GtkCssProvider *css_provider_button, *css_provider_toggle_button_red, *css_provider_toggle_button_blue;
@@ -423,7 +430,7 @@ void create_main_window (void)
 			gtk_widget_set_margin_end (widget, BUTTON_MARGIN_VALUE);
 			gtk_style_context_add_provider (gtk_widget_get_style_context (widget), GTK_STYLE_PROVIDER (css_provider_button), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
 			gtk_button_set_use_underline (GTK_BUTTON (widget), TRUE);
-			g_signal_connect (G_OBJECT (widget), "clicked", G_CALLBACK (create_settings_window), NULL);
+			g_signal_connect (G_OBJECT (widget), "clicked", G_CALLBACK (show_settings_window), NULL);
 		gtk_box_pack_start (GTK_BOX (box2), widget, FALSE, FALSE, 0);
 
 			interface_button = gtk_button_new_with_label (interface_settings_txt);
@@ -480,7 +487,14 @@ void create_main_window (void)
 		gtk_box_pack_end (GTK_BOX (box2), box3, TRUE, TRUE, 0);
 	gtk_box_pack_end (GTK_BOX (box1), box2, FALSE, FALSE, 0);
 
-	gtk_container_add (GTK_CONTAINER (main_window), box1);
+	main_event_box = gtk_event_box_new ();
+	g_signal_connect (G_OBJECT (main_event_box), "button-press-event", G_CALLBACK (main_event_box_events), NULL);
+	g_signal_connect (G_OBJECT (main_event_box), "button-release-event", G_CALLBACK (main_event_box_events), NULL);
+	g_signal_connect (G_OBJECT (main_event_box), "key-press-event", G_CALLBACK (main_event_box_events), NULL);
+	g_signal_connect (G_OBJECT (main_event_box), "key-release-event", G_CALLBACK (main_event_box_events), NULL);
+
+	gtk_container_add (GTK_CONTAINER (main_event_box), box1);
+	gtk_container_add (GTK_CONTAINER (main_window), main_event_box);
 }
 
 void device_added_to_seat (GdkSeat *seat, GdkDevice *device)
