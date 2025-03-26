@@ -59,10 +59,11 @@ int zoom_speed = 25;
 
 gboolean destroy_about_window (GtkWidget *about_window, GdkEventKey *event, gpointer user_data)
 {
+	gtk_window_set_transient_for (GTK_WINDOW (about_window), NULL);
+
 	gtk_widget_destroy (about_window);
 
 	gtk_window_set_transient_for (GTK_WINDOW (settings_window), GTK_WINDOW (main_window));
-	gtk_window_set_modal (GTK_WINDOW (settings_window), TRUE);
 
 	return GDK_EVENT_STOP;
 }
@@ -73,13 +74,12 @@ void show_about_window (void)
 	char gtk_version[64];
 
 	gtk_window_set_transient_for (GTK_WINDOW (settings_window), NULL);
-	gtk_window_set_modal (GTK_WINDOW (settings_window), FALSE);
 
 	about_window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_title (GTK_WINDOW (about_window), about_txt);
 	gtk_window_set_type_hint (GTK_WINDOW (about_window), GDK_WINDOW_TYPE_HINT_DIALOG);
 	gtk_window_set_modal (GTK_WINDOW (about_window), TRUE);
-	gtk_window_set_transient_for (GTK_WINDOW (about_window), GTK_WINDOW (settings_window));
+	gtk_window_set_transient_for (GTK_WINDOW (about_window), GTK_WINDOW (main_window));
 	gtk_window_set_skip_taskbar_hint (GTK_WINDOW (about_window), FALSE);
 	gtk_window_set_skip_pager_hint (GTK_WINDOW (about_window), FALSE);
 	gtk_window_set_position (GTK_WINDOW (about_window), GTK_WIN_POS_CENTER_ON_PARENT);
@@ -139,12 +139,21 @@ void show_about_window (void)
 gboolean delete_confirmation_window_key_press (GtkWidget *confirmation_window, GdkEventKey *event)
 {
 	if ((event->keyval == GDK_KEY_n) || (event->keyval == GDK_KEY_N) || (event->keyval == GDK_KEY_Escape)) {
+		gtk_window_set_transient_for (GTK_WINDOW (confirmation_window), NULL);
+
 		gtk_widget_destroy (confirmation_window);
+
+		gtk_window_set_transient_for (GTK_WINDOW (settings_window), GTK_WINDOW (main_window));
 
 		return GDK_EVENT_STOP;
 	} else if ((event->keyval == GDK_KEY_o) || (event->keyval == GDK_KEY_O)) {
 		delete_cameras_set ();
+
+		gtk_window_set_transient_for (GTK_WINDOW (confirmation_window), NULL);
+
 		gtk_widget_destroy (confirmation_window);
+
+		gtk_window_set_transient_for (GTK_WINDOW (settings_window), GTK_WINDOW (main_window));
 
 		return GDK_EVENT_STOP;
 	}
@@ -159,6 +168,8 @@ void show_delete_confirmation_window (void)
 	GList *list;
 	char message[128];
 	char *text = "Etes-vous sûr de vouloir supprimer l'ensemble de caméras \"";
+
+	gtk_window_set_transient_for (GTK_WINDOW (settings_window), NULL);
 
 	window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_type_hint (GTK_WINDOW (window), GDK_WINDOW_TYPE_HINT_DIALOG);
@@ -211,16 +222,21 @@ void settings_list_box_row_selected (GtkListBox *list_box, GtkListBoxRow *row)
 	}
 }
 
-void delete_settings_window (void)
+gboolean delete_settings_window (void)
 {
+	gtk_window_set_transient_for (GTK_WINDOW (settings_window), NULL);
+
 	gtk_widget_destroy (settings_window);
+
 	settings_window = NULL;
+
+	return GDK_EVENT_STOP;
 }
 
 gboolean settings_window_key_press (GtkWidget *window, GdkEventKey *event)
 {
 	if (event->keyval == GDK_KEY_Escape) {
-		gtk_widget_destroy (window);
+		delete_settings_window ();
 
 		return GDK_EVENT_STOP;
 	}
@@ -366,7 +382,7 @@ void tsl_umd_v5_udp_port_entry_activate (GtkEntry *entry, GtkEntryBuffer *entry_
 	backup_needed = TRUE;
 }
 
-void create_settings_window (void)
+void show_settings_window (void)
 {
 	GtkWidget *box1, *frame, *box2, *box3, *box4, *widget, *controller_ip_address_box;
 	cameras_set_t *cameras_set_itr;
