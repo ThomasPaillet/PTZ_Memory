@@ -183,8 +183,6 @@ void main_window_notebook_switch_page (GtkNotebook *notebook, GtkWidget *page, g
 
 	g_mutex_unlock (&cameras_sets_mutex);
 
-	thumbnail_size = current_cameras_set->thumbnail_size;
-
 	if (page_num != tally_cameras_set) tell_cameras_set_is_selected (page_num);
 }
 
