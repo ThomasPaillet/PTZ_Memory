@@ -34,7 +34,7 @@ extern GtkWidget *settings_list_box;
 extern GtkWidget *settings_new_button;
 
 
-void create_settings_window (void);
+void show_settings_window (void);
 
 void load_config_file (void);
 
