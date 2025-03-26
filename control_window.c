@@ -1,5 +1,5 @@
 /*
- * copyright (c) 2020 2021 Thomas Paillet <thomas.paillet@net-c.fr>
+ * copyright (c) 2020 2021 2025 Thomas Paillet <thomas.paillet@net-c.fr>
 
  * This file is part of PTZ-Memory.
 
@@ -45,8 +45,6 @@ char zoom_stop_cmd[5] = "#Z50";
 char pan_tilt_speed_cmd[9] = "#PTS5050";
 char pan_tilt_stop_cmd[9] = "#PTS5050";
 
-ptz_t *current_ptz_control_window = NULL;
-
 
 gboolean get_control_window_position_and_size (GtkWidget *window, gpointer cr, ptz_t *ptz)
 {
@@ -60,8 +58,13 @@ gboolean get_control_window_position_and_size (GtkWidget *window, gpointer cr, p
 gboolean hide_control_window (GtkWidget *window, GdkEvent *event, ptz_t *ptz)
 {
 	ptz->control_window.is_on_screen = FALSE;
-	current_ptz_control_window = NULL;
+	current_ptz = NULL;
+
+	gtk_window_set_transient_for (GTK_WINDOW (window), NULL);
+
 	gtk_widget_hide (window);
+
+	gtk_event_box_set_above_child (main_event_box, FALSE);
 
 	return GDK_EVENT_STOP;
 }
@@ -74,9 +77,7 @@ gboolean control_window_key_press (GtkWidget *window, GdkEventKey *event, ptz_t 
 
 	if (!ptz->control_window.key_pressed) {
 		if (event->keyval == GDK_KEY_Escape) {
-			ptz->control_window.is_on_screen = FALSE;
-			current_ptz_control_window = NULL;
-			gtk_widget_hide (window);
+			hide_control_window (window, NULL, ptz);
 
 			return GDK_EVENT_STOP;
 		} else if ((event->keyval == GDK_KEY_Up) || (event->keyval == GDK_KEY_KP_Up)) {
@@ -128,8 +129,8 @@ gboolean control_window_key_press (GtkWidget *window, GdkEventKey *event, ptz_t 
 			gtk_widget_set_state_flags (ptz->control_window.otaf_button, GTK_STATE_FLAG_ACTIVE, FALSE);
 			send_cam_control_command (ptz, "OSE:69:1");
 		} else if ((event->state & GDK_MOD1_MASK) && ((event->keyval == GDK_KEY_q) || (event->keyval == GDK_KEY_Q))) {
-			ptz->control_window.is_on_screen = FALSE;
-			gtk_widget_hide (window);
+			hide_control_window (window, NULL, ptz);
+
 			show_exit_confirmation_window ();
 
 			return GDK_EVENT_STOP;
@@ -137,8 +138,7 @@ gboolean control_window_key_press (GtkWidget *window, GdkEventKey *event, ptz_t 
 			i = event->keyval - GDK_KEY_F1;
 
 			if ((i != ptz->index) && (i < current_cameras_set->number_of_cameras)) {
-				ptz->control_window.is_on_screen = FALSE;
-				gtk_widget_hide (ptz->control_window.window);
+				hide_control_window (window, NULL, ptz);
 
 				new_ptz = current_cameras_set->cameras[i];
 
@@ -192,8 +192,7 @@ gboolean control_window_button_press (GtkWidget *window, GdkEventButton *event, 
 	if (event->button == GDK_BUTTON_PRIMARY) {
 		if ((event->x_root < ptz->control_window.x_root) || (event->x_root > ptz->control_window.x_root + ptz->control_window.width) || \
 			(event->y_root < ptz->control_window.y_root) || (event->y_root > ptz->control_window.y_root + ptz->control_window.height)) {
-			ptz->control_window.is_on_screen = FALSE;
-			gtk_widget_hide (window);
+			hide_control_window (window, NULL, ptz);
 
 			return GDK_EVENT_STOP;
 		}
@@ -1207,8 +1206,6 @@ void create_control_window (control_window_t *control_window, gpointer ptz)
 	GtkWidget *main_grid, *grid, *box, *widget, *image, *event_box;
 
 	widget = gtk_window_new (GTK_WINDOW_TOPLEVEL);
-	gtk_window_set_transient_for (GTK_WINDOW (widget), GTK_WINDOW (main_window));
-	gtk_window_set_modal (GTK_WINDOW (widget), TRUE);
 	gtk_window_set_decorated (GTK_WINDOW (widget), FALSE);
 	gtk_window_set_skip_taskbar_hint (GTK_WINDOW (widget), FALSE);
 	gtk_window_set_skip_pager_hint (GTK_WINDOW (widget), FALSE);
@@ -1363,6 +1360,8 @@ void create_control_window (control_window_t *control_window, gpointer ptz)
 	gtk_container_add (GTK_CONTAINER (control_window->window), main_grid);
 
 	gtk_widget_realize (control_window->window);
+	gtk_window_set_resizable (GTK_WINDOW (control_window->window), FALSE);
+
 	control_window->gdk_window = gtk_widget_get_window (control_window->window);
 }
 
