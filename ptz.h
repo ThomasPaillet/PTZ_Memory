@@ -142,6 +142,8 @@ gpointer switch_ptz_off (ptz_thread_t *ptz_thread);
 
 void show_control_window (ptz_t *ptz);
 
+gboolean hide_control_window (GtkWidget *window, GdkEvent *event, ptz_t *ptz);
+
 gboolean update_auto_focus_toggle_button (ptz_t *ptz);
 
 void create_ptz_widgets_horizontal (ptz_t *ptz, int thumbnail_width, int thumbnail_height, int memories_button_vertical_margins, int memories_button_horizontal_margins);
