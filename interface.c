@@ -71,16 +71,16 @@ void orientation_check_button_toggled (GtkToggleButton *togglebutton)
 
 	for (i = 0; i < current_cameras_set->number_of_cameras; i++) {
 		if (current_cameras_set->cameras[i]->active) {
-			if (current_cameras_set->orientation) create_ptz_widgets_horizontal (current_cameras_set->cameras[i], current_cameras_set->thumbnail_width, current_cameras_set->thumbnail_height);
-			else create_ptz_widgets_vertical (current_cameras_set->cameras[i], current_cameras_set->thumbnail_width, current_cameras_set->thumbnail_height);
+			if (current_cameras_set->orientation) create_ptz_widgets_horizontal (current_cameras_set->cameras[i], current_cameras_set->thumbnail_width, current_cameras_set->thumbnail_height, current_cameras_set->memories_button_vertical_margins, current_cameras_set->memories_button_horizontal_margins);
+			else create_ptz_widgets_vertical (current_cameras_set->cameras[i], current_cameras_set->thumbnail_width, current_cameras_set->thumbnail_height, current_cameras_set->memories_button_vertical_margins, current_cameras_set->memories_button_horizontal_margins);
 
 			if (!current_cameras_set->cameras[i]->is_on) {
 				gtk_widget_set_sensitive (current_cameras_set->cameras[i]->name_grid, FALSE);
 				gtk_widget_set_sensitive (current_cameras_set->cameras[i]->memories_grid, FALSE);
 			}
 		} else {
-			if (current_cameras_set->orientation) create_ghost_ptz_widgets_horizontal (current_cameras_set->cameras[i], current_cameras_set->thumbnail_width, current_cameras_set->thumbnail_height);
-			else create_ghost_ptz_widgets_vertical (current_cameras_set->cameras[i], current_cameras_set->thumbnail_width, current_cameras_set->thumbnail_height);
+			if (current_cameras_set->orientation) create_ghost_ptz_widgets_horizontal (current_cameras_set->cameras[i], current_cameras_set->thumbnail_width, current_cameras_set->thumbnail_height, current_cameras_set->memories_button_vertical_margins, current_cameras_set->memories_button_horizontal_margins);
+			else create_ghost_ptz_widgets_vertical (current_cameras_set->cameras[i], current_cameras_set->thumbnail_width, current_cameras_set->thumbnail_height, current_cameras_set->memories_button_vertical_margins, current_cameras_set->memories_button_horizontal_margins);
 		}
 	}
 
@@ -225,7 +225,8 @@ void memories_button_horizontal_margins_value_changed (GtkRange *range)
 	backup_needed = TRUE;
 }
 
-#define (p) void p##_value_changed (GtkRange *range) \
+#define SCALE_VALUE_CHANGED(p) \
+void p##_value_changed (GtkRange *range) \
 { \
 	int i, j; \ 
  \
@@ -242,14 +243,14 @@ void memories_button_horizontal_margins_value_changed (GtkRange *range)
 	backup_needed = TRUE; \
 }
 
-memories_name_color_red)
-	double memories_name_color_green)
-	double memories_name_color_blue)
+SCALE_VALUE_CHANGED(memories_name_color_red)
+SCALE_VALUE_CHANGED(memories_name_color_green)
+SCALE_VALUE_CHANGED(memories_name_color_blue)
 
-	double memories_name_backdrop_color_red)
-	double memories_name_backdrop_color_green)
-	double memories_name_backdrop_color_blue)
-memories_name_backdrop_color_alpha)
+SCALE_VALUE_CHANGED(memories_name_backdrop_color_red)
+SCALE_VALUE_CHANGED(memories_name_backdrop_color_green)
+SCALE_VALUE_CHANGED(memories_name_backdrop_color_blue)
+SCALE_VALUE_CHANGED(memories_name_backdrop_color_alpha)
 
 #define UPDATE_INTERFACE_CHECK_BUTTON(c) \
 g_signal_handler_block (c##_check_button, c##_check_button_handler_id); \
@@ -299,7 +300,6 @@ void show_interface_settings_window (void)
 gboolean hide_interface_settings_window (void)
 {
 	gtk_window_set_transient_for (GTK_WINDOW (interface_settings_window), NULL);
-	gtk_window_set_modal (GTK_WINDOW (interface_settings_window), FALSE);
 
 	gtk_widget_hide (interface_settings_window);
 
