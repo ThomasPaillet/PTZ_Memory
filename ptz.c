@@ -238,6 +238,20 @@ void show_control_window (ptz_t *ptz)
 	ptz->control_window.is_on_screen = TRUE;
 }
 
+gboolean hide_control_window (GtkWidget *window, GdkEvent *event, ptz_t *ptz)
+{
+	ptz->control_window.is_on_screen = FALSE;
+	current_ptz = NULL;
+
+	gtk_window_set_transient_for (GTK_WINDOW (window), NULL);
+
+	gtk_widget_hide (window);
+
+	gtk_event_box_set_above_child (main_event_box, FALSE);
+
+	return GDK_EVENT_STOP;
+}
+
 gboolean update_auto_focus_toggle_button (ptz_t *ptz)
 {
 	g_signal_handler_block (ptz->control_window.auto_focus_toggle_button, ptz->control_window.auto_focus_handler_id);
