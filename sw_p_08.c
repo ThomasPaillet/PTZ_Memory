@@ -91,9 +91,9 @@ gboolean g_source_select_cameras_set_page (gpointer page_num)
 
 gboolean g_source_show_control_window (ptz_t *ptz)
 {
-	if (current_ptz_control_window != NULL) {
-		current_ptz_control_window->control_window.is_on_screen = FALSE;
-		gtk_widget_hide (current_ptz_control_window->control_window.window);
+	if (current_ptz != NULL) {
+		current_ptz->control_window.is_on_screen = FALSE;
+		gtk_widget_hide (current_ptz->control_window.window);
 	}
 
 	gtk_window_set_position (GTK_WINDOW (ptz->control_window.window), GTK_WIN_POS_CENTER);
