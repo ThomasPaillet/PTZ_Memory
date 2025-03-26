@@ -54,6 +54,8 @@
 #define AW_HE130 0
 #define AW_UE150 1
 
+#define MAX_CAMERAS_SET 8
+#define MAX_CAMERAS 15
 #define MAX_MEMORIES 20
 
 
@@ -121,6 +123,9 @@ typedef struct {
 } ptz_thread_t;
 
 
+extern ptz_t *current_ptz;
+
+
 void init_ptz (ptz_t *ptz);
 
 gboolean ptz_is_on (ptz_t *ptz);
@@ -146,12 +151,6 @@ void create_ptz_widgets_vertical (ptz_t *ptz, int thumbnail_width, int thumbnail
 void create_ghost_ptz_widgets_horizontal (ptz_t *ptz, int thumbnail_width, int thumbnail_height, int memories_button_vertical_margins, int memories_button_horizontal_margins);
 
 void create_ghost_ptz_widgets_vertical (ptz_t *ptz, int thumbnail_width, int thumbnail_height, int memories_button_vertical_margins, int memories_button_horizontal_margins);
-
-
-extern ptz_t *current_ptz_control_window;
-
-//cameras_set.h
-#define MAX_CAMERAS_SET 8
 
 
 #endif
