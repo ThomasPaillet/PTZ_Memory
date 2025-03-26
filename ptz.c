@@ -28,6 +28,9 @@
 #include "tally.h"
 
 
+ptz_t *current_ptz = NULL;
+
+
 void init_ptz (ptz_t *ptz)
 {
 	int i;
@@ -226,7 +229,7 @@ void show_control_window (ptz_t *ptz)
 	gtk_widget_set_sensitive (ptz->control_window.focus_box, !ptz->auto_focus);
 
 	gtk_widget_show_all (ptz->control_window.window);
-	current_ptz_control_window = ptz;
+	current_ptz = ptz;
 	ptz->control_window.is_on_screen = TRUE;
 }
 
