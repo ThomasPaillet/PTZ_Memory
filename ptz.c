@@ -228,7 +228,12 @@ void show_control_window (ptz_t *ptz)
 
 	gtk_widget_set_sensitive (ptz->control_window.focus_box, !ptz->auto_focus);
 
+	gtk_event_box_set_above_child (main_event_box, TRUE);
+
+	gtk_window_set_transient_for (GTK_WINDOW (ptz->control_window.window), GTK_WINDOW (main_window));
+
 	gtk_widget_show_all (ptz->control_window.window);
+
 	current_ptz = ptz;
 	ptz->control_window.is_on_screen = TRUE;
 }
