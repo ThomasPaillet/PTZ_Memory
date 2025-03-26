@@ -48,8 +48,11 @@ gulong thumbnail_size_scale_handler_id;
 gulong memories_button_vertical_margins_scale_handler_id;
 gulong memories_button_horizontal_margins_scale_handler_id;
 
-GtkWidget *memories_name_color_scale_red, *memories_name_color_scale_green, *memories_name_color_scale_blue;
-GtkWidget *memories_name_backdrop_color_scale_red, *memories_name_backdrop_color_scale_green, *memories_name_backdrop_color_scale_blue, *memories_name_backdrop_color_scale_alpha;
+GtkWidget *memories_name_color_red_scale, *memories_name_color_green_scale, *memories_name_color_blue_scale;
+GtkWidget *memories_name_backdrop_color_red_scale, *memories_name_backdrop_color_green_scale, *memories_name_backdrop_color_blue_scale, *memories_name_backdrop_color_alpha_scale;
+
+gulong memories_name_color_red_scale_handler_id, memories_name_color_green_scale_handler_id, memories_name_color_blue_scale_handler_id;
+gulong memories_name_backdrop_color_red_scale_handler_id, memories_name_backdrop_color_green_scale_handler_id, memories_name_backdrop_color_blue_scale_handler_id, memories_name_backdrop_color_alpha_scale_handler_id;
 
 
 void orientation_check_button_toggled (GtkToggleButton *togglebutton)
@@ -222,37 +225,70 @@ void memories_button_horizontal_margins_value_changed (GtkRange *range)
 	backup_needed = TRUE;
 }
 
+#define (p) void p##_value_changed (GtkRange *range) \
+{ \
+	int i, j; \ 
+ \
+	current_cameras_set->p = gtk_range_get_value (range); \
+ \
+	for (i = 0; i < current_cameras_set->number_of_cameras; i++) { \
+		if (current_cameras_set->cameras[i]->active) { \
+			for (j = 0; j < MAX_MEMORIES; j++) { \
+				if (!current_cameras_set->cameras[i]->memories[j].empty) gtk_widget_queue_draw (current_cameras_set->cameras[i]->memories[j].button); \
+			} \
+		} \
+	} \
+ \
+	backup_needed = TRUE; \
+}
+
+memories_name_color_red)
+	double memories_name_color_green)
+	double memories_name_color_blue)
+
+	double memories_name_backdrop_color_red)
+	double memories_name_backdrop_color_green)
+	double memories_name_backdrop_color_blue)
+memories_name_backdrop_color_alpha)
+
+#define UPDATE_INTERFACE_CHECK_BUTTON(c) \
+g_signal_handler_block (c##_check_button, c##_check_button_handler_id); \
+gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (c##_check_button), current_cameras_set->c); \
+g_signal_handler_unblock (c##_check_button, c##_check_button_handler_id);
+
+#define UPDATE_INTERFACE_SCALE(s) \
+g_signal_handler_block (s##_scale, s##_scale_handler_id); \
+gtk_range_set_value (GTK_RANGE (s##_scale), current_cameras_set->s); \
+g_signal_handler_unblock (s##_scale, s##_scale_handler_id);
+
 void show_interface_settings_window (void)
 {
-	g_signal_handler_block (orientation_check_button, orientation_check_button_handler_id);
-	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (orientation_check_button), current_cameras_set->orientation);
-	g_signal_handler_unblock (orientation_check_button, orientation_check_button_handler_id);
+	UPDATE_INTERFACE_CHECK_BUTTON(orientation)
 
-	g_signal_handler_block (show_linked_memories_names_entries_check_button, show_linked_memories_names_entries_check_button_handler_id);
-	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (show_linked_memories_names_entries_check_button), current_cameras_set->show_linked_memories_names_entries);
-	g_signal_handler_unblock (show_linked_memories_names_entries_check_button, show_linked_memories_names_entries_check_button_handler_id);
+	UPDATE_INTERFACE_CHECK_BUTTON(show_linked_memories_names_entries)
 
-	g_signal_handler_block (show_linked_memories_names_labels_check_button, show_linked_memories_names_labels_check_button_handler_id);
-	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (show_linked_memories_names_labels_check_button), current_cameras_set->show_linked_memories_names_labels);
-	g_signal_handler_unblock (show_linked_memories_names_labels_check_button, show_linked_memories_names_labels_check_button_handler_id);
+	UPDATE_INTERFACE_CHECK_BUTTON(show_linked_memories_names_labels)
 
-	g_signal_handler_block (thumbnail_size_scale, thumbnail_size_scale_handler_id);
-	gtk_range_set_value (GTK_RANGE (thumbnail_size_scale), current_cameras_set->thumbnail_size);
-	g_signal_handler_unblock (thumbnail_size_scale, thumbnail_size_scale_handler_id);
+	UPDATE_INTERFACE_SCALE(thumbnail_size)
 
-	g_signal_handler_block (memories_button_vertical_margins_scale, memories_button_vertical_margins_scale_handler_id);
-	gtk_range_set_value (GTK_RANGE (memories_button_vertical_margins_scale), current_cameras_set->memories_button_vertical_margins);
-	g_signal_handler_unblock (memories_button_vertical_margins_scale, memories_button_vertical_margins_scale_handler_id);
+	UPDATE_INTERFACE_SCALE(memories_button_vertical_margins)
 
 	if (current_cameras_set->memories_button_vertical_margins <= 1) gtk_label_set_text (GTK_LABEL (vertical_margins_label), pixel_txt);
 	else gtk_label_set_text (GTK_LABEL (vertical_margins_label), pixels_txt);
 
-	g_signal_handler_block (memories_button_horizontal_margins_scale, memories_button_horizontal_margins_scale_handler_id);
-	gtk_range_set_value (GTK_RANGE (memories_button_horizontal_margins_scale), current_cameras_set->memories_button_horizontal_margins);
-	g_signal_handler_unblock (memories_button_horizontal_margins_scale, memories_button_horizontal_margins_scale_handler_id);
+	UPDATE_INTERFACE_SCALE(memories_button_horizontal_margins)
 
 	if (current_cameras_set->memories_button_horizontal_margins <= 1) gtk_label_set_text (GTK_LABEL (horizontal_margins_label), pixel_txt);
 	else gtk_label_set_text (GTK_LABEL (horizontal_margins_label), pixels_txt);
+
+	UPDATE_INTERFACE_SCALE(memories_name_color_red)
+	UPDATE_INTERFACE_SCALE(memories_name_color_green)
+	UPDATE_INTERFACE_SCALE(memories_name_color_blue)
+
+	UPDATE_INTERFACE_SCALE(memories_name_backdrop_color_red)
+	UPDATE_INTERFACE_SCALE(memories_name_backdrop_color_green)
+	UPDATE_INTERFACE_SCALE(memories_name_backdrop_color_blue)
+	UPDATE_INTERFACE_SCALE(memories_name_backdrop_color_alpha)
 
 	gtk_window_set_transient_for (GTK_WINDOW (interface_settings_window), GTK_WINDOW (main_window));
 	gtk_window_set_modal (GTK_WINDOW (interface_settings_window), TRUE);
