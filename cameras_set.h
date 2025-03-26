@@ -25,7 +25,6 @@
 
 
 #define CAMERAS_SET_NAME_LENGTH 20
-#define MAX_CAMERAS 15
 
 
 typedef struct cameras_set_s {
