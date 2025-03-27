@@ -41,7 +41,7 @@ const char config_file_name[] = "PTZ-Memory.dat";
 
 gboolean backup_needed = FALSE;
 
-const char settings_txt[] = "_Système";
+const char settings_txt[] = "_Paramètres";
 const char about_txt[] = "A propos";
 
 GtkWidget *settings_window = NULL;
@@ -57,13 +57,9 @@ int focus_speed = 25;
 int zoom_speed = 25;
 
 
-gboolean destroy_about_window (GtkWidget *about_window)
+gboolean about_window_key_press (GtkWidget *about_window)
 {
-	gtk_window_set_transient_for (GTK_WINDOW (about_window), NULL);
-
 	gtk_widget_destroy (about_window);
-
-	gtk_window_set_transient_for (GTK_WINDOW (settings_window), GTK_WINDOW (main_window));
 
 	return GDK_EVENT_STOP;
 }
@@ -73,18 +69,16 @@ void show_about_window (void)
 	GtkWidget *about_window, *box, *widget;
 	char gtk_version[64];
 
-	gtk_window_set_transient_for (GTK_WINDOW (settings_window), NULL);
-
 	about_window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_title (GTK_WINDOW (about_window), about_txt);
 	gtk_window_set_type_hint (GTK_WINDOW (about_window), GDK_WINDOW_TYPE_HINT_DIALOG);
 	gtk_window_set_modal (GTK_WINDOW (about_window), TRUE);
-	gtk_window_set_transient_for (GTK_WINDOW (about_window), GTK_WINDOW (main_window));
+	gtk_window_set_transient_for (GTK_WINDOW (about_window), GTK_WINDOW (settings_window));
 	gtk_window_set_skip_taskbar_hint (GTK_WINDOW (about_window), FALSE);
 	gtk_window_set_skip_pager_hint (GTK_WINDOW (about_window), FALSE);
+	gtk_window_set_resizable (GTK_WINDOW (about_window), FALSE);
 	gtk_window_set_position (GTK_WINDOW (about_window), GTK_WIN_POS_CENTER_ON_PARENT);
-	g_signal_connect (G_OBJECT (about_window), "delete-event", G_CALLBACK (destroy_about_window), NULL);
-	g_signal_connect (G_OBJECT (about_window), "key-press-event", G_CALLBACK (destroy_about_window), NULL);
+	g_signal_connect (G_OBJECT (about_window), "key-press-event", G_CALLBACK (about_window_key_press), NULL);
 
 	box = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
 	gtk_container_set_border_width (GTK_CONTAINER (box), MARGIN_VALUE);
@@ -132,31 +126,19 @@ void show_about_window (void)
 		gtk_box_pack_start (GTK_BOX (box), widget, FALSE, FALSE, 0);
 	gtk_container_add (GTK_CONTAINER (about_window), box);
 
-	gtk_window_set_resizable (GTK_WINDOW (about_window), FALSE);
 	gtk_widget_show_all (about_window);
-}
-
-gboolean destroy_delete_confirmation_window (GtkWidget *confirmation_window)
-{
-	gtk_window_set_transient_for (GTK_WINDOW (confirmation_window), NULL);
-
-	gtk_widget_destroy (confirmation_window);
-
-	gtk_window_set_transient_for (GTK_WINDOW (settings_window), GTK_WINDOW (main_window));
-
-	return GDK_EVENT_STOP;
 }
 
 gboolean delete_confirmation_window_key_press (GtkWidget *confirmation_window, GdkEventKey *event)
 {
 	if ((event->keyval == GDK_KEY_n) || (event->keyval == GDK_KEY_N) || (event->keyval == GDK_KEY_Escape)) {
-		destroy_delete_confirmation_window (confirmation_window);
+		gtk_widget_destroy (confirmation_window);
 
 		return GDK_EVENT_STOP;
 	} else if ((event->keyval == GDK_KEY_o) || (event->keyval == GDK_KEY_O)) {
 		delete_cameras_set ();
 
-		destroy_delete_confirmation_window (confirmation_window);
+		gtk_widget_destroy (confirmation_window);
 
 		return GDK_EVENT_STOP;
 	}
@@ -172,17 +154,15 @@ void show_delete_confirmation_window (void)
 	char message[128];
 	char *text = "Etes-vous sûr de vouloir supprimer l'ensemble de caméras \"";
 
-	gtk_window_set_transient_for (GTK_WINDOW (settings_window), NULL);
-
 	window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_type_hint (GTK_WINDOW (window), GDK_WINDOW_TYPE_HINT_DIALOG);
 	gtk_window_set_title (GTK_WINDOW (window), warning_txt);
 	gtk_window_set_modal (GTK_WINDOW (window), TRUE);
-	gtk_window_set_transient_for (GTK_WINDOW (window), GTK_WINDOW (main_window));
+	gtk_window_set_transient_for (GTK_WINDOW (window), GTK_WINDOW (settings_window));
 	gtk_window_set_skip_taskbar_hint (GTK_WINDOW (window), FALSE);
 	gtk_window_set_skip_pager_hint (GTK_WINDOW (window), FALSE);
+	gtk_window_set_resizable (GTK_WINDOW (window), FALSE);
 	gtk_window_set_position (GTK_WINDOW (window), GTK_WIN_POS_CENTER_ON_PARENT);
-	g_signal_connect (G_OBJECT (window), "delete-event", G_CALLBACK (destroy_delete_confirmation_window), NULL);
 	g_signal_connect (G_OBJECT (window), "key-press-event", G_CALLBACK (delete_confirmation_window_key_press), NULL);
 
 	box1 = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
@@ -202,16 +182,15 @@ void show_delete_confirmation_window (void)
 		gtk_box_set_homogeneous (GTK_BOX (box2), TRUE);
 			widget = gtk_button_new_with_label ("OUI");
 			g_signal_connect (G_OBJECT (widget), "clicked", G_CALLBACK (delete_cameras_set), NULL);
-			g_signal_connect_swapped (G_OBJECT (widget), "clicked", G_CALLBACK (destroy_delete_confirmation_window), window);
+			g_signal_connect_swapped (G_OBJECT (widget), "clicked", G_CALLBACK (gtk_widget_destroy), window);
 			gtk_box_pack_start (GTK_BOX (box2), widget, TRUE, TRUE, 0);
 
 			widget = gtk_button_new_with_label ("NON");
-			g_signal_connect_swapped (G_OBJECT (widget), "clicked", G_CALLBACK (destroy_delete_confirmation_window), window);
+			g_signal_connect_swapped (G_OBJECT (widget), "clicked", G_CALLBACK (gtk_widget_destroy), window);
 			gtk_box_pack_start (GTK_BOX (box2), widget, FALSE, FALSE, 0);
 		gtk_box_pack_start (GTK_BOX (box1), box2, FALSE, FALSE, 0);
 	gtk_container_add (GTK_CONTAINER (window), box1);
 
-	gtk_window_set_resizable (GTK_WINDOW (window), FALSE);
 	gtk_widget_show_all (window);
 }
 
@@ -226,21 +205,10 @@ void settings_list_box_row_selected (GtkListBox *list_box, GtkListBoxRow *row)
 	}
 }
 
-gboolean destroy_settings_window (void)
-{
-	gtk_window_set_transient_for (GTK_WINDOW (settings_window), NULL);
-
-	gtk_widget_destroy (settings_window);
-
-	settings_window = NULL;
-
-	return GDK_EVENT_STOP;
-}
-
 gboolean settings_window_key_press (GtkWidget *window, GdkEventKey *event)
 {
 	if (event->keyval == GDK_KEY_Escape) {
-		destroy_settings_window ();
+		gtk_widget_destroy (settings_window);
 
 		return GDK_EVENT_STOP;
 	}
@@ -398,12 +366,12 @@ void show_settings_window (void)
 	settings_window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_title (GTK_WINDOW (settings_window), settings_txt + 1);
 	gtk_window_set_type_hint (GTK_WINDOW (settings_window), GDK_WINDOW_TYPE_HINT_DIALOG);
-	gtk_window_set_transient_for (GTK_WINDOW (settings_window), GTK_WINDOW (main_window));
 	gtk_window_set_modal (GTK_WINDOW (settings_window), TRUE);
+	gtk_window_set_transient_for (GTK_WINDOW (settings_window), GTK_WINDOW (main_window));
 	gtk_window_set_skip_taskbar_hint (GTK_WINDOW (settings_window), FALSE);
 	gtk_window_set_skip_pager_hint (GTK_WINDOW (settings_window), FALSE);
+	gtk_window_set_resizable (GTK_WINDOW (settings_window), FALSE);
 	gtk_window_set_position (GTK_WINDOW (settings_window), GTK_WIN_POS_CENTER_ON_PARENT);
-	g_signal_connect (G_OBJECT (settings_window), "delete-event", G_CALLBACK (destroy_settings_window), NULL);
 	g_signal_connect (G_OBJECT (settings_window), "key-press-event", G_CALLBACK (settings_window_key_press), NULL);
 
 	box1 = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
@@ -692,7 +660,6 @@ void show_settings_window (void)
 	gtk_box_pack_end (GTK_BOX (box1), box2, FALSE, FALSE, 0);
 	gtk_container_add (GTK_CONTAINER (settings_window), box1);
 
-	gtk_window_set_resizable (GTK_WINDOW (settings_window), FALSE);
 	gtk_widget_show_all (settings_window);
 }
 
@@ -736,7 +703,6 @@ void load_config_file (void)
 		if (cameras_set_tmp->thumbnail_size < 0.5) cameras_set_tmp->thumbnail_size = 0.5;
 		else if (cameras_set_tmp->thumbnail_size > 1.0) cameras_set_tmp->thumbnail_size = 1.0;
 
-		thumbnail_size = cameras_set_tmp->thumbnail_size;
 		cameras_set_tmp->thumbnail_width = 320 * cameras_set_tmp->thumbnail_size;
 		cameras_set_tmp->thumbnail_height = 180 * cameras_set_tmp->thumbnail_size;
 
