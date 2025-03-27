@@ -1,5 +1,5 @@
 /*
- * copyright (c) 2020 2021 Thomas Paillet <thomas.paillet@net-c.fr>
+ * copyright (c) 2020 2021 2025 Thomas Paillet <thomas.paillet@net-c.fr>
 
  * This file is part of PTZ-Memory.
 
@@ -105,22 +105,23 @@ gboolean g_source_show_control_window (ptz_t *ptz)
 	return G_SOURCE_REMOVE;
 }
 
-gboolean delete_matrix_window (GtkWidget *window)
+gboolean destroy_matrix_window (GtkWidget *window)
 {
 	remote_devices[0].connected_label = NULL;
 	remote_devices[1].connected_label = NULL;
 
 	gtk_widget_destroy (window);
 
-	gtk_window_set_transient_for (GTK_WINDOW (settings_window), GTK_WINDOW (main_window));
-	gtk_window_set_modal (GTK_WINDOW (settings_window), TRUE);
-
 	return GDK_EVENT_STOP;
 }
 
 gboolean matrix_window_key_press (GtkWidget *window, GdkEventKey *event)
 {
-	if (event->keyval == GDK_KEY_Escape) delete_matrix_window (window);
+	if (event->keyval == GDK_KEY_Escape) {
+		destroy_matrix_window (window);
+
+		return GDK_EVENT_STOP;
+	}
 
 	return GDK_EVENT_PROPAGATE;
 }
@@ -131,9 +132,6 @@ void show_matrix_window (void)
 	char label[64];
 	int i;
 
-	gtk_window_set_transient_for (GTK_WINDOW (settings_window), NULL);
-	gtk_window_set_modal (GTK_WINDOW (settings_window), FALSE);
-
 	window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_title (GTK_WINDOW (window), "Grille Snell SW-P-08");
 	gtk_window_set_type_hint (GTK_WINDOW (window), GDK_WINDOW_TYPE_HINT_DIALOG);
@@ -141,8 +139,9 @@ void show_matrix_window (void)
 	gtk_window_set_transient_for (GTK_WINDOW (window), GTK_WINDOW (settings_window));
 	gtk_window_set_skip_taskbar_hint (GTK_WINDOW (window), FALSE);
 	gtk_window_set_skip_pager_hint (GTK_WINDOW (window), FALSE);
+	gtk_window_set_resizable (GTK_WINDOW (window), FALSE);
 	gtk_window_set_position (GTK_WINDOW (window), GTK_WIN_POS_CENTER_ON_PARENT);
-	g_signal_connect (G_OBJECT (window), "delete-event", G_CALLBACK (delete_matrix_window), NULL);
+	g_signal_connect (G_OBJECT (window), "delete-event", G_CALLBACK (destroy_matrix_window), NULL);
 	g_signal_connect (G_OBJECT (window), "key-press-event", G_CALLBACK (matrix_window_key_press), NULL);
 
 		box = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
@@ -262,7 +261,7 @@ void show_matrix_window (void)
 			gtk_grid_attach (GTK_GRID (grid), widget, MAX_CAMERAS + 2, 2, 1, 1);
 		gtk_box_pack_start (GTK_BOX (box), grid, FALSE, FALSE, 0);
 	gtk_container_add (GTK_CONTAINER (window), box);
-	gtk_window_set_resizable (GTK_WINDOW (window), FALSE);
+
 	gtk_widget_show_all (window);
 
 	if (sw_p_08_server_started) {
