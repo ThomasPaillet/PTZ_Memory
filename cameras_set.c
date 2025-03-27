@@ -407,9 +407,6 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 
 	gtk_widget_destroy (cameras_set_configuration_window);
 
-	gtk_window_set_transient_for (GTK_WINDOW (settings_window), GTK_WINDOW (main_window));
-	gtk_window_set_modal (GTK_WINDOW (settings_window), TRUE);
-
 	g_free (cameras_configuration_widgets);
 
 	new_cameras_set = NULL;
@@ -417,14 +414,11 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 	backup_needed = TRUE;
 }
 
-void cameras_set_configuration_window_cancel (void)
+gboolean cameras_set_configuration_window_cancel (void)
 {
 	int i;
 
 	gtk_widget_destroy (cameras_set_configuration_window);
-
-	gtk_window_set_transient_for (GTK_WINDOW (settings_window), GTK_WINDOW (main_window));
-	gtk_window_set_modal (GTK_WINDOW (settings_window), TRUE);
 
 	g_free (cameras_configuration_widgets);
 
@@ -434,11 +428,17 @@ void cameras_set_configuration_window_cancel (void)
 		g_free (new_cameras_set);
 		new_cameras_set = NULL;
 	}
+
+	return GDK_EVENT_STOP;
 }
 
-gboolean cameras_set_confirmation_window_key_press (GtkWidget *confirmation_window, GdkEventKey *event, gpointer user_data)
+gboolean cameras_set_confirmation_window_key_press (GtkWidget *confirmation_window, GdkEventKey *event)
 {
-	if (event->keyval == GDK_KEY_Escape) cameras_set_configuration_window_cancel ();
+	if (event->keyval == GDK_KEY_Escape) {
+		cameras_set_configuration_window_cancel ();
+
+		return GDK_EVENT_STOP;
+	}
 
 	return GDK_EVENT_PROPAGATE;
 }
@@ -463,9 +463,6 @@ void show_cameras_set_configuration_window (void)
 		}
 	} else cameras_set = new_cameras_set;
 
-	gtk_window_set_transient_for (GTK_WINDOW (settings_window), NULL);
-	gtk_window_set_modal (GTK_WINDOW (settings_window), FALSE);
-
 	cameras_set_configuration_window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_title (GTK_WINDOW (cameras_set_configuration_window), "Configuration");
 	gtk_window_set_type_hint (GTK_WINDOW (cameras_set_configuration_window), GDK_WINDOW_TYPE_HINT_DIALOG);
@@ -476,7 +473,7 @@ void show_cameras_set_configuration_window (void)
 	gtk_window_set_skip_pager_hint (GTK_WINDOW (cameras_set_configuration_window), FALSE);
 	gtk_window_set_position (GTK_WINDOW (cameras_set_configuration_window), GTK_WIN_POS_CENTER_ON_PARENT);
 	g_signal_connect (G_OBJECT (cameras_set_configuration_window), "delete-event", G_CALLBACK (cameras_set_configuration_window_cancel), NULL);
-	g_signal_connect (G_OBJECT (cameras_set_configuration_window), "key-press-event", G_CALLBACK (cameras_set_confirmation_window_key_press), cameras_set);
+	g_signal_connect (G_OBJECT (cameras_set_configuration_window), "key-press-event", G_CALLBACK (cameras_set_confirmation_window_key_press), NULL);
 
 	box1 = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
 	gtk_container_set_border_width (GTK_CONTAINER (box1), MARGIN_VALUE);
