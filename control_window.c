@@ -1195,13 +1195,15 @@ void create_control_window (control_window_t *control_window, gpointer ptz)
 	gtk_window_set_decorated (GTK_WINDOW (widget), FALSE);
 	gtk_window_set_skip_taskbar_hint (GTK_WINDOW (widget), FALSE);
 	gtk_window_set_skip_pager_hint (GTK_WINDOW (widget), FALSE);
+	gtk_window_set_modal (GTK_WINDOW (widget), TRUE);
+	gtk_window_set_resizable (GTK_WINDOW (widget), FALSE);
 	g_signal_connect (G_OBJECT (widget), "draw", G_CALLBACK (get_control_window_position_and_size), ptz);
 	g_signal_connect (G_OBJECT (widget), "button-press-event", G_CALLBACK (control_window_button_press), ptz);
 	g_signal_connect (G_OBJECT (widget), "motion-notify-event", G_CALLBACK (control_window_motion_notify), ptz);
 	g_signal_connect (G_OBJECT (widget), "button-release-event", G_CALLBACK (control_window_button_release), ptz);
 	g_signal_connect (G_OBJECT (widget), "key-press-event", G_CALLBACK (control_window_key_press), ptz);
 	g_signal_connect (G_OBJECT (widget), "key-release-event", G_CALLBACK (control_window_key_release), ptz);
-	g_signal_connect (G_OBJECT (widget), "focus-out-event", G_CALLBACK (hide_control_window), ptz);
+//	g_signal_connect (G_OBJECT (widget), "focus-out-event", G_CALLBACK (hide_control_window), ptz);
 	g_signal_connect (G_OBJECT (widget), "delete-event", G_CALLBACK (hide_control_window), ptz);
 	control_window->window = widget;
 
@@ -1346,7 +1348,6 @@ void create_control_window (control_window_t *control_window, gpointer ptz)
 	gtk_container_add (GTK_CONTAINER (control_window->window), main_grid);
 
 	gtk_widget_realize (control_window->window);
-	gtk_window_set_resizable (GTK_WINDOW (control_window->window), FALSE);
 
 	control_window->gdk_window = gtk_widget_get_window (control_window->window);
 }
