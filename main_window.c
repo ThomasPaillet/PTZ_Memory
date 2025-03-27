@@ -590,10 +590,10 @@ int main (int argc, char** argv)
 	}
 
 	if (number_of_cameras_sets == 0) {
-		create_settings_window ();
+		show_settings_window ();
 		add_cameras_set ();
 	} else if (cameras_set_with_error != NULL) {
-		create_settings_window ();
+		show_settings_window ();
 		show_cameras_set_configuration_window ();
 	}
 
