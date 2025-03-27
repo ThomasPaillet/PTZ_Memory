@@ -57,7 +57,7 @@ int focus_speed = 25;
 int zoom_speed = 25;
 
 
-gboolean destroy_about_window (GtkWidget *about_window, GdkEventKey *event, gpointer user_data)
+gboolean destroy_about_window (GtkWidget *about_window)
 {
 	gtk_window_set_transient_for (GTK_WINDOW (about_window), NULL);
 
@@ -136,24 +136,27 @@ void show_about_window (void)
 	gtk_widget_show_all (about_window);
 }
 
+gboolean destroy_delete_confirmation_window (GtkWidget *confirmation_window)
+{
+	gtk_window_set_transient_for (GTK_WINDOW (confirmation_window), NULL);
+
+	gtk_widget_destroy (confirmation_window);
+
+	gtk_window_set_transient_for (GTK_WINDOW (settings_window), GTK_WINDOW (main_window));
+
+	return GDK_EVENT_STOP;
+}
+
 gboolean delete_confirmation_window_key_press (GtkWidget *confirmation_window, GdkEventKey *event)
 {
 	if ((event->keyval == GDK_KEY_n) || (event->keyval == GDK_KEY_N) || (event->keyval == GDK_KEY_Escape)) {
-		gtk_window_set_transient_for (GTK_WINDOW (confirmation_window), NULL);
-
-		gtk_widget_destroy (confirmation_window);
-
-		gtk_window_set_transient_for (GTK_WINDOW (settings_window), GTK_WINDOW (main_window));
+		destroy_delete_confirmation_window (confirmation_window);
 
 		return GDK_EVENT_STOP;
 	} else if ((event->keyval == GDK_KEY_o) || (event->keyval == GDK_KEY_O)) {
 		delete_cameras_set ();
 
-		gtk_window_set_transient_for (GTK_WINDOW (confirmation_window), NULL);
-
-		gtk_widget_destroy (confirmation_window);
-
-		gtk_window_set_transient_for (GTK_WINDOW (settings_window), GTK_WINDOW (main_window));
+		destroy_delete_confirmation_window (confirmation_window);
 
 		return GDK_EVENT_STOP;
 	}
@@ -179,6 +182,7 @@ void show_delete_confirmation_window (void)
 	gtk_window_set_skip_taskbar_hint (GTK_WINDOW (window), FALSE);
 	gtk_window_set_skip_pager_hint (GTK_WINDOW (window), FALSE);
 	gtk_window_set_position (GTK_WINDOW (window), GTK_WIN_POS_CENTER_ON_PARENT);
+	g_signal_connect (G_OBJECT (window), "delete-event", G_CALLBACK (destroy_delete_confirmation_window), NULL);
 	g_signal_connect (G_OBJECT (window), "key-press-event", G_CALLBACK (delete_confirmation_window_key_press), NULL);
 
 	box1 = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
@@ -198,11 +202,11 @@ void show_delete_confirmation_window (void)
 		gtk_box_set_homogeneous (GTK_BOX (box2), TRUE);
 			widget = gtk_button_new_with_label ("OUI");
 			g_signal_connect (G_OBJECT (widget), "clicked", G_CALLBACK (delete_cameras_set), NULL);
-			g_signal_connect_swapped (G_OBJECT (widget), "clicked", G_CALLBACK (gtk_widget_destroy), window);
+			g_signal_connect_swapped (G_OBJECT (widget), "clicked", G_CALLBACK (destroy_delete_confirmation_window), window);
 			gtk_box_pack_start (GTK_BOX (box2), widget, TRUE, TRUE, 0);
 
 			widget = gtk_button_new_with_label ("NON");
-			g_signal_connect_swapped (G_OBJECT (widget), "clicked", G_CALLBACK (gtk_widget_destroy), window);
+			g_signal_connect_swapped (G_OBJECT (widget), "clicked", G_CALLBACK (destroy_delete_confirmation_window), window);
 			gtk_box_pack_start (GTK_BOX (box2), widget, FALSE, FALSE, 0);
 		gtk_box_pack_start (GTK_BOX (box1), box2, FALSE, FALSE, 0);
 	gtk_container_add (GTK_CONTAINER (window), box1);
@@ -222,7 +226,7 @@ void settings_list_box_row_selected (GtkListBox *list_box, GtkListBoxRow *row)
 	}
 }
 
-gboolean delete_settings_window (void)
+gboolean destroy_settings_window (void)
 {
 	gtk_window_set_transient_for (GTK_WINDOW (settings_window), NULL);
 
@@ -236,7 +240,7 @@ gboolean delete_settings_window (void)
 gboolean settings_window_key_press (GtkWidget *window, GdkEventKey *event)
 {
 	if (event->keyval == GDK_KEY_Escape) {
-		delete_settings_window ();
+		destroy_settings_window ();
 
 		return GDK_EVENT_STOP;
 	}
@@ -399,7 +403,7 @@ void show_settings_window (void)
 	gtk_window_set_skip_taskbar_hint (GTK_WINDOW (settings_window), FALSE);
 	gtk_window_set_skip_pager_hint (GTK_WINDOW (settings_window), FALSE);
 	gtk_window_set_position (GTK_WINDOW (settings_window), GTK_WIN_POS_CENTER_ON_PARENT);
-	g_signal_connect (G_OBJECT (settings_window), "delete-event", G_CALLBACK (delete_settings_window), NULL);
+	g_signal_connect (G_OBJECT (settings_window), "delete-event", G_CALLBACK (destroy_settings_window), NULL);
 	g_signal_connect (G_OBJECT (settings_window), "key-press-event", G_CALLBACK (settings_window_key_press), NULL);
 
 	box1 = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
