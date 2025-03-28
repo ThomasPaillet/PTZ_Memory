@@ -56,9 +56,9 @@ gdouble control_window_y;
 int control_window_pan_speed;
 int control_window_tilt_speed;
 
-guint focus_timeout_id;
-guint pan_tilt_timeout_id;
-guint zoom_timeout_id;
+guint control_window_focus_timeout_id;
+guint control_window_pan_tilt_timeout_id;
+guint control_window_zoom_timeout_id;
 
 gboolean focus_is_moving = FALSE;
 gboolean pan_tilt_is_moving = FALSE;
@@ -82,7 +82,6 @@ gboolean control_window_key_press (GtkWidget *gtk_window, GdkEventKey *event)
 	ptz_t *new_ptz;
 	ptz_thread_t *controller_thread;
 
-	if (!control_window_key_pressed) {
 		if (event->keyval == GDK_KEY_Escape) {
 			hide_control_window ();
 
@@ -159,7 +158,6 @@ gboolean control_window_key_press (GtkWidget *gtk_window, GdkEventKey *event)
 				ask_to_connect_ptz_to_ctrl_opv (new_ptz);
 			}
 		} else if ((event->state & GDK_MOD1_MASK) && ((event->keyval == GDK_KEY_i) || (event->keyval == GDK_KEY_I))) send_jpeg_image_request_cmd (current_ptz);
-	}
 
 	return GDK_EVENT_PROPAGATE;
 }
@@ -1272,7 +1270,7 @@ gboolean hide_control_window (void)
 	}
 
 	if (focus_is_moving == TRUE) {
-		if (ptz->is_on) send_ptz_control_command (current_ptz, focus_stop_cmd, FALSE);
+		if (current_ptz->is_on) send_ptz_control_command (current_ptz, focus_stop_cmd, FALSE);
 		focus_is_moving = FALSE;
 	}
 
@@ -1282,7 +1280,7 @@ gboolean hide_control_window (void)
 	}
 
 	if (pan_tilt_is_moving == TRUE) {
-		if (ptz->is_on) send_ptz_control_command (current_ptz, pan_tilt_stop_cmd, TRUE);
+		if (current_ptz->is_on) send_ptz_control_command (current_ptz, pan_tilt_stop_cmd, TRUE);
 		pan_tilt_is_moving = FALSE;
 	}
 
@@ -1292,7 +1290,7 @@ gboolean hide_control_window (void)
 	}
 
 	if (zoom_is_moving == TRUE) {
-		if (ptz->is_on) send_ptz_control_command (current_ptz, zoom_stop_cmd, FALSE);
+		if (current_ptz->is_on) send_ptz_control_command (current_ptz, zoom_stop_cmd, FALSE);
 		zoom_is_moving = FALSE;
 	}
 
