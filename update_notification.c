@@ -173,7 +173,7 @@ gpointer receive_update_notification (gpointer data)
 								ptz->zoom_position_cmd[5] = buffer[34];
 								ptz->zoom_position_cmd[6] = buffer[35];
 
-								if (ptz->control_window.is_on_screen) gtk_widget_queue_draw (ptz->control_window.zoom_level_bar_drawing_area);
+								if (ptz == current_ptz) gtk_widget_queue_draw (control_window_zoom_level_bar_drawing_area);
 							}
 
 							if ((ptz->focus_position_cmd[4] != buffer[36]) || (ptz->focus_position_cmd[5] != buffer[37]) || (ptz->focus_position_cmd[6] != buffer[38])) {
@@ -188,7 +188,7 @@ gpointer receive_update_notification (gpointer data)
 								ptz->focus_position_cmd[5] = buffer[37];
 								ptz->focus_position_cmd[6] = buffer[38];
 
-								if (ptz->control_window.is_on_screen) gtk_widget_queue_draw (ptz->control_window.focus_level_bar_drawing_area);
+								if (ptz == current_ptz) gtk_widget_queue_draw (control_window_focus_level_bar_drawing_area);
 							}
 						} else {
 							other_ptz = cameras_set_itr->cameras[i];
@@ -201,7 +201,7 @@ gpointer receive_update_notification (gpointer data)
 								other_ptz->zoom_position_cmd[5] = buffer[34];
 								other_ptz->zoom_position_cmd[6] = buffer[35];
 
-								if (other_ptz->control_window.is_on_screen) gtk_widget_queue_draw (other_ptz->control_window.zoom_level_bar_drawing_area);
+								if (other_ptz == current_ptz) gtk_widget_queue_draw (control_window_zoom_level_bar_drawing_area);
 							}
 
 							if (other_ptz->focus_position != ptz->focus_position) {
@@ -210,7 +210,7 @@ gpointer receive_update_notification (gpointer data)
 								other_ptz->focus_position_cmd[5] = buffer[37];
 								other_ptz->focus_position_cmd[6] = buffer[38];
 
-								if (other_ptz->control_window.is_on_screen) gtk_widget_queue_draw (other_ptz->control_window.focus_level_bar_drawing_area);
+								if (other_ptz == current_ptz) gtk_widget_queue_draw (control_window_focus_level_bar_drawing_area);
 							}
 
 							g_mutex_unlock (&other_ptz->lens_information_mutex);
@@ -232,13 +232,10 @@ gpointer receive_update_notification (gpointer data)
 					ptz = cameras_set_itr->cameras[i];
 
 					if (ptz->address.sin_addr.s_addr == src_addr.sin_addr.s_addr) {
-						if (buffer[34] == '1') {
-							ptz->auto_focus = TRUE;
-							if (ptz->control_window.is_on_screen) g_idle_add ((GSourceFunc)update_auto_focus_toggle_button, ptz);
-						} else {
-							ptz->auto_focus = FALSE;
-							if (ptz->control_window.is_on_screen) g_idle_add ((GSourceFunc)update_auto_focus_toggle_button, ptz);
-						}
+						if (buffer[34] == '1') ptz->auto_focus = TRUE;
+						else ptz->auto_focus = FALSE;
+
+						if (ptz == current_ptz) g_idle_add ((GSourceFunc)update_auto_focus_state, NULL);
 
 						break;
 					}
