@@ -21,6 +21,31 @@
 #define __INTERFACE_SETTINGS_H
 
 
+typedef struct interface_param_s {
+	gboolean orientation;
+
+	gdouble thumbnail_size;
+	int thumbnail_width, thumbnail_height;
+
+	double memories_name_color_red;
+	double memories_name_color_green;
+	double memories_name_color_blue;
+
+	double memories_name_backdrop_color_red;
+	double memories_name_backdrop_color_green;
+	double memories_name_backdrop_color_blue;
+	double memories_name_backdrop_color_alpha;
+
+	int memories_button_vertical_margins;
+	int memories_button_horizontal_margins;
+
+	gboolean show_linked_memories_names_entries;
+	gboolean show_linked_memories_names_labels;
+} interface_param_t;
+
+
+extern interface_param_t interface_default;
+
 extern const char interface_settings_txt[];
 
 extern char ptz_name_font[];
