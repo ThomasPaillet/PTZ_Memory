@@ -517,6 +517,7 @@ void device_added_to_seat (GdkSeat *seat, GdkDevice *device)
 void device_removed_from_seat (GdkSeat *seat, GdkDevice *device)
 {
 	if (device == trackball) trackball = NULL;
+	//gtk_combo_box_text_remove_all (GTK_COMBO_BOX_TEXT (widget));
 }
 
 #ifdef _WIN32
