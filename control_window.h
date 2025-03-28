@@ -24,6 +24,8 @@
 #include "ptz.h"
 
 
+extern ptz_t *current_ptz;
+
 extern char focus_near_speed_cmd[5];
 extern char focus_far_speed_cmd[5];
 
