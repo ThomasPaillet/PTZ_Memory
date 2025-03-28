@@ -47,13 +47,7 @@ GThread *tsl_umd_v5_thread = NULL;
 
 gboolean g_source_ptz_tally_queue_draw (ptz_t *ptz)
 {
-	if (ptz->control_window.is_on_screen) {
-		gtk_widget_queue_draw (ptz->control_window.name_drawing_area);
-		gtk_widget_queue_draw (ptz->control_window.tally[0]);
-		gtk_widget_queue_draw (ptz->control_window.tally[1]);
-		gtk_widget_queue_draw (ptz->control_window.tally[2]);
-		gtk_widget_queue_draw (ptz->control_window.tally[3]);
-	}
+	if (current_ptz == ptz) update_control_window_tally ();
 
 	gtk_widget_queue_draw (ptz->name_drawing_area);
 	gtk_widget_queue_draw (ptz->tally[0]);
