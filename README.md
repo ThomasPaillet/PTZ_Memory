@@ -13,7 +13,7 @@ Fn : Open control window of camera n.
 
 Echap : Close child window (camera control window, settings window, ...).
 
-Alt + I : Retrieve jpeg picture (quality n°1) from the selected camera (control window opened) or from all cameras.
+Alt + C : Retrieve jpeg picture (quality n°1) from the selected camera (control window opened) or from all cameras.
 
 Right click on thumbnail : Allow you to name it.
 
