@@ -301,14 +301,14 @@ gboolean memory_name_draw (GtkWidget *widget, cairo_t *cr, char *name)
 	PangoFontDescription *desc;
 
 	if (name[0] != '\0') {
-		cairo_set_source_rgba (cr, current_cameras_set->memories_name_backdrop_color_red, current_cameras_set->memories_name_backdrop_color_green, current_cameras_set->memories_name_backdrop_color_blue, current_cameras_set->memories_name_backdrop_color_alpha);
-		cairo_rectangle (cr, 5.0, current_cameras_set->thumbnail_height + 5.0 - (20.0 * current_cameras_set->thumbnail_size), current_cameras_set->thumbnail_width, 20.0 * current_cameras_set->thumbnail_size);
+		cairo_set_source_rgba (cr, current_cameras_set->interface.memories_name_backdrop_color_red, current_cameras_set->interface.memories_name_backdrop_color_green, current_cameras_set->interface.memories_name_backdrop_color_blue, current_cameras_set->interface.memories_name_backdrop_color_alpha);
+		cairo_rectangle (cr, 5.0, current_cameras_set->interface.thumbnail_height + 5.0 - (20.0 * current_cameras_set->interface.thumbnail_size), current_cameras_set->interface.thumbnail_width, 20.0 * current_cameras_set->interface.thumbnail_size);
 		cairo_fill (cr);
 
-		cairo_set_source_rgb (cr, current_cameras_set->memories_name_color_red, current_cameras_set->memories_name_color_green, current_cameras_set->memories_name_color_blue);
+		cairo_set_source_rgb (cr, current_cameras_set->interface.memories_name_color_red, current_cameras_set->interface.memories_name_color_green, current_cameras_set->interface.memories_name_color_blue);
 		pl = pango_cairo_create_layout (cr);
 
-		cairo_translate (cr, 5.0 + 16.0 * (10 - (strlen (name) / 2)) * current_cameras_set->thumbnail_size, current_cameras_set->thumbnail_height - (19.0 * current_cameras_set->thumbnail_size) + (1.0 - current_cameras_set->thumbnail_size) * 4.0);
+		cairo_translate (cr, 5.0 + 16.0 * (10 - (strlen (name) / 2)) * current_cameras_set->interface.thumbnail_size, current_cameras_set->interface.thumbnail_height - (19.0 * current_cameras_set->interface.thumbnail_size) + (1.0 - current_cameras_set->interface.thumbnail_size) * 4.0);
 
 		pango_layout_set_text (pl, name, -1);
 		desc = pango_font_description_from_string (memory_name_font);
@@ -328,20 +328,20 @@ gboolean memory_outline_draw (GtkWidget *widget, cairo_t *cr, memory_t *memory)
 	if (memory->is_loaded) {
 		cairo_set_source_rgba (cr, 0.8, 0.545, 0.0, 1.0);
 //Top
-		cairo_rectangle (cr, 3.0, 2.0, current_cameras_set->thumbnail_width + 4.0, 1.0);
+		cairo_rectangle (cr, 3.0, 2.0, current_cameras_set->interface.thumbnail_width + 4.0, 1.0);
 		cairo_fill (cr);
-		cairo_rectangle (cr, 2.0, 3.0, current_cameras_set->thumbnail_width + 6.0, 2.0);
+		cairo_rectangle (cr, 2.0, 3.0, current_cameras_set->interface.thumbnail_width + 6.0, 2.0);
 		cairo_fill (cr);
 //Bottom
-		cairo_rectangle (cr, 2.0, 5.0 + current_cameras_set->thumbnail_height, current_cameras_set->thumbnail_width + 6.0, 2.0);
+		cairo_rectangle (cr, 2.0, 5.0 + current_cameras_set->interface.thumbnail_height, current_cameras_set->interface.thumbnail_width + 6.0, 2.0);
 		cairo_fill (cr);
-		cairo_rectangle (cr, 3.0, 7.0 + current_cameras_set->thumbnail_height, current_cameras_set->thumbnail_width + 4.0, 1.0);
+		cairo_rectangle (cr, 3.0, 7.0 + current_cameras_set->interface.thumbnail_height, current_cameras_set->interface.thumbnail_width + 4.0, 1.0);
 		cairo_fill (cr);
 //Left
-		cairo_rectangle (cr, 2.0, 5.0, 3.0, current_cameras_set->thumbnail_height);
+		cairo_rectangle (cr, 2.0, 5.0, 3.0, current_cameras_set->interface.thumbnail_height);
 		cairo_fill (cr);
 //Right
-		cairo_rectangle (cr, 5.0 + current_cameras_set->thumbnail_width, 5.0, 3.0, current_cameras_set->thumbnail_height);
+		cairo_rectangle (cr, 5.0 + current_cameras_set->interface.thumbnail_width, 5.0, 3.0, current_cameras_set->interface.thumbnail_height);
 		cairo_fill (cr);
 	}
 
