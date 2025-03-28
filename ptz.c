@@ -116,10 +116,7 @@ gboolean ptz_is_off (ptz_t *ptz)
 {
 	ptz->is_on = FALSE;
 
-	if (ptz->control_window.is_on_screen) {
-		ptz->control_window.is_on_screen = FALSE;
-		gtk_widget_hide (ptz->control_window.window);
-	}
+	if (ptz == current_ptz) hide_control_window ();
 
 	if ((ptz->error_code != 0x30) && (ptz->error_code != 0x00)) {
 		ptz->error_code = 0x00;
