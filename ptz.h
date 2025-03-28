@@ -48,7 +48,6 @@
 #include <sys/time.h>
 
 #include "memory.h"
-#include "control_window.h"
 
 
 #define AW_HE130 0
@@ -97,8 +96,6 @@ typedef struct {
 
 	GMutex lens_information_mutex;
 
-	control_window_t control_window;
-
 	GtkWidget *name_separator;
 	GtkWidget *name_grid;
 	GtkWidget *name_drawing_area;
@@ -123,9 +120,6 @@ typedef struct {
 } ptz_thread_t;
 
 
-extern ptz_t *current_ptz;
-
-
 void init_ptz (ptz_t *ptz);
 
 gboolean ptz_is_on (ptz_t *ptz);
@@ -140,19 +134,15 @@ gpointer switch_ptz_on (ptz_thread_t *ptz_thread);
 
 gpointer switch_ptz_off (ptz_thread_t *ptz_thread);
 
-void show_control_window (ptz_t *ptz);
-
-gboolean hide_control_window (GtkWidget *window, GdkEvent *event, ptz_t *ptz);
-
 gboolean update_auto_focus_toggle_button (ptz_t *ptz);
 
-void create_ptz_widgets_horizontal (ptz_t *ptz, int thumbnail_width, int thumbnail_height, int memories_button_vertical_margins, int memories_button_horizontal_margins);
+void create_ptz_widgets_horizontal (ptz_t *ptz);
 
-void create_ptz_widgets_vertical (ptz_t *ptz, int thumbnail_width, int thumbnail_height, int memories_button_vertical_margins, int memories_button_horizontal_margins);
+void create_ptz_widgets_vertical (ptz_t *ptz);
 
-void create_ghost_ptz_widgets_horizontal (ptz_t *ptz, int thumbnail_width, int thumbnail_height, int memories_button_vertical_margins, int memories_button_horizontal_margins);
+void create_ghost_ptz_widgets_horizontal (ptz_t *ptz);
 
-void create_ghost_ptz_widgets_vertical (ptz_t *ptz, int thumbnail_width, int thumbnail_height, int memories_button_vertical_margins, int memories_button_horizontal_margins);
+void create_ghost_ptz_widgets_vertical (ptz_t *ptz);
 
 
 #endif
