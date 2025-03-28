@@ -147,8 +147,8 @@ gboolean ptz_name_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 
 	pl = pango_cairo_create_layout (cr);
 
-	if (ptz->name[1] == '\0') cairo_translate (cr, 50 * current_cameras_set->thumbnail_size, 20 * current_cameras_set->thumbnail_size);
-	else cairo_translate (cr, 10 * current_cameras_set->thumbnail_size, 20 * current_cameras_set->thumbnail_size);
+	if (ptz->name[1] == '\0') cairo_translate (cr, 50 * current_cameras_set->interface.thumbnail_size, 20 * current_cameras_set->interface.thumbnail_size);
+	else cairo_translate (cr, 10 * current_cameras_set->interface.thumbnail_size, 20 * current_cameras_set->interface.thumbnail_size);
 
 	pango_layout_set_text (pl, ptz->name, -1);
 	desc = pango_font_description_from_string (ptz_name_font);
@@ -185,8 +185,8 @@ gboolean ghost_ptz_name_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 
 	pl = pango_cairo_create_layout (cr);
 
-	if (ptz->name[1] == '\0') cairo_translate (cr, 60 * current_cameras_set->thumbnail_size, -10 * current_cameras_set->thumbnail_size);
-	else cairo_translate (cr, 30 * current_cameras_set->thumbnail_size, -10 * current_cameras_set->thumbnail_size);
+	if (ptz->name[1] == '\0') cairo_translate (cr, 60 * current_cameras_set->interface.thumbnail_size, -10 * current_cameras_set->interface.thumbnail_size);
+	else cairo_translate (cr, 30 * current_cameras_set->interface.thumbnail_size, -10 * current_cameras_set->interface.thumbnail_size);
 
 	pango_layout_set_text (pl, ptz->name, -1);
 	desc = pango_font_description_from_string (ghost_ptz_name_font);
