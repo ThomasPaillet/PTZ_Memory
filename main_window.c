@@ -53,7 +53,8 @@ GtkWidget *switch_cameras_on_button, *switch_cameras_off_button;
 gboolean fullscreen = TRUE;
 
 GdkSeat *seat;
-GdkDevice *mouse, *trackball = NULL;
+GList *pointing_devices = NULL;
+GdkDevice *trackball = NULL;
 
 
 gboolean digit_key_press (GtkEntry *entry, GdkEventKey *event)
@@ -82,7 +83,7 @@ void ptz_main_quit (GtkWidget *confirmation_window)
 gboolean exit_confirmation_window_key_press (GtkWidget *confirmation_window, GdkEventKey *event)
 {
 	if ((event->keyval == GDK_KEY_n) || (event->keyval == GDK_KEY_N) || (event->keyval == GDK_KEY_Escape)) gtk_widget_destroy (confirmation_window);
-	else if ((event->keyval == GDK_KEY_o) || (event->keyval == GDK_KEY_O)) ptz_main_quit (confirmation_window);
+	else if ((event->keyval == GDK_KEY_o) || (event->keyval == GDK_KEY_O)|| (event->keyval == GDK_KEY_Return)) ptz_main_quit (confirmation_window);
 
 	return GDK_EVENT_PROPAGATE;
 }
@@ -92,12 +93,13 @@ gboolean show_exit_confirmation_window (void)
 	GtkWidget *confirmation_window, *box2, *box3, *widget;
 
 	confirmation_window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
-	gtk_window_set_type_hint (GTK_WINDOW (confirmation_window), GDK_WINDOW_TYPE_HINT_DIALOG);
 	gtk_window_set_title (GTK_WINDOW (confirmation_window), warning_txt);
+	gtk_window_set_type_hint (GTK_WINDOW (confirmation_window), GDK_WINDOW_TYPE_HINT_DIALOG);
 	gtk_window_set_modal (GTK_WINDOW (confirmation_window), TRUE);
 	gtk_window_set_transient_for (GTK_WINDOW (confirmation_window), GTK_WINDOW (main_window));
 	gtk_window_set_skip_taskbar_hint (GTK_WINDOW (confirmation_window), FALSE);
 	gtk_window_set_skip_pager_hint (GTK_WINDOW (confirmation_window), FALSE);
+	gtk_window_set_resizable (GTK_WINDOW (confirmation_window), FALSE);
 	gtk_window_set_position (GTK_WINDOW (confirmation_window), GTK_WIN_POS_CENTER_ON_PARENT);
 	g_signal_connect (G_OBJECT (confirmation_window), "key-press-event", G_CALLBACK (exit_confirmation_window_key_press), NULL);
 
@@ -121,7 +123,6 @@ gboolean show_exit_confirmation_window (void)
 		gtk_box_pack_start (GTK_BOX (box2), box3, FALSE, FALSE, 0);
 	gtk_container_add (GTK_CONTAINER (confirmation_window), box2);
 
-	gtk_window_set_resizable (GTK_WINDOW (confirmation_window), FALSE);
 	gtk_widget_show_all (confirmation_window);
 
 	return GDK_EVENT_STOP;
@@ -179,7 +180,11 @@ void main_window_notebook_switch_page (GtkNotebook *notebook, GtkWidget *page, g
 	g_mutex_lock (&cameras_sets_mutex);
 
 	for (current_cameras_set = cameras_sets; current_cameras_set != NULL; current_cameras_set = current_cameras_set->next) {
-		if (current_cameras_set->page == page) break;
+		if (current_cameras_set->page == page) {
+			interface_default = current_cameras_set->interface;
+
+			break;
+		}
 	}
 
 	g_mutex_unlock (&cameras_sets_mutex);
@@ -216,8 +221,6 @@ gboolean main_window_key_press (GtkWidget *widget, GdkEventKey *event)
 
 				if (ptz->active && gtk_widget_get_sensitive (ptz->name_grid)) {
 					show_control_window (ptz, GTK_WIN_POS_CENTER);
-
-//					if (trackball != NULL) gdk_device_get_position_double (mouse, NULL, &ptz->control_window.x, &ptz->control_window.y);
 
 					if (controller_is_used && controller_ip_address_is_valid) {
 						controller_thread = g_malloc (sizeof (ptz_thread_t));
@@ -498,7 +501,9 @@ void create_main_window (void)
 
 void device_added_to_seat (GdkSeat *seat, GdkDevice *device)
 {
-	GList *pointing_devices, *glist;
+	GList *glist;
+
+	g_list_free (pointing_devices);
 
 	pointing_devices = gdk_seat_get_slaves (seat, GDK_SEAT_CAPABILITY_POINTER);
 	for (glist = pointing_devices; glist != NULL; glist = glist->next) {
@@ -507,7 +512,6 @@ void device_added_to_seat (GdkSeat *seat, GdkDevice *device)
 			break;
 		}
 	}
-	g_list_free (pointing_devices);
 }
 
 void device_removed_from_seat (GdkSeat *seat, GdkDevice *device)
@@ -524,7 +528,7 @@ int main (int argc, char** argv)
 	GtkCssProvider *main_css_provider;
 	GFile *file;
 	GdkScreen *screen;
-	GList *pointing_devices, *glist;
+	GList *glist;
 	cameras_set_t *cameras_set_itr;
 	int i;
 	ptz_thread_t *ptz_thread;
@@ -563,6 +567,18 @@ int main (int argc, char** argv)
 	screen = gdk_screen_get_default ();
 	gtk_style_context_add_provider_for_screen (screen, GTK_STYLE_PROVIDER (main_css_provider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
 
+	seat = gdk_display_get_default_seat (gdk_display_get_default ());
+	g_signal_connect (G_OBJECT (seat), "device-added", G_CALLBACK (device_added_to_seat), NULL);
+	g_signal_connect (G_OBJECT (seat), "device-removed", G_CALLBACK (device_removed_from_seat), NULL);
+
+	pointing_devices = gdk_seat_get_slaves (seat, GDK_SEAT_CAPABILITY_POINTER);
+	for (glist = pointing_devices; glist != NULL; glist = glist->next) {
+		if (memcmp (gdk_device_get_name (glist->data), "Kensington Slimblade Trackball", 30) == 0) {
+			trackball = glist->data;
+			break;
+		}
+	}
+
 	create_main_window ();
 
 	create_control_window ();
@@ -586,8 +602,8 @@ int main (int argc, char** argv)
 	gtk_window_set_focus (GTK_WINDOW (main_window), NULL);
 
 	for (cameras_set_itr = cameras_sets; cameras_set_itr != NULL; cameras_set_itr = cameras_set_itr->next) {
-		if (!cameras_set_itr->show_linked_memories_names_entries) gtk_widget_hide (cameras_set_itr->linked_memories_names_entries);
-		if (!cameras_set_itr->show_linked_memories_names_labels) gtk_widget_hide (cameras_set_itr->linked_memories_names_labels);
+		if (!cameras_set_itr->interface.show_linked_memories_names_entries) gtk_widget_hide (cameras_set_itr->linked_memories_names_entries);
+		if (!cameras_set_itr->interface.show_linked_memories_names_labels) gtk_widget_hide (cameras_set_itr->linked_memories_names_labels);
 	}
 
 	if (number_of_cameras_sets == 0) {
@@ -601,19 +617,6 @@ int main (int argc, char** argv)
 	start_error_log ();
 
 	start_update_notification ();
-
-	seat = gdk_display_get_default_seat (gdk_display_get_default ());
-	g_signal_connect (G_OBJECT (seat), "device-added", G_CALLBACK (device_added_to_seat), NULL);
-	g_signal_connect (G_OBJECT (seat), "device-removed", G_CALLBACK (device_removed_from_seat), NULL);
-	mouse = gdk_seat_get_pointer (seat);
-	pointing_devices = gdk_seat_get_slaves (seat, GDK_SEAT_CAPABILITY_POINTER);
-	for (glist = pointing_devices; glist != NULL; glist = glist->next) {
-		if (memcmp (gdk_device_get_name (glist->data), "Kensington Slimblade Trackball", 30) == 0) {
-			trackball = glist->data;
-			break;
-		}
-	}
-	g_list_free (pointing_devices);
 
 	for (cameras_set_itr = cameras_sets; cameras_set_itr != NULL; cameras_set_itr = cameras_set_itr->next) {
 		for (i = 0; i < cameras_set_itr->number_of_cameras; i++) {
@@ -643,9 +646,11 @@ int main (int argc, char** argv)
 
 	stop_update_notification ();
 
+	stop_error_log ();
+
 	gtk_widget_destroy (main_window);
 
-	stop_error_log ();
+	g_list_free (pointing_devices);
 
 	WSACleanup ();	//_WIN32
 
