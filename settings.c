@@ -21,6 +21,7 @@
 
 #include "cameras_set.h"
 #include "controller.h"
+#include "interface.h"
 #include "main_window.h"
 #include "protocol.h"
 #include "sw_p_08.h"
