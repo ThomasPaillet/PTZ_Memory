@@ -24,6 +24,8 @@
 #include "settings.h"
 
 
+interface_param_t interface_default = { TRUE, 1.0, 320, 180, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.2, 0, 0, TRUE, TRUE };
+
 const char interface_settings_txt[] = "_Interface";
 const char pixel_txt[] = "pixel";
 const char pixels_txt[] = "pixels";
@@ -71,16 +73,16 @@ void orientation_check_button_toggled (GtkToggleButton *togglebutton)
 
 	for (i = 0; i < current_cameras_set->number_of_cameras; i++) {
 		if (current_cameras_set->cameras[i]->active) {
-			if (current_cameras_set->orientation) create_ptz_widgets_horizontal (current_cameras_set->cameras[i], current_cameras_set->thumbnail_width, current_cameras_set->thumbnail_height, current_cameras_set->memories_button_vertical_margins, current_cameras_set->memories_button_horizontal_margins);
-			else create_ptz_widgets_vertical (current_cameras_set->cameras[i], current_cameras_set->thumbnail_width, current_cameras_set->thumbnail_height, current_cameras_set->memories_button_vertical_margins, current_cameras_set->memories_button_horizontal_margins);
+			if (current_cameras_set->orientation) create_ptz_widgets_horizontal (current_cameras_set->cameras[i]);
+			else create_ptz_widgets_vertical (current_cameras_set->cameras[i]);
 
 			if (!current_cameras_set->cameras[i]->is_on) {
 				gtk_widget_set_sensitive (current_cameras_set->cameras[i]->name_grid, FALSE);
 				gtk_widget_set_sensitive (current_cameras_set->cameras[i]->memories_grid, FALSE);
 			}
 		} else {
-			if (current_cameras_set->orientation) create_ghost_ptz_widgets_horizontal (current_cameras_set->cameras[i], current_cameras_set->thumbnail_width, current_cameras_set->thumbnail_height, current_cameras_set->memories_button_vertical_margins, current_cameras_set->memories_button_horizontal_margins);
-			else create_ghost_ptz_widgets_vertical (current_cameras_set->cameras[i], current_cameras_set->thumbnail_width, current_cameras_set->thumbnail_height, current_cameras_set->memories_button_vertical_margins, current_cameras_set->memories_button_horizontal_margins);
+			if (current_cameras_set->orientation) create_ghost_ptz_widgets_horizontal (current_cameras_set->cameras[i]);
+			else create_ghost_ptz_widgets_vertical (current_cameras_set->cameras[i]);
 		}
 	}
 
