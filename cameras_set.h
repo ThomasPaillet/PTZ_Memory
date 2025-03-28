@@ -22,6 +22,7 @@
 
 
 #include "ptz.h"
+#include "interface.h"
 
 
 #define CAMERAS_SET_NAME_LENGTH 20
@@ -35,29 +36,12 @@ typedef struct cameras_set_s {
 
 	int number_of_ghost_cameras;
 
-	gboolean orientation;
-
-	gdouble thumbnail_size;
-	int thumbnail_width, thumbnail_height;
-
-	double memories_name_color_red;
-	double memories_name_color_green;
-	double memories_name_color_blue;
-
-	double memories_name_backdrop_color_red;
-	double memories_name_backdrop_color_green;
-	double memories_name_backdrop_color_blue;
-	double memories_name_backdrop_color_alpha;
-
-	int memories_button_vertical_margins;
-	int memories_button_horizontal_margins;
+	interface_param_t interface;
 
 	GtkWidget *linked_memories_names_entries;
 	GtkWidget *entry_widgets_padding;
 	GtkWidget *entry_widgets[MAX_MEMORIES];
 	GtkAdjustment *entry_scrolled_window_adjustment;
-
-	gboolean show_linked_memories_names_entries;
 
 	GtkWidget *name_grid_box;
 
@@ -68,8 +52,6 @@ typedef struct cameras_set_s {
 	GtkWidget *memories_labels_padding;
 	GtkWidget *memories_labels[MAX_MEMORIES];
 	GtkAdjustment *label_scrolled_window_adjustment;
-
-	gboolean show_linked_memories_names_labels;
 
 	GtkWidget *memories_scrollbar_padding;
 	GtkAdjustment *memories_scrollbar_adjustment;
@@ -95,7 +77,6 @@ extern int number_of_cameras_sets;
 extern cameras_set_t *cameras_sets;
 
 extern cameras_set_t *current_cameras_set;
-extern cameras_set_t *new_cameras_set;
 extern cameras_set_t *cameras_set_with_error;
 
 
