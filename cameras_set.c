@@ -432,15 +432,19 @@ gboolean cameras_set_configuration_window_cancel (void)
 	return GDK_EVENT_STOP;
 }
 
-gboolean cameras_set_confirmation_window_key_press (GtkWidget *confirmation_window, GdkEventKey *event)
+gboolean cameras_set_confirmation_window_key_press (GtkWidget *confirmation_window, GdkEventKey *event, cameras_set_t *cameras_set)
 {
 	if (event->keyval == GDK_KEY_Escape) {
 		cameras_set_configuration_window_cancel ();
 
 		return GDK_EVENT_STOP;
+	} else if (event->keyval == GDK_KEY_Return) {
+		cameras_set_configuration_window_ok (NULL, cameras_set);
+
+		return GDK_EVENT_STOP;
 	}
 
-	return GDK_EVENT_PROPAGATE;
+	return GDK_EVENT_PROPAGATE;GDK_KEY_Return
 }
 
 void show_cameras_set_configuration_window (void)
@@ -473,7 +477,7 @@ void show_cameras_set_configuration_window (void)
 	gtk_window_set_skip_pager_hint (GTK_WINDOW (cameras_set_configuration_window), FALSE);
 	gtk_window_set_position (GTK_WINDOW (cameras_set_configuration_window), GTK_WIN_POS_CENTER_ON_PARENT);
 	g_signal_connect (G_OBJECT (cameras_set_configuration_window), "delete-event", G_CALLBACK (cameras_set_configuration_window_cancel), NULL);
-	g_signal_connect (G_OBJECT (cameras_set_configuration_window), "key-press-event", G_CALLBACK (cameras_set_confirmation_window_key_press), NULL);
+	g_signal_connect (G_OBJECT (cameras_set_configuration_window), "key-press-event", G_CALLBACK (cameras_set_confirmation_window_key_press), cameras_set);
 
 	box1 = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
 	gtk_container_set_border_width (GTK_CONTAINER (box1), MARGIN_VALUE);
