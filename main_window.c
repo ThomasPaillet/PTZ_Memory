@@ -20,6 +20,7 @@
 #include "main_window.h"
 
 #include "cameras_set.h"
+#include "control_window.h"
 #include "controller.h"
 #include "error.h"
 #include "interface.h"
@@ -214,11 +215,9 @@ gboolean main_window_key_press (GtkWidget *widget, GdkEventKey *event)
 				ptz = current_cameras_set->cameras[i];
 
 				if (ptz->active && gtk_widget_get_sensitive (ptz->name_grid)) {
-					gtk_window_set_position (GTK_WINDOW (ptz->control_window.window), GTK_WIN_POS_CENTER);
+					show_control_window (ptz, GTK_WIN_POS_CENTER);
 
-					show_control_window (ptz);
-
-					if (trackball != NULL) gdk_device_get_position_double (mouse, NULL, &ptz->control_window.x, &ptz->control_window.y);
+//					if (trackball != NULL) gdk_device_get_position_double (mouse, NULL, &ptz->control_window.x, &ptz->control_window.y);
 
 					if (controller_is_used && controller_ip_address_is_valid) {
 						controller_thread = g_malloc (sizeof (ptz_thread_t));
