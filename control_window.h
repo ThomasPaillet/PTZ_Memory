@@ -26,6 +26,9 @@
 
 extern ptz_t *current_ptz;
 
+extern GtkWidget *control_window_focus_level_bar_drawing_area;
+extern GtkWidget *control_window_zoom_level_bar_drawing_area;
+
 extern char focus_near_speed_cmd[5];
 extern char focus_far_speed_cmd[5];
 
@@ -33,7 +36,9 @@ extern char zoom_wide_speed_cmd[5];
 extern char zoom_tele_speed_cmd[5];
 
 
-void update_control_window_tally (ptz_t *ptz);
+gboolean update_auto_focus_state (void);
+
+void update_control_window_tally (void);
 
 void show_control_window (ptz_t *ptz, GtkWindowPosition position);
 
