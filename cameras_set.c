@@ -35,8 +35,10 @@ int number_of_cameras_sets = 0;
 cameras_set_t *cameras_sets = NULL;
 
 cameras_set_t *current_cameras_set = NULL;
-cameras_set_t *new_cameras_set = NULL;
+
 cameras_set_t *cameras_set_with_error = NULL;
+
+cameras_set_t *new_cameras_set = NULL;
 
 //cameras_set_configuration_window
 GtkWidget *cameras_set_configuration_window;
@@ -148,15 +150,13 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 			strcpy (ptz->name, entry_buffer_text);
 
 			if (ptz->active) {
-				create_control_window (&ptz->control_window, ptz);
-
-				if (cameras_set->orientation) create_ptz_widgets_horizontal (ptz, cameras_set->thumbnail_width, cameras_set->thumbnail_height, cameras_set->memories_button_vertical_margins, cameras_set->memories_button_horizontal_margins);
-				else create_ptz_widgets_vertical (ptz, cameras_set->thumbnail_width, cameras_set->thumbnail_height, cameras_set->memories_button_vertical_margins, cameras_set->memories_button_horizontal_margins);
+				if (cameras_set->interface.orientation) create_ptz_widgets_horizontal (ptz);
+				else create_ptz_widgets_vertical (ptz);
 			} else {
 				cameras_set->number_of_ghost_cameras++;
 
-				if (cameras_set->orientation) create_ghost_ptz_widgets_horizontal (ptz, cameras_set->thumbnail_width, cameras_set->thumbnail_height, cameras_set->memories_button_vertical_margins, cameras_set->memories_button_horizontal_margins);
-				else create_ghost_ptz_widgets_vertical (ptz, cameras_set->thumbnail_width, cameras_set->thumbnail_height, cameras_set->memories_button_vertical_margins, cameras_set->memories_button_horizontal_margins);
+				if (cameras_set->interface.orientation) create_ghost_ptz_widgets_horizontal (ptz);
+				else create_ghost_ptz_widgets_vertical (ptz);
 			}
 		}
 
@@ -183,6 +183,8 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 
 		number_of_cameras_sets++;
 	} else {
+		interface_default = cameras_set->interface;
+
 		for (i = new_number_of_cameras; i < cameras_set->number_of_cameras; i++) {
 			ptz = cameras_set->cameras[i];
 
@@ -240,15 +242,13 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 			ptz->active = gtk_switch_get_active (GTK_SWITCH (cameras_configuration_widgets[i].camera_switch));
 
 			if (ptz->active) {
-				create_control_window (&ptz->control_window, ptz);
-
-				if (cameras_set->orientation) create_ptz_widgets_horizontal (ptz, cameras_set->thumbnail_width, cameras_set->thumbnail_height, cameras_set->memories_button_vertical_margins, cameras_set->memories_button_horizontal_margins);
-				else create_ptz_widgets_vertical (ptz, cameras_set->thumbnail_width, cameras_set->thumbnail_height, cameras_set->memories_button_vertical_margins, cameras_set->memories_button_horizontal_margins);
+				if (cameras_set->interface.orientation) create_ptz_widgets_horizontal (ptz);
+				else create_ptz_widgets_vertical (ptz);
 			} else {
 				cameras_set->number_of_ghost_cameras++;
 
-				if (cameras_set->orientation) create_ghost_ptz_widgets_horizontal (ptz, cameras_set->thumbnail_width, cameras_set->thumbnail_height, cameras_set->memories_button_vertical_margins, cameras_set->memories_button_horizontal_margins);
-				else create_ghost_ptz_widgets_vertical (ptz, cameras_set->thumbnail_width, cameras_set->thumbnail_height, cameras_set->memories_button_vertical_margins, cameras_set->memories_button_horizontal_margins);
+				if (cameras_set->interface.orientation) create_ghost_ptz_widgets_horizontal (ptz);
+				else create_ghost_ptz_widgets_vertical (ptz);
 			}
 
 			gtk_widget_show (ptz->name_separator);
@@ -288,10 +288,8 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 					gtk_widget_destroy (ptz->memories_grid);
 				}
 
-				create_control_window (&ptz->control_window, ptz);
-
-				if (cameras_set->orientation) create_ptz_widgets_horizontal (ptz, cameras_set->thumbnail_width, cameras_set->thumbnail_height, cameras_set->memories_button_vertical_margins, cameras_set->memories_button_horizontal_margins);
-				else create_ptz_widgets_vertical (ptz, cameras_set->thumbnail_width, cameras_set->thumbnail_height, cameras_set->memories_button_vertical_margins, cameras_set->memories_button_horizontal_margins);
+				if (cameras_set->interface.orientation) create_ptz_widgets_horizontal (ptz);
+				else create_ptz_widgets_vertical (ptz);
 			} else {
 				ptz->active = FALSE;
 				cameras_set->number_of_ghost_cameras++;
@@ -329,8 +327,8 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 					}
 				}
 
-				if (cameras_set->orientation) create_ghost_ptz_widgets_horizontal (ptz, cameras_set->thumbnail_width, cameras_set->thumbnail_height, cameras_set->memories_button_vertical_margins, cameras_set->memories_button_horizontal_margins);
-				else create_ghost_ptz_widgets_vertical (ptz, cameras_set->thumbnail_width, cameras_set->thumbnail_height, cameras_set->memories_button_vertical_margins, cameras_set->memories_button_horizontal_margins);
+				if (cameras_set->interface.orientation) create_ghost_ptz_widgets_horizontal (ptz);
+				else create_ghost_ptz_widgets_vertical (ptz);
 			}
 
 			gtk_widget_show_all (ptz->name_grid);
@@ -751,26 +749,7 @@ void add_cameras_set (void)
 
 	new_cameras_set->number_of_ghost_cameras = 0;
 
-	new_cameras_set->orientation = TRUE;
-
-	new_cameras_set->thumbnail_size = 1.0;
-	new_cameras_set->thumbnail_width = 320;
-	new_cameras_set->thumbnail_height = 180;
-
-	new_cameras_set->memories_name_color_red = 0.0;
-	new_cameras_set->memories_name_color_green = 0.0;
-	new_cameras_set->memories_name_color_blue = 0.0;
-
-	new_cameras_set->memories_name_backdrop_color_red = 1.0;
-	new_cameras_set->memories_name_backdrop_color_green = 1.0;
-	new_cameras_set->memories_name_backdrop_color_blue = 1.0;
-	new_cameras_set->memories_name_backdrop_color_alpha = 0.2;
-
-	new_cameras_set->memories_button_vertical_margins = 0;
-	new_cameras_set->memories_button_horizontal_margins = 0;
-
-	new_cameras_set->show_linked_memories_names_entries = TRUE;
-	new_cameras_set->show_linked_memories_names_labels = TRUE;
+	new_cameras_set->interface = interface_default;
 
 	show_cameras_set_configuration_window ();
 }
