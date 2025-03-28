@@ -77,6 +77,7 @@ extern int number_of_cameras_sets;
 extern cameras_set_t *cameras_sets;
 
 extern cameras_set_t *current_cameras_set;
+
 extern cameras_set_t *cameras_set_with_error;
 
 
