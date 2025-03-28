@@ -242,7 +242,7 @@ gboolean main_window_key_press (GtkWidget *widget, GdkEventKey *event)
 			}
 
 			return GDK_EVENT_STOP;
-		} else if ((event->keyval == GDK_KEY_i) || (event->keyval == GDK_KEY_I)) {
+		} else if ((event->keyval == GDK_KEY_c) || (event->keyval == GDK_KEY_C)) {
 			if (current_cameras_set != NULL) {
 				for (i = 0; i < current_cameras_set->number_of_cameras; i++) {
 					ptz = current_cameras_set->cameras[i];
