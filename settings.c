@@ -697,48 +697,54 @@ void load_config_file (void)
 
 		cameras_set_tmp->number_of_ghost_cameras = 0;
 
-		fread (&cameras_set_tmp->orientation, sizeof (gboolean), 1, config_file);
+		fread (&cameras_set_tmp->interface.orientation, sizeof (gboolean), 1, config_file);
 
-		fread (&cameras_set_tmp->thumbnail_size, sizeof (gdouble), 1, config_file);
-		if (cameras_set_tmp->thumbnail_size < 0.5) cameras_set_tmp->thumbnail_size = 0.5;
-		else if (cameras_set_tmp->thumbnail_size > 1.0) cameras_set_tmp->thumbnail_size = 1.0;
+		fread (&cameras_set_tmp->interface.thumbnail_size, sizeof (gdouble), 1, config_file);
+		if (cameras_set_tmp->interface.thumbnail_size < 0.5) cameras_set_tmp->interface.thumbnail_size = 0.5;
+		else if (cameras_set_tmp->interface.thumbnail_size > 1.0) cameras_set_tmp->interface.thumbnail_size = 1.0;
 
-		cameras_set_tmp->thumbnail_width = 320 * cameras_set_tmp->thumbnail_size;
-		cameras_set_tmp->thumbnail_height = 180 * cameras_set_tmp->thumbnail_size;
+		cameras_set_tmp->interface.thumbnail_width = 320 * cameras_set_tmp->interface.thumbnail_size;
+		cameras_set_tmp->interface.thumbnail_height = 180 * cameras_set_tmp->interface.thumbnail_size;
 
-		fread (&cameras_set_tmp->memories_name_color_red, sizeof (double), 1, config_file);
-		if (cameras_set_tmp->memories_name_color_red < 0.0) cameras_set_tmp->memories_name_color_red = 0.0;
-		else if (cameras_set_tmp->memories_name_color_red > 1.0) cameras_set_tmp->memories_name_color_red = 1.0;
+		fread (&cameras_set_tmp->interface.memories_name_color_red, sizeof (double), 1, config_file);
+		if (cameras_set_tmp->interface.memories_name_color_red < 0.0) cameras_set_tmp->interface.memories_name_color_red = 0.0;
+		else if (cameras_set_tmp->interface.memories_name_color_red > 1.0) cameras_set_tmp->interface.memories_name_color_red = 1.0;
 
-		fread (&cameras_set_tmp->memories_name_color_green, sizeof (double), 1, config_file);
-		if (cameras_set_tmp->memories_name_color_green < 0.0) cameras_set_tmp->memories_name_color_green = 0.0;
-		else if (cameras_set_tmp->memories_name_color_green > 1.0) cameras_set_tmp->memories_name_color_green = 1.0;
+		fread (&cameras_set_tmp->interface.memories_name_color_green, sizeof (double), 1, config_file);
+		if (cameras_set_tmp->interface.memories_name_color_green < 0.0) cameras_set_tmp->interface.memories_name_color_green = 0.0;
+		else if (cameras_set_tmp->interface.memories_name_color_green > 1.0) cameras_set_tmp->interface.memories_name_color_green = 1.0;
 
-		fread (&cameras_set_tmp->memories_name_color_blue, sizeof (double), 1, config_file);
-		if (cameras_set_tmp->memories_name_color_blue < 0.0) cameras_set_tmp->memories_name_color_blue = 0.0;
-		else if (cameras_set_tmp->memories_name_color_blue > 1.0) cameras_set_tmp->memories_name_color_blue = 1.0;
+		fread (&cameras_set_tmp->interface.memories_name_color_blue, sizeof (double), 1, config_file);
+		if (cameras_set_tmp->interface.memories_name_color_blue < 0.0) cameras_set_tmp->interface.memories_name_color_blue = 0.0;
+		else if (cameras_set_tmp->interface.memories_name_color_blue > 1.0) cameras_set_tmp->interface.memories_name_color_blue = 1.0;
 
-		fread (&cameras_set_tmp->memories_name_backdrop_color_red, sizeof (double), 1, config_file);
-		if (cameras_set_tmp->memories_name_backdrop_color_red < 0.0) cameras_set_tmp->memories_name_backdrop_color_red = 0.0;
-		else if (cameras_set_tmp->memories_name_backdrop_color_red > 1.0) cameras_set_tmp->memories_name_backdrop_color_red = 1.0;
+		fread (&cameras_set_tmp->interface.memories_name_backdrop_color_red, sizeof (double), 1, config_file);
+		if (cameras_set_tmp->interface.memories_name_backdrop_color_red < 0.0) cameras_set_tmp->interface.memories_name_backdrop_color_red = 0.0;
+		else if (cameras_set_tmp->interface.memories_name_backdrop_color_red > 1.0) cameras_set_tmp->interface.memories_name_backdrop_color_red = 1.0;
 
-		fread (&cameras_set_tmp->memories_name_backdrop_color_green, sizeof (double), 1, config_file);
-		if (cameras_set_tmp->memories_name_backdrop_color_green < 0.0) cameras_set_tmp->memories_name_backdrop_color_green = 0.0;
-		else if (cameras_set_tmp->memories_name_backdrop_color_green > 1.0) cameras_set_tmp->memories_name_backdrop_color_green = 1.0;
+		fread (&cameras_set_tmp->interface.memories_name_backdrop_color_green, sizeof (double), 1, config_file);
+		if (cameras_set_tmp->interface.memories_name_backdrop_color_green < 0.0) cameras_set_tmp->interface.memories_name_backdrop_color_green = 0.0;
+		else if (cameras_set_tmp->interface.memories_name_backdrop_color_green > 1.0) cameras_set_tmp->interface.memories_name_backdrop_color_green = 1.0;
 
-		fread (&cameras_set_tmp->memories_name_backdrop_color_blue, sizeof (double), 1, config_file);
-		if (cameras_set_tmp->memories_name_backdrop_color_blue < 0.0) cameras_set_tmp->memories_name_backdrop_color_blue = 0.0;
-		else if (cameras_set_tmp->memories_name_backdrop_color_blue > 1.0) cameras_set_tmp->memories_name_backdrop_color_blue = 1.0;
+		fread (&cameras_set_tmp->interface.memories_name_backdrop_color_blue, sizeof (double), 1, config_file);
+		if (cameras_set_tmp->interface.memories_name_backdrop_color_blue < 0.0) cameras_set_tmp->interface.memories_name_backdrop_color_blue = 0.0;
+		else if (cameras_set_tmp->interface.memories_name_backdrop_color_blue > 1.0) cameras_set_tmp->interface.memories_name_backdrop_color_blue = 1.0;
 
-		fread (&cameras_set_tmp->memories_name_backdrop_color_alpha, sizeof (double), 1, config_file);
-		if (cameras_set_tmp->memories_name_backdrop_color_alpha < 0.0) cameras_set_tmp->memories_name_backdrop_color_alpha = 0.0;
-		else if (cameras_set_tmp->memories_name_backdrop_color_alpha > 1.0) cameras_set_tmp->memories_name_backdrop_color_alpha = 1.0;
+		fread (&cameras_set_tmp->interface.memories_name_backdrop_color_alpha, sizeof (double), 1, config_file);
+		if (cameras_set_tmp->interface.memories_name_backdrop_color_alpha < 0.0) cameras_set_tmp->interface.memories_name_backdrop_color_alpha = 0.0;
+		else if (cameras_set_tmp->interface.memories_name_backdrop_color_alpha > 1.0) cameras_set_tmp->interface.memories_name_backdrop_color_alpha = 1.0;
 
-		fread (&cameras_set_tmp->memories_button_vertical_margins, sizeof (int), 1, config_file);
-		if ((cameras_set_tmp->memories_button_vertical_margins < 0) || (cameras_set_tmp->memories_button_vertical_margins > 50)) cameras_set_tmp->memories_button_vertical_margins = 0;
+		fread (&cameras_set_tmp->interface.memories_button_vertical_margins, sizeof (int), 1, config_file);
+		if ((cameras_set_tmp->interface.memories_button_vertical_margins < 0) || (cameras_set_tmp->interface.memories_button_vertical_margins > 50)) cameras_set_tmp->interface.memories_button_vertical_margins = 0;
 
-		fread (&cameras_set_tmp->memories_button_horizontal_margins, sizeof (int), 1, config_file);
-		if ((cameras_set_tmp->memories_button_horizontal_margins < 0) || (cameras_set_tmp->memories_button_horizontal_margins > 50)) cameras_set_tmp->memories_button_horizontal_margins = 0;
+		fread (&cameras_set_tmp->interface.memories_button_horizontal_margins, sizeof (int), 1, config_file);
+		if ((cameras_set_tmp->interface.memories_button_horizontal_margins < 0) || (cameras_set_tmp->interface.memories_button_horizontal_margins > 50)) cameras_set_tmp->interface.memories_button_horizontal_margins = 0;
+
+		fread (&cameras_set_tmp->interface.show_linked_memories_names_entries, sizeof (gboolean), 1, config_file);
+
+		fread (&cameras_set_tmp->interface.show_linked_memories_names_labels, sizeof (gboolean), 1, config_file);
+
+		interface_default = cameras_set_tmp->interface;
 
 		for (j = 0; j < cameras_set_tmp->number_of_cameras; j++) {
 			ptz = g_malloc (sizeof (ptz_t));
@@ -753,10 +759,8 @@ void load_config_file (void)
 			fread (&ptz->active, sizeof (gboolean), 1, config_file);
 
 			if (ptz->active) {
-				create_control_window (&ptz->control_window, ptz);
-
-				if (cameras_set_tmp->orientation) create_ptz_widgets_horizontal (ptz, cameras_set_tmp->thumbnail_width, cameras_set_tmp->thumbnail_height, cameras_set_tmp->memories_button_vertical_margins, cameras_set_tmp->memories_button_horizontal_margins);
-				else create_ptz_widgets_vertical (ptz, cameras_set_tmp->thumbnail_width, cameras_set_tmp->thumbnail_height, cameras_set_tmp->memories_button_vertical_margins, cameras_set_tmp->memories_button_horizontal_margins);
+				if (cameras_set_tmp->orientation) create_ptz_widgets_horizontal (ptz);
+				else create_ptz_widgets_vertical (ptz);
 
 				fread (ptz->ip_address, sizeof (char), 16, config_file);
 				ptz->ip_address[15] = '\0';
@@ -803,8 +807,8 @@ void load_config_file (void)
 			} else {
 				cameras_set_tmp->number_of_ghost_cameras++;
 
-				if (cameras_set_tmp->orientation) create_ghost_ptz_widgets_horizontal (ptz, cameras_set_tmp->thumbnail_width, cameras_set_tmp->thumbnail_height, cameras_set_tmp->memories_button_vertical_margins, cameras_set_tmp->memories_button_horizontal_margins);
-				else create_ghost_ptz_widgets_vertical (ptz, cameras_set_tmp->thumbnail_width, cameras_set_tmp->thumbnail_height, cameras_set_tmp->memories_button_vertical_margins, cameras_set_tmp->memories_button_horizontal_margins);
+				if (cameras_set_tmp->orientation) create_ghost_ptz_widgets_horizontal (ptz);
+				else create_ghost_ptz_widgets_vertical (ptz);
 			}
 		}
 
@@ -812,10 +816,6 @@ void load_config_file (void)
 			fread (memories_name[j], sizeof (char), MEMORIES_NAME_LENGTH, config_file);
 			memories_name[j][MEMORIES_NAME_LENGTH] = '\0';
 		}
-
-		fread (&cameras_set_tmp->show_linked_memories_names_entries, sizeof (gboolean), 1, config_file);
-
-		fread (&cameras_set_tmp->show_linked_memories_names_labels, sizeof (gboolean), 1, config_file);
 
 		add_cameras_set_to_main_window_notebook (cameras_set_tmp);
 
@@ -887,22 +887,26 @@ void save_config_file (void)
 		fwrite (cameras_set_itr->name, sizeof (char), CAMERAS_SET_NAME_LENGTH, config_file);
 		fwrite (&cameras_set_itr->number_of_cameras, sizeof (int), 1, config_file);
 
-		fwrite (&cameras_set_itr->orientation, sizeof (gboolean), 1, config_file);
+		fwrite (&cameras_set_itr->interface.orientation, sizeof (gboolean), 1, config_file);
 
-		fwrite (&cameras_set_itr->thumbnail_size, sizeof (gdouble), 1, config_file);
+		fwrite (&cameras_set_itr->interface.thumbnail_size, sizeof (gdouble), 1, config_file);
 
-		fwrite (&cameras_set_itr->memories_name_color_red, sizeof (double), 1, config_file);
-		fwrite (&cameras_set_itr->memories_name_color_green, sizeof (double), 1, config_file);
-		fwrite (&cameras_set_itr->memories_name_color_blue, sizeof (double), 1, config_file);
+		fwrite (&cameras_set_itr->interface.memories_name_color_red, sizeof (double), 1, config_file);
+		fwrite (&cameras_set_itr->interface.memories_name_color_green, sizeof (double), 1, config_file);
+		fwrite (&cameras_set_itr->interface.memories_name_color_blue, sizeof (double), 1, config_file);
 
-		fwrite (&cameras_set_itr->memories_name_backdrop_color_red, sizeof (double), 1, config_file);
-		fwrite (&cameras_set_itr->memories_name_backdrop_color_green, sizeof (double), 1, config_file);
-		fwrite (&cameras_set_itr->memories_name_backdrop_color_blue, sizeof (double), 1, config_file);
-		fwrite (&cameras_set_itr->memories_name_backdrop_color_alpha, sizeof (double), 1, config_file);
+		fwrite (&cameras_set_itr->interface.memories_name_backdrop_color_red, sizeof (double), 1, config_file);
+		fwrite (&cameras_set_itr->interface.memories_name_backdrop_color_green, sizeof (double), 1, config_file);
+		fwrite (&cameras_set_itr->interface.memories_name_backdrop_color_blue, sizeof (double), 1, config_file);
+		fwrite (&cameras_set_itr->interface.memories_name_backdrop_color_alpha, sizeof (double), 1, config_file);
 
-		fwrite (&cameras_set_itr->memories_button_vertical_margins, sizeof (int), 1, config_file);
+		fwrite (&cameras_set_itr->interface.memories_button_vertical_margins, sizeof (int), 1, config_file);
 
-		fwrite (&cameras_set_itr->memories_button_horizontal_margins, sizeof (int), 1, config_file);
+		fwrite (&cameras_set_itr->interface.memories_button_horizontal_margins, sizeof (int), 1, config_file);
+
+		fwrite (&cameras_set_itr->interface.show_linked_memories_names_entries, sizeof (gboolean), 1, config_file);
+
+		fwrite (&cameras_set_itr->interface.show_linked_memories_names_labels, sizeof (gboolean), 1, config_file);
 
 		for (j = 0; j < cameras_set_itr->number_of_cameras; j++) {
 			ptz = cameras_set_itr->cameras[j];
@@ -936,10 +940,6 @@ void save_config_file (void)
 		for (j = 0; j < MAX_MEMORIES; j++) {
 			fwrite (gtk_label_get_text (GTK_LABEL (cameras_set_itr->memories_labels[j])), sizeof (char), MEMORIES_NAME_LENGTH, config_file);
 		}
-
-		fwrite (&cameras_set_itr->show_linked_memories_names_entries, sizeof (gboolean), 1, config_file);
-
-		fwrite (&cameras_set_itr->show_linked_memories_names_labels, sizeof (gboolean), 1, config_file);
 	}
 
 	fwrite (&controller_is_used, sizeof (gboolean), 1, config_file);
