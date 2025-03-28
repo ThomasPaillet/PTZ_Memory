@@ -21,45 +21,7 @@
 #define __CONTROL_WINDOW_H
 
 
-#include <gtk/gtk.h>
-
-
-typedef struct {
-	GtkWidget *window;
-	gboolean is_on_screen;
-	GtkWidget *tally[4];
-	GtkWidget *name_drawing_area;
-
-	GtkWidget *auto_focus_toggle_button;
-	gulong auto_focus_handler_id;
-	GtkWidget *focus_box;
-	GdkWindow *gdk_window;
-	gint x_root;
-	gint y_root;
-	int width;
-	int height;
-
-	GtkWidget *otaf_button;
-	GtkWidget *focus_level_bar_drawing_area;
-
-	GtkWidget *zoom_level_bar_drawing_area;
-	GtkWidget *zoom_tele_button;
-	GtkWidget *zoom_wide_button;
-
-	gdouble x;
-	gdouble y;
-	int pan_speed;
-	int tilt_speed;
-
-	guint focus_timeout_id;
-	guint pan_tilt_timeout_id;
-	guint zoom_timeout_id;
-
-	gboolean key_pressed;
-} control_window_t;
-
-
-void create_control_window (control_window_t *control_window, gpointer ptz);
+#include "ptz.h"
 
 
 extern char focus_near_speed_cmd[5];
@@ -67,6 +29,15 @@ extern char focus_far_speed_cmd[5];
 
 extern char zoom_wide_speed_cmd[5];
 extern char zoom_tele_speed_cmd[5];
+
+
+void update_control_window_tally (ptz_t *ptz);
+
+void show_control_window (ptz_t *ptz, GtkWindowPosition position);
+
+gboolean hide_control_window (void);
+
+void create_control_window (void);
 
 
 #endif
