@@ -20,6 +20,7 @@
 #include "sw_p_08.h"
 
 #include "cameras_set.h"
+#include "control_window.h"
 #include "main_window.h"
 #include "protocol.h"
 #include "settings.h"
@@ -91,16 +92,9 @@ gboolean g_source_select_cameras_set_page (gpointer page_num)
 
 gboolean g_source_show_control_window (ptz_t *ptz)
 {
-	if (current_ptz != NULL) {
-		current_ptz->control_window.is_on_screen = FALSE;
-		gtk_widget_hide (current_ptz->control_window.window);
-	}
+	show_control_window (ptz, GTK_WIN_POS_CENTER);
 
-	gtk_window_set_position (GTK_WINDOW (ptz->control_window.window), GTK_WIN_POS_CENTER);
-
-	show_control_window (ptz);
-
-	if (trackball != NULL) gdk_window_get_device_position_double (ptz->control_window.gdk_window, trackball, &ptz->control_window.x, &ptz->control_window.y, NULL);
+//	if (trackball != NULL) gdk_window_get_device_position_double (ptz->control_window.gdk_window, trackball, &ptz->control_window.x, &ptz->control_window.y, NULL);
 
 	return G_SOURCE_REMOVE;
 }
