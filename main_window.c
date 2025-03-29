@@ -529,7 +529,6 @@ int main (int argc, char** argv)
 	GtkCssProvider *main_css_provider;
 	GFile *file;
 	GdkScreen *screen;
-	GList *glist;
 	cameras_set_t *cameras_set_itr;
 	int i;
 	ptz_thread_t *ptz_thread;
@@ -573,12 +572,6 @@ int main (int argc, char** argv)
 	g_signal_connect (G_OBJECT (seat), "device-removed", G_CALLBACK (device_removed_from_seat), NULL);
 
 	pointing_devices = gdk_seat_get_slaves (seat, GDK_SEAT_CAPABILITY_POINTER);
-	for (glist = pointing_devices; glist != NULL; glist = glist->next) {
-		if (memcmp (gdk_device_get_name (glist->data), "Kensington Slimblade Trackball", 30) == 0) {
-			trackball = glist->data;
-			break;
-		}
-	}
 
 	create_main_window ();
 
