@@ -20,6 +20,7 @@
 #include "update_notification.h"
 
 #include "cameras_set.h"
+#include "control_window.h"
 #include "protocol.h"
 #include "error.h"
 
