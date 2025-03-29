@@ -58,6 +58,11 @@ GtkEntryBuffer *controller_ip_entry_buffer[4];
 int focus_speed = 25;
 int zoom_speed = 25;
 
+char *trackball_name = NULL;
+size_t trackball_name_len = 0;
+
+GtkWidget *pointing_devices_combo_box = NULL;
+
 
 gboolean about_window_key_press (GtkWidget *about_window)
 {
@@ -664,13 +669,13 @@ void show_settings_window (void)
 				gtk_widget_set_margin_start (box3, MARGIN_VALUE);
 				gtk_widget_set_margin_end (box3, MARGIN_VALUE);
 				gtk_widget_set_margin_bottom (box3, MARGIN_VALUE);
-					widget =  gtk_combo_box_text_new ();
-					gtk_combo_box_text_insert_text (GTK_COMBO_BOX_TEXT (widget), 0, "");
+					pointing_devices_combo_box =  gtk_combo_box_text_new ();
+					gtk_combo_box_text_insert_text (GTK_COMBO_BOX_TEXT (pointing_devices_combo_box), 0, "");
 					for (glist = pointing_devices, i = 1; glist != NULL; glist = glist->next, i++) {
-						gtk_combo_box_text_insert_text (GTK_COMBO_BOX_TEXT (widget), i, gdk_device_get_name (glist->data));
-//						if (memcmp (gdk_device_get_name (glist->data), "Kensington Slimblade Trackball", 30) == 0) gtk_combo_box_set_active (GTK_COMBO_BOX (widget), i);
+						gtk_combo_box_text_insert_text (GTK_COMBO_BOX_TEXT (pointing_devices_combo_box), i, gdk_device_get_name (glist->data));
+						if (memcmp (gdk_device_get_name (glist->data), trackball_name, trackball_name_len) == 0) gtk_combo_box_set_active (GTK_COMBO_BOX (pointing_devices_combo_box), i);
 					}
-				gtk_box_pack_start (GTK_BOX (box3), widget, TRUE, TRUE, 0);
+				gtk_box_pack_start (GTK_BOX (box3), pointing_devices_combo_box, TRUE, TRUE, 0);
 			gtk_box_pack_start (GTK_BOX (box2), box3, FALSE, FALSE, 0);
 		gtk_container_add (GTK_CONTAINER (frame), box2);
 	gtk_box_pack_start (GTK_BOX (box1), frame, FALSE, FALSE, 0);
@@ -696,6 +701,7 @@ void load_config_file (void)
 	int pixbuf_rowstride;
 	gsize pixbuf_byte_length;
 	guint8 *pixbuf_data;
+	GList *glist;
 
 	config_file = fopen (config_file_name, "rb");
 	if (config_file == NULL) return;
@@ -872,6 +878,22 @@ void load_config_file (void)
 	fread (&tsl_umd_v5_address.sin_port, sizeof (guint16), 1, config_file);
 	if (ntohs (tsl_umd_v5_address.sin_port) < 1024) tsl_umd_v5_address.sin_port = htons (TSL_UMD_V5_UDP_PORT);
 
+	fread (&trackball_name_len, sizeof (size_t), 1, config_file);
+	if (trackball_name_len > 100) trackball_name_len = 0;
+
+	if (trackball_name_len > 0) {
+		trackball_name = g_malloc (trackball_name_len + 1);
+		fread (trackball_name, sizeof (char), trackball_name_len, config_file);
+		trackball_name[trackball_name_len] = '\0';
+					
+		for (glist = pointing_devices; glist != NULL; glist = glist->next) {
+			if (memcmp (gdk_device_get_name (glist->data), trackball_name, trackball_name_len) == 0) {
+				trackball = glist->data;
+				break;
+			}
+		}
+	}
+
 	fclose (config_file);
 }
 
@@ -947,6 +969,10 @@ void save_config_file (void)
 	fwrite (&sw_p_08_address.sin_port, sizeof (guint16), 1, config_file);
 
 	fwrite (&tsl_umd_v5_address.sin_port, sizeof (guint16), 1, config_file);
+
+	fwrite (&trackball_name_len, sizeof (size_t), 1, config_file);
+
+	if (trackball_name_len > 0) fwrite (trackball_name, sizeof (char), trackball_name_len, config_file);
 
 	fclose (config_file);
 }
