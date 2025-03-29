@@ -21,6 +21,9 @@
 #define __INTERFACE_SETTINGS_H
 
 
+#include <glib-2.0/glib.h>
+
+
 typedef struct interface_param_s {
 	gboolean orientation;
 
