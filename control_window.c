@@ -53,12 +53,12 @@ GtkWidget *control_window_zoom_wide_button;
 
 gdouble control_window_x;
 gdouble control_window_y;
-int control_window_pan_speed;
-int control_window_tilt_speed;
+int control_window_pan_speed = 0;
+int control_window_tilt_speed = 0;
 
-guint control_window_focus_timeout_id;
-guint control_window_pan_tilt_timeout_id;
-guint control_window_zoom_timeout_id;
+guint control_window_focus_timeout_id = 0;
+guint control_window_pan_tilt_timeout_id = 0;
+guint control_window_zoom_timeout_id = 0;
 
 gboolean focus_is_moving = FALSE;
 gboolean pan_tilt_is_moving = FALSE;
