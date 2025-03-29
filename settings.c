@@ -20,6 +20,7 @@
 #include "settings.h"
 
 #include "cameras_set.h"
+#include "control_window.h"
 #include "controller.h"
 #include "interface.h"
 #include "main_window.h"
@@ -766,7 +767,7 @@ void load_config_file (void)
 			fread (&ptz->active, sizeof (gboolean), 1, config_file);
 
 			if (ptz->active) {
-				if (cameras_set_tmp->orientation) create_ptz_widgets_horizontal (ptz);
+				if (cameras_set_tmp->interface.orientation) create_ptz_widgets_horizontal (ptz);
 				else create_ptz_widgets_vertical (ptz);
 
 				fread (ptz->ip_address, sizeof (char), 16, config_file);
@@ -800,10 +801,10 @@ void load_config_file (void)
 					fread (pixbuf_data, sizeof (guint8), pixbuf_byte_length, config_file);
 
 					ptz->memories[index].full_pixbuf = gdk_pixbuf_new_from_data (pixbuf_data, GDK_COLORSPACE_RGB, FALSE, 8, 320, 180, pixbuf_rowstride, (GdkPixbufDestroyNotify)g_free, NULL);
-					if (cameras_set_tmp->thumbnail_width == 320) {
+					if (cameras_set_tmp->interface.thumbnail_width == 320) {
 						ptz->memories[index].image = gtk_image_new_from_pixbuf (ptz->memories[index].full_pixbuf);
 					} else {
-						ptz->memories[index].scaled_pixbuf = gdk_pixbuf_scale_simple (ptz->memories[index].full_pixbuf, cameras_set_tmp->thumbnail_width, cameras_set_tmp->thumbnail_height, GDK_INTERP_BILINEAR);
+						ptz->memories[index].scaled_pixbuf = gdk_pixbuf_scale_simple (ptz->memories[index].full_pixbuf, cameras_set_tmp->interface.thumbnail_width, cameras_set_tmp->interface.thumbnail_height, GDK_INTERP_BILINEAR);
 						ptz->memories[index].image = gtk_image_new_from_pixbuf (ptz->memories[index].scaled_pixbuf);
 					}
 					gtk_button_set_image (GTK_BUTTON (ptz->memories[index].button), ptz->memories[index].image);
@@ -814,7 +815,7 @@ void load_config_file (void)
 			} else {
 				cameras_set_tmp->number_of_ghost_cameras++;
 
-				if (cameras_set_tmp->orientation) create_ghost_ptz_widgets_horizontal (ptz);
+				if (cameras_set_tmp->interface.orientation) create_ghost_ptz_widgets_horizontal (ptz);
 				else create_ghost_ptz_widgets_vertical (ptz);
 			}
 		}
