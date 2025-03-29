@@ -84,14 +84,6 @@ void init_ptz (ptz_t *ptz)
 
 	g_mutex_init (&ptz->lens_information_mutex);
 
-	ptz->control_window.is_on_screen = FALSE;
-
-	ptz->control_window.focus_timeout_id = 0;
-	ptz->control_window.pan_tilt_timeout_id = 0;
-	ptz->control_window.zoom_timeout_id = 0;
-
-	ptz->control_window.key_pressed = FALSE;
-
 	ptz->name_grid = NULL;
 
 	ptz->enter_notify_name_drawing_area = FALSE;
