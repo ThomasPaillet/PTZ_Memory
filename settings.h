@@ -33,6 +33,8 @@ extern GtkWidget *settings_window;
 extern GtkWidget *settings_list_box;
 extern GtkWidget *settings_new_button;
 
+extern GtkWidget *pointing_devices_combo_box;
+
 
 void show_settings_window (void);
 
