@@ -665,11 +665,12 @@ void show_settings_window (void)
 				gtk_widget_set_margin_end (box3, MARGIN_VALUE);
 				gtk_widget_set_margin_bottom (box3, MARGIN_VALUE);
 					widget =  gtk_combo_box_text_new ();
-					for (glist = pointing_devices, i = 0; glist != NULL; glist = glist->next, i++) {
+					gtk_combo_box_text_insert_text (GTK_COMBO_BOX_TEXT (widget), 0, "");
+					for (glist = pointing_devices, i = 1; glist != NULL; glist = glist->next, i++) {
 						gtk_combo_box_text_insert_text (GTK_COMBO_BOX_TEXT (widget), i, gdk_device_get_name (glist->data));
 //						if (memcmp (gdk_device_get_name (glist->data), "Kensington Slimblade Trackball", 30) == 0) gtk_combo_box_set_active (GTK_COMBO_BOX (widget), i);
 					}
-				gtk_box_pack_start (GTK_BOX (box3), widget, FALSE, FALSE, 0);
+				gtk_box_pack_start (GTK_BOX (box3), widget, TRUE, TRUE, 0);
 			gtk_box_pack_start (GTK_BOX (box2), box3, FALSE, FALSE, 0);
 		gtk_container_add (GTK_CONTAINER (frame), box2);
 	gtk_box_pack_start (GTK_BOX (box1), frame, FALSE, FALSE, 0);
