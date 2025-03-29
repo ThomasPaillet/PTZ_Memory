@@ -44,11 +44,11 @@ gboolean free_memory_thread (memory_thread_t *memory_thread)
 gboolean update_button (memory_t *memory)
 {
 	if (memory->image == NULL) {
-		if (current_cameras_set->thumbnail_width == 320) memory->image = gtk_image_new_from_pixbuf (memory->full_pixbuf);
+		if (current_cameras_set->interface.thumbnail_width == 320) memory->image = gtk_image_new_from_pixbuf (memory->full_pixbuf);
 		else memory->image = gtk_image_new_from_pixbuf (memory->scaled_pixbuf);
 		gtk_button_set_image (GTK_BUTTON (memory->button), memory->image);
 	} else {
-		if (current_cameras_set->thumbnail_width == 320) gtk_image_set_from_pixbuf (GTK_IMAGE (memory->image), memory->full_pixbuf);
+		if (current_cameras_set->interface.thumbnail_width == 320) gtk_image_set_from_pixbuf (GTK_IMAGE (memory->image), memory->full_pixbuf);
 		else gtk_image_set_from_pixbuf (GTK_IMAGE (memory->image), memory->scaled_pixbuf);
 	}
 
@@ -66,9 +66,9 @@ gpointer save_memory (memory_thread_t *memory_thread)
 	if (ptz->model == AW_HE130) send_thumbnail_320_request_cmd (memory);
 	else send_thumbnail_640_request_cmd (memory);
 
-	if (current_cameras_set->thumbnail_width != 320) {
+	if (current_cameras_set->interface.thumbnail_width != 320) {
 		if (!memory->empty) g_object_unref (G_OBJECT (memory->scaled_pixbuf));
-		memory->scaled_pixbuf = gdk_pixbuf_scale_simple (memory->full_pixbuf, current_cameras_set->thumbnail_width, current_cameras_set->thumbnail_height, GDK_INTERP_BILINEAR);
+		memory->scaled_pixbuf = gdk_pixbuf_scale_simple (memory->full_pixbuf, current_cameras_set->interface.thumbnail_width, current_cameras_set->interface.thumbnail_height, GDK_INTERP_BILINEAR);
 	}
 
 	g_mutex_lock (&ptz->lens_information_mutex);
@@ -244,7 +244,7 @@ gboolean memory_button_button_press_event (GtkButton *button, GdkEventButton *ev
 			gtk_widget_destroy (memory->image);
 			memory->image = NULL;
 			g_object_unref (G_OBJECT (memory->full_pixbuf));
-			if (current_cameras_set->thumbnail_width != 320) g_object_unref (G_OBJECT (memory->scaled_pixbuf));
+			if (current_cameras_set->interface.thumbnail_width != 320) g_object_unref (G_OBJECT (memory->scaled_pixbuf));
 
 			memory->name[0] = '\0';
 
