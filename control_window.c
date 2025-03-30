@@ -55,6 +55,7 @@ gdouble control_window_x;
 gdouble control_window_y;
 int control_window_pan_speed = 0;
 int control_window_tilt_speed = 0;
+int pan_tilt_stop_sensibility = 5;
 
 guint control_window_focus_timeout_id = 0;
 guint control_window_pan_tilt_timeout_id = 0;
@@ -187,7 +188,7 @@ gboolean control_window_key_release (GtkWidget *gtk_window, GdkEventKey *event)
 
 gboolean control_window_button_press (GtkWidget *window, GdkEventButton *event)
 {
-/*	if ((gdk_event_get_source_device ((GdkEvent *)event) == trackball) && (!control_window_key_pressed)) {
+	if (gdk_event_get_source_device ((GdkEvent *)event) == trackball) {
 		switch (event->button) {
 			case 2: gtk_widget_set_state_flags (control_window_otaf_button, GTK_STATE_FLAG_ACTIVE, FALSE);
 				send_cam_control_command (current_ptz, "OSE:69:1");
@@ -199,7 +200,7 @@ gboolean control_window_button_press (GtkWidget *window, GdkEventButton *event)
 				send_ptz_control_command (current_ptz, zoom_wide_speed_cmd, TRUE);
 				break;
 		}
-	}*/
+	}
 
 	return GDK_EVENT_PROPAGATE;
 }
@@ -232,7 +233,6 @@ gboolean control_window_motion_notify (GtkWidget *gtk_window, GdkEventMotion *ev
 	struct timeval current_time, elapsed_time;
 
 	if (gdk_event_get_source_device ((GdkEvent *)event) == trackball) {
-
 		if (!pan_tilt_is_moving) {
 			control_window_x = event->x_root;
 			control_window_y = event->y_root;
@@ -250,7 +250,7 @@ gboolean control_window_motion_notify (GtkWidget *gtk_window, GdkEventMotion *ev
 			if (tilt_speed < 1) tilt_speed = 1;
 			else if (tilt_speed > 99) tilt_speed = 99;
 
-			if ((pan_speed < control_window_pan_speed) && (pan_speed < 5) && (tilt_speed < control_window_tilt_speed) && (tilt_speed < 5)) {
+			if ((pan_speed < control_window_pan_speed) && (pan_speed < pan_tilt_stop_sensibility) && (tilt_speed < control_window_tilt_speed) && (tilt_speed < pan_tilt_stop_sensibility)) {
 				send_ptz_control_command (current_ptz, pan_tilt_stop_cmd, TRUE);
 				pan_tilt_is_moving = FALSE;
 
@@ -297,11 +297,9 @@ gboolean control_window_motion_notify (GtkWidget *gtk_window, GdkEventMotion *ev
 
 gboolean control_window_button_release (GtkWidget *gtk_window, GdkEventButton *event)
 {
-/*	if (gdk_event_get_source_device ((GdkEvent *)event) == trackball) {
+	if (gdk_event_get_source_device ((GdkEvent *)event) == trackball) {
 		switch (event->button) {
 			case 1: send_ptz_control_command (current_ptz, pan_tilt_stop_cmd, TRUE);
-				control_window_x = event->x_root;
-				control_window_y = event->y_root;
 				break;
 			case 2: gtk_widget_unset_state_flags (GTK_WIDGET (control_window_otaf_button), GTK_STATE_FLAG_ACTIVE);
 				break;
@@ -312,7 +310,7 @@ gboolean control_window_button_release (GtkWidget *gtk_window, GdkEventButton *e
 				gtk_widget_unset_state_flags (GTK_WIDGET (control_window_zoom_wide_button), GTK_STATE_FLAG_ACTIVE);
 				break;
 		}
-	}*/
+	}
 
 	return GDK_EVENT_PROPAGATE;
 }
