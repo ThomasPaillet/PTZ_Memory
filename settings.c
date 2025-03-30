@@ -215,6 +215,8 @@ void settings_list_box_row_selected (GtkListBox *list_box, GtkListBoxRow *row)
 gboolean settings_window_key_press (GtkWidget *window, GdkEventKey *event)
 {
 	if (event->keyval == GDK_KEY_Escape) {
+		pointing_devices_combo_box = NULL;
+
 		gtk_widget_destroy (settings_window);
 
 		return GDK_EVENT_STOP;
@@ -361,6 +363,22 @@ void tsl_umd_v5_udp_port_entry_activate (GtkEntry *entry, GtkEntryBuffer *entry_
 	backup_needed = TRUE;
 }
 
+void pan_tilt_stop_sensibility_value_changed (GtkRange *range)
+{
+	pan_tilt_stop_sensibility = gtk_range_get_value (range);
+
+	backup_needed = TRUE;
+}
+
+gboolean destroy_settings_window (void)
+{
+	pointing_devices_combo_box = NULL;
+
+	gtk_widget_destroy (settings_window);
+
+	return GDK_EVENT_STOP;
+}
+
 void show_settings_window (void)
 {
 	GtkWidget *box1, *frame, *box2, *box3, *box4, *widget, *controller_ip_address_box;
@@ -381,6 +399,7 @@ void show_settings_window (void)
 	gtk_window_set_resizable (GTK_WINDOW (settings_window), FALSE);
 	gtk_window_set_position (GTK_WINDOW (settings_window), GTK_WIN_POS_CENTER_ON_PARENT);
 	g_signal_connect (G_OBJECT (settings_window), "key-press-event", G_CALLBACK (settings_window_key_press), NULL);
+	g_signal_connect (G_OBJECT (settings_window), "delete-event", G_CALLBACK (destroy_settings_window), NULL);
 
 	box1 = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
 		frame = gtk_frame_new ("Ensembles de caméras");
@@ -677,6 +696,24 @@ void show_settings_window (void)
 					}
 				gtk_box_pack_start (GTK_BOX (box3), pointing_devices_combo_box, TRUE, TRUE, 0);
 			gtk_box_pack_start (GTK_BOX (box2), box3, FALSE, FALSE, 0);
+
+				box3 = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
+				gtk_widget_set_margin_top (box3, MARGIN_VALUE);
+				gtk_widget_set_margin_start (box3, MARGIN_VALUE);
+				gtk_widget_set_margin_end (box3, MARGIN_VALUE);
+				gtk_widget_set_margin_bottom (box3, MARGIN_VALUE);
+					box4 = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
+					gtk_widget_set_margin_end (box4, MARGIN_VALUE);
+						widget =  gtk_label_new ("Sensibilité à l'arrêt :");
+					gtk_box_pack_start (GTK_BOX (box4), widget, FALSE, FALSE, 0);
+						widget = gtk_scale_new_with_range (GTK_ORIENTATION_HORIZONTAL, 0.0, 20.0, 1.0);
+						gtk_scale_set_value_pos (GTK_SCALE (widget), GTK_POS_RIGHT);
+						gtk_scale_set_draw_value (GTK_SCALE (widget), TRUE);
+						gtk_scale_set_has_origin (GTK_SCALE (widget), FALSE);
+						g_signal_connect (G_OBJECT (widget), "value-changed", G_CALLBACK (pan_tilt_stop_sensibility_value_changed), NULL);
+					gtk_box_pack_start (GTK_BOX (box4), widget, TRUE, TRUE, 0);
+				gtk_box_pack_start (GTK_BOX (box3), box4, TRUE, TRUE, 0);
+			gtk_box_pack_start (GTK_BOX (box2), box3, FALSE, FALSE, 0);
 		gtk_container_add (GTK_CONTAINER (frame), box2);
 	gtk_box_pack_start (GTK_BOX (box1), frame, FALSE, FALSE, 0);
 
@@ -894,6 +931,9 @@ void load_config_file (void)
 		}
 	}
 
+	fread (&pan_tilt_stop_sensibility, sizeof (int), 1, config_file);
+	if ((pan_tilt_stop_sensibility < 0) || (pan_tilt_stop_sensibility > 20)) pan_tilt_stop_sensibility = 5;
+
 	fclose (config_file);
 }
 
@@ -973,6 +1013,8 @@ void save_config_file (void)
 	fwrite (&trackball_name_len, sizeof (size_t), 1, config_file);
 
 	if (trackball_name_len > 0) fwrite (trackball_name, sizeof (char), trackball_name_len, config_file);
+
+	fwrite (&pan_tilt_stop_sensibility, sizeof (int), 1, config_file);
 
 	fclose (config_file);
 }
