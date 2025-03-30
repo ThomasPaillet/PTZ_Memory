@@ -322,11 +322,15 @@ gboolean interface_settings_window_key_press (GtkWidget *window, GdkEventKey *ev
 	return GDK_EVENT_PROPAGATE;
 }
 
-#define CREATE_INTERFACE_SCALE(p) \
+#define CREATE_INTERFACE_SCALE(p,c) \
 	box3 = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0); \
 	gtk_widget_set_margin_top (box3, MARGIN_VALUE); \
 	gtk_widget_set_margin_start (box3, MARGIN_VALUE); \
 	gtk_widget_set_margin_end (box3, MARGIN_VALUE); \
+		widget =  gtk_label_new (c); \
+		gtk_widget_set_margin_end (widget, MARGIN_VALUE); \
+	gtk_box_pack_start (GTK_BOX (box3), widget, FALSE, FALSE, 0); \
+ \
 		p##_scale = gtk_scale_new_with_range (GTK_ORIENTATION_HORIZONTAL, 0.0, 1.0, 0.0039); \
 		gtk_scale_set_value_pos (GTK_SCALE (p##_scale), GTK_POS_RIGHT); \
 		gtk_scale_set_draw_value (GTK_SCALE (p##_scale), TRUE); \
@@ -351,7 +355,7 @@ void create_interface_settings_window (void)
 	g_signal_connect (G_OBJECT (interface_settings_window), "key-press-event", G_CALLBACK (interface_settings_window_key_press), NULL);
 
 	box1 = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
-		frame = gtk_frame_new ("Mémoire");
+		frame = gtk_frame_new (NULL);
 		gtk_frame_set_label_align (GTK_FRAME (frame), 0.5, 0.5);
 		gtk_container_set_border_width (GTK_CONTAINER (frame), MARGIN_VALUE);
 			box2 = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
@@ -396,7 +400,13 @@ void create_interface_settings_window (void)
 					gtk_widget_set_margin_start (show_linked_memories_names_labels_check_button, MARGIN_VALUE);
 				gtk_box_pack_end (GTK_BOX (box3), show_linked_memories_names_labels_check_button, FALSE, FALSE, 0);
 			gtk_box_pack_start (GTK_BOX (box2), box3, FALSE, FALSE, 0);
+		gtk_container_add (GTK_CONTAINER (frame), box2);
+	gtk_box_pack_start (GTK_BOX (box1), frame, FALSE, FALSE, 0);
 
+		frame = gtk_frame_new ("Mémoires");
+		gtk_frame_set_label_align (GTK_FRAME (frame), 0.5, 0.5);
+		gtk_container_set_border_width (GTK_CONTAINER (frame), MARGIN_VALUE);
+			box2 = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
 				box3 = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
 				gtk_widget_set_margin_top (box3, MARGIN_VALUE);
 				gtk_widget_set_margin_start (box3, MARGIN_VALUE);
@@ -468,15 +478,30 @@ void create_interface_settings_window (void)
 					gtk_widget_set_margin_start (horizontal_margins_label, MARGIN_VALUE);
 				gtk_box_pack_end (GTK_BOX (box3), horizontal_margins_label, FALSE, FALSE, 0);
 			gtk_box_pack_start (GTK_BOX (box2), box3, FALSE, FALSE, 0);
+		gtk_container_add (GTK_CONTAINER (frame), box2);
+	gtk_box_pack_start (GTK_BOX (box1), frame, FALSE, FALSE, 0);
 
-			CREATE_INTERFACE_SCALE(memories_name_color_red)
-			CREATE_INTERFACE_SCALE(memories_name_color_green)
-			CREATE_INTERFACE_SCALE(memories_name_color_blue)
+		frame = gtk_frame_new ("Couleur du nom des mémoires");
+		gtk_frame_set_label_align (GTK_FRAME (frame), 0.5, 0.5);
+		gtk_container_set_border_width (GTK_CONTAINER (frame), MARGIN_VALUE);
+			box2 = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
+
+			CREATE_INTERFACE_SCALE(memories_name_color_red,"Rouge")
+			CREATE_INTERFACE_SCALE(memories_name_color_green,"Vert")
+			CREATE_INTERFACE_SCALE(memories_name_color_blue,"bleu")
 		
-			CREATE_INTERFACE_SCALE(memories_name_backdrop_color_red)
-			CREATE_INTERFACE_SCALE(memories_name_backdrop_color_green)
-			CREATE_INTERFACE_SCALE(memories_name_backdrop_color_blue)
-			CREATE_INTERFACE_SCALE(memories_name_backdrop_color_alpha)
+		gtk_container_add (GTK_CONTAINER (frame), box2);
+	gtk_box_pack_start (GTK_BOX (box1), frame, FALSE, FALSE, 0);
+
+		frame = gtk_frame_new ("Couleur du cartouche");
+		gtk_frame_set_label_align (GTK_FRAME (frame), 0.5, 0.5);
+		gtk_container_set_border_width (GTK_CONTAINER (frame), MARGIN_VALUE);
+			box2 = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
+
+			CREATE_INTERFACE_SCALE(memories_name_backdrop_color_red,"Rouge")
+			CREATE_INTERFACE_SCALE(memories_name_backdrop_color_green,"Vert")
+			CREATE_INTERFACE_SCALE(memories_name_backdrop_color_blue,"Bleu")
+			CREATE_INTERFACE_SCALE(memories_name_backdrop_color_alpha,"Alpha")
 
 		gtk_container_add (GTK_CONTAINER (frame), box2);
 	gtk_box_pack_start (GTK_BOX (box1), frame, FALSE, FALSE, 0);
