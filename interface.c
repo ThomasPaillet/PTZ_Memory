@@ -180,7 +180,7 @@ void thumbnail_size_value_changed (GtkRange *range)
 			gtk_widget_set_size_request (current_cameras_set->memories_labels_padding, current_cameras_set->interface.thumbnail_height + 12, 20);
 			gtk_widget_set_size_request (current_cameras_set->memories_scrollbar_padding, current_cameras_set->interface.thumbnail_height + 12, 10);
 		} else {
-			gtk_widget_set_size_request (current_cameras_set->entry_widgets_padding, 34, current_cameras_set->interface.thumbnail_height + 12);
+			gtk_widget_set_size_request (current_cameras_set->entry_widgets_padding, 160, current_cameras_set->interface.thumbnail_height + 12);
 			gtk_widget_set_size_request (current_cameras_set->memories_labels_padding, 20, current_cameras_set->interface.thumbnail_height + 12);
 			gtk_widget_set_size_request (current_cameras_set->memories_scrollbar_padding, 10, current_cameras_set->interface.thumbnail_height + 12);
 		}
@@ -190,7 +190,7 @@ void thumbnail_size_value_changed (GtkRange *range)
 				gtk_widget_set_size_request (current_cameras_set->entry_widgets[j], current_cameras_set->interface.thumbnail_width + 6, 34);
 				gtk_widget_set_size_request (current_cameras_set->memories_labels[j], current_cameras_set->interface.thumbnail_width + 6, 20);
 			} else {
-				gtk_widget_set_size_request (current_cameras_set->entry_widgets[j], 34, current_cameras_set->interface.thumbnail_width + 10);
+				gtk_widget_set_size_request (current_cameras_set->entry_widgets[j], 160, current_cameras_set->interface.thumbnail_height + 10);
 				gtk_widget_set_size_request (current_cameras_set->memories_labels[j], 20, current_cameras_set->interface.thumbnail_height + 10);
 			}
 		}
