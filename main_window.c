@@ -52,7 +52,6 @@ GtkWidget *switch_cameras_on_button, *switch_cameras_off_button;
 
 gboolean fullscreen = TRUE;
 
-GdkSeat *seat;
 GList *pointing_devices = NULL;
 GdkDevice *trackball = NULL;
 
@@ -503,21 +502,35 @@ void device_added_to_seat (GdkSeat *seat, GdkDevice *device)
 {
 	GList *glist;
 
-	g_list_free (pointing_devices);
+	if (memcmp (gdk_device_get_name (device), trackball_name, trackball_name_len) == 0) trackball = device;
 
-	pointing_devices = gdk_seat_get_slaves (seat, GDK_SEAT_CAPABILITY_POINTER);
-	for (glist = pointing_devices; glist != NULL; glist = glist->next) {
-		if (memcmp (gdk_device_get_name (glist->data), "Kensington Slimblade Trackball", 30) == 0) {
-			trackball = glist->data;
-			break;
-		}
+	pointing_devices = g_list_prepend (pointing_devices, device);
+
+	if (pointing_devices_combo_box != NULL) {
+		gtk_combo_box_text_insert_text (GTK_COMBO_BOX_TEXT (pointing_devices_combo_box), 1, gdk_device_get_name (device));
+
+		if (memcmp (gdk_device_get_name (device), trackball_name, trackball_name_len) == 0) gtk_combo_box_set_active (GTK_COMBO_BOX (pointing_devices_combo_box), 1);
 	}
 }
 
 void device_removed_from_seat (GdkSeat *seat, GdkDevice *device)
 {
+	GList *glist;
+	int i;
+
 	if (device == trackball) trackball = NULL;
-	//gtk_combo_box_text_remove_all (GTK_COMBO_BOX_TEXT (widget));
+
+	pointing_devices = g_list_remove (pointing_devices, device);
+
+	if (pointing_devices_combo_box != NULL) {
+		gtk_combo_box_text_remove_all (GTK_COMBO_BOX_TEXT (pointing_devices_combo_box));
+
+		gtk_combo_box_text_insert_text (GTK_COMBO_BOX_TEXT (pointing_devices_combo_box), 0, "");
+		for (glist = pointing_devices, i = 1; glist != NULL; glist = glist->next, i++) {
+			gtk_combo_box_text_insert_text (GTK_COMBO_BOX_TEXT (pointing_devices_combo_box), i, gdk_device_get_name (glist->data));
+			if (memcmp (gdk_device_get_name (glist->data), trackball_name, trackball_name_len) == 0) gtk_combo_box_set_active (GTK_COMBO_BOX (pointing_devices_combo_box), i);
+		}
+	}
 }
 
 #ifdef _WIN32
@@ -529,6 +542,7 @@ int main (int argc, char** argv)
 	GtkCssProvider *main_css_provider;
 	GFile *file;
 	GdkScreen *screen;
+	GdkSeat *seat;
 	cameras_set_t *cameras_set_itr;
 	int i;
 	ptz_thread_t *ptz_thread;
