@@ -932,14 +932,14 @@ void create_vertical_linked_memories_names_entries (cameras_set_t *cameras_set)
 	gtk_box_pack_start (GTK_BOX (cameras_set->linked_memories_names_entries), cameras_set->entry_widgets_padding, FALSE, FALSE, 0);
 
 		scrolled_window = gtk_scrolled_window_new (NULL, NULL);
-		gtk_scrolled_window_set_min_content_height (GTK_SCROLLED_WINDOW (scrolled_window), 30);
+		gtk_scrolled_window_set_min_content_width (GTK_SCROLLED_WINDOW (scrolled_window), 160);
 		gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scrolled_window), GTK_POLICY_EXTERNAL, GTK_POLICY_EXTERNAL);
 		cameras_set->entry_scrolled_window_adjustment = gtk_scrolled_window_get_vadjustment (GTK_SCROLLED_WINDOW (scrolled_window));
 		g_signal_connect (G_OBJECT (cameras_set->entry_scrolled_window_adjustment), "value-changed", G_CALLBACK (entry_scrolled_window_adjustment_value_changed), cameras_set);
 			box = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
 				for (i = 0; i < MAX_MEMORIES; i++) {
 					cameras_set->entry_widgets[i] = gtk_entry_new ();
-					gtk_widget_set_size_request (cameras_set->entry_widgets[i], 34, cameras_set->interface.thumbnail_height + 10);
+					gtk_widget_set_size_request (cameras_set->entry_widgets[i], 160, cameras_set->interface.thumbnail_height + 10);
 					gtk_widget_set_margin_top (cameras_set->entry_widgets[i], cameras_set->interface.memories_button_horizontal_margins);
 					gtk_widget_set_margin_bottom (cameras_set->entry_widgets[i], cameras_set->interface.memories_button_horizontal_margins);
 					gtk_entry_set_max_length (GTK_ENTRY (cameras_set->entry_widgets[i]), MEMORIES_NAME_LENGTH);
@@ -949,7 +949,7 @@ void create_vertical_linked_memories_names_entries (cameras_set_t *cameras_set)
 				}
 
 				widget = gtk_drawing_area_new ();
-				gtk_widget_set_size_request (widget, 20, 4);
+				gtk_widget_set_size_request (widget, 160, 4);
 			gtk_box_pack_start (GTK_BOX (box), widget, FALSE, FALSE, 0);
 		gtk_container_add (GTK_CONTAINER (scrolled_window), box);
 	gtk_box_pack_start (GTK_BOX (cameras_set->linked_memories_names_entries), scrolled_window, TRUE, TRUE, 0);
