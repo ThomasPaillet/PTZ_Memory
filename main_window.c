@@ -500,8 +500,6 @@ void create_main_window (void)
 
 void device_added_to_seat (GdkSeat *seat, GdkDevice *device)
 {
-	GList *glist;
-
 	if (memcmp (gdk_device_get_name (device), trackball_name, trackball_name_len) == 0) trackball = device;
 
 	pointing_devices = g_list_prepend (pointing_devices, device);
