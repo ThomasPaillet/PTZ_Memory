@@ -42,7 +42,6 @@ extern GtkWidget *link_toggle_button;
 extern GtkWidget *switch_cameras_on_button;
 extern GtkWidget *switch_cameras_off_button;
 
-extern GdkSeat *seat;
 extern GList *pointing_devices;
 extern GdkDevice *trackball;
 
