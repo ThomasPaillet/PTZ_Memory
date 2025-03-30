@@ -58,10 +58,10 @@ GtkEntryBuffer *controller_ip_entry_buffer[4];
 int focus_speed = 25;
 int zoom_speed = 25;
 
+GtkWidget *pointing_devices_combo_box = NULL;
+
 char *trackball_name = NULL;
 size_t trackball_name_len = 0;
-
-GtkWidget *pointing_devices_combo_box = NULL;
 
 
 gboolean about_window_key_press (GtkWidget *about_window)
@@ -359,6 +359,24 @@ void tsl_umd_v5_udp_port_entry_activate (GtkEntry *entry, GtkEntryBuffer *entry_
 	} else tsl_umd_v5_address.sin_port = htons (port);
 
 	start_tally ();
+
+	backup_needed = TRUE;
+}
+
+void pointing_devices_changed (void)
+{
+	GList *glist;
+
+	g_free (trackball_name);
+	trackball_name = gtk_combo_box_text_get_active_text (GTK_COMBO_BOX_TEXT (pointing_devices_combo_box));
+	trackball_name_len = strlen (trackball_name);
+
+	for (glist = pointing_devices; glist != NULL; glist = glist->next) {
+		if (memcmp (gdk_device_get_name (glist->data), trackball_name, trackball_name_len) == 0) {
+			trackball = glist->data;
+			break;
+		}
+	}
 
 	backup_needed = TRUE;
 }
@@ -690,10 +708,12 @@ void show_settings_window (void)
 				gtk_widget_set_margin_bottom (box3, MARGIN_VALUE);
 					pointing_devices_combo_box =  gtk_combo_box_text_new ();
 					gtk_combo_box_text_insert_text (GTK_COMBO_BOX_TEXT (pointing_devices_combo_box), 0, "");
+					gtk_combo_box_set_active (GTK_COMBO_BOX (pointing_devices_combo_box), 0);
 					for (glist = pointing_devices, i = 1; glist != NULL; glist = glist->next, i++) {
 						gtk_combo_box_text_insert_text (GTK_COMBO_BOX_TEXT (pointing_devices_combo_box), i, gdk_device_get_name (glist->data));
-						if (memcmp (gdk_device_get_name (glist->data), trackball_name, trackball_name_len) == 0) gtk_combo_box_set_active (GTK_COMBO_BOX (pointing_devices_combo_box), i);
+						if ((trackball_name_len > 0) && (memcmp (gdk_device_get_name (glist->data), trackball_name, trackball_name_len) == 0)) gtk_combo_box_set_active (GTK_COMBO_BOX (pointing_devices_combo_box), i);
 					}
+					g_signal_connect (G_OBJECT (pointing_devices_combo_box), "changed", G_CALLBACK (pointing_devices_changed), NULL);
 				gtk_box_pack_start (GTK_BOX (box3), pointing_devices_combo_box, TRUE, TRUE, 0);
 			gtk_box_pack_start (GTK_BOX (box2), box3, FALSE, FALSE, 0);
 
