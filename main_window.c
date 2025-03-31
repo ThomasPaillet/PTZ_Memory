@@ -67,6 +67,7 @@ gboolean digit_key_press (GtkEntry *entry, GdkEventKey *event)
 	else if ((event->keyval >= GDK_KEY_Execute) && (event->keyval <= GDK_KEY_Redo)) return GDK_EVENT_PROPAGATE;
 	else if ((event->keyval == GDK_KEY_KP_Tab) || (event->keyval == GDK_KEY_KP_Enter)) return GDK_EVENT_PROPAGATE;
 	else if ((event->keyval >= GDK_KEY_KP_Home) && (event->keyval <= GDK_KEY_KP_Delete)) return GDK_EVENT_PROPAGATE;
+	else if ((event->keyval >= GDK_KEY_Left) && (event->keyval <= GDK_KEY_Right)) return GDK_EVENT_PROPAGATE;
 	else return GDK_EVENT_STOP;
 }
 
