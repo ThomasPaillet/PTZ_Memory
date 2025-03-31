@@ -315,6 +315,12 @@ gboolean interface_settings_window_key_press (GtkWidget *window, GdkEventKey *ev
 		hide_interface_settings_window ();
 
 		return GDK_EVENT_STOP;
+	} else if ((event->state & GDK_MOD1_MASK) && ((event->keyval == GDK_KEY_q) || (event->keyval == GDK_KEY_Q))) {
+		hide_interface_settings_window ();
+
+		show_exit_confirmation_window ();
+		
+		return GDK_EVENT_STOP;
 	}
 
 	return GDK_EVENT_PROPAGATE;
