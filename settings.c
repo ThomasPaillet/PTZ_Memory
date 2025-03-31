@@ -220,6 +220,14 @@ gboolean settings_window_key_press (GtkWidget *window, GdkEventKey *event)
 		gtk_widget_destroy (settings_window);
 
 		return GDK_EVENT_STOP;
+	} else if ((event->state & GDK_MOD1_MASK) && ((event->keyval == GDK_KEY_q) || (event->keyval == GDK_KEY_Q))) {
+		pointing_devices_combo_box = NULL;
+
+		gtk_widget_destroy (settings_window);
+
+		show_exit_confirmation_window ();
+		
+		return GDK_EVENT_STOP;
 	}
 
 	return GDK_EVENT_PROPAGATE;
@@ -723,13 +731,13 @@ void show_settings_window (void)
 				gtk_widget_set_margin_end (box3, MARGIN_VALUE);
 				gtk_widget_set_margin_bottom (box3, MARGIN_VALUE);
 					box4 = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
-					gtk_widget_set_margin_end (box4, MARGIN_VALUE);
-						widget =  gtk_label_new ("Sensibilité à l'arrêt :");
+						widget =  gtk_label_new ("Sensibilité à l'arrêt");
 					gtk_box_pack_start (GTK_BOX (box4), widget, FALSE, FALSE, 0);
 						widget = gtk_scale_new_with_range (GTK_ORIENTATION_HORIZONTAL, 0.0, 20.0, 1.0);
 						gtk_scale_set_value_pos (GTK_SCALE (widget), GTK_POS_RIGHT);
 						gtk_scale_set_draw_value (GTK_SCALE (widget), TRUE);
 						gtk_scale_set_has_origin (GTK_SCALE (widget), FALSE);
+						gtk_range_set_value (GTK_RANGE (widget), pan_tilt_stop_sensibility);
 						g_signal_connect (G_OBJECT (widget), "value-changed", G_CALLBACK (pan_tilt_stop_sensibility_value_changed), NULL);
 					gtk_box_pack_start (GTK_BOX (box4), widget, TRUE, TRUE, 0);
 				gtk_box_pack_start (GTK_BOX (box3), box4, TRUE, TRUE, 0);
