@@ -124,8 +124,8 @@ gboolean ptz_name_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 	PangoFontDescription *desc;
 
 	if ((gtk_widget_is_sensitive (widget)) && !(GTK_STATE_FLAG_BACKDROP & gtk_widget_get_state_flags (widget))) {
-		if (ptz->enter_notify_name_drawing_area) cairo_set_source_rgb (cr, 0.176470588, 0.196078431, 0.203921569);
-		else cairo_set_source_rgb (cr, 0.2, 0.223529412, 0.231372549);
+		if (ptz->enter_notify_name_drawing_area) cairo_set_source_rgb (cr, 0.2, 0.223529412, 0.231372549);
+		else cairo_set_source_rgb (cr, 0.176470588, 0.196078431, 0.203921569);
 	} else cairo_set_source_rgb (cr, 0.2, 0.223529412, 0.231372549);
 
 	cairo_paint (cr);
