@@ -388,7 +388,6 @@ void show_settings_window (void)
 	int i, l, k;
 	GtkEntryBuffer *entry_buffer;
 	char label[8];
-	GList *glist;
 
 	settings_window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_title (GTK_WINDOW (settings_window), settings_txt + 1);
