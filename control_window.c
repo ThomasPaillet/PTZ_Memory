@@ -145,17 +145,19 @@ gboolean control_window_key_press (GtkWidget *gtk_window, GdkEventKey *event)
 	} else if ((GDK_KEY_F1 <= event->keyval) && (event->keyval <= GDK_KEY_F15)) {
 		i = event->keyval - GDK_KEY_F1;
 
-		if ((i != current_ptz->index) && (i < current_cameras_set->number_of_cameras)) {
-			new_ptz = current_cameras_set->cameras[i];
+		if (i != current_ptz->index) {
+			if (i < current_cameras_set->number_of_cameras)) {
+				new_ptz = current_cameras_set->cameras[i];
 
-			if (new_ptz->active && gtk_widget_get_sensitive (new_ptz->name_grid)) {
-				show_control_window (new_ptz, 0);
+				if (new_ptz->active && gtk_widget_get_sensitive (new_ptz->name_grid)) {
+					show_control_window (new_ptz, 0);
 
-				if (controller_is_used && controller_ip_address_is_valid) {
-					controller_thread = g_malloc (sizeof (ptz_thread_t));
-					controller_thread->ptz_ptr = new_ptz;
-					controller_thread->thread = g_thread_new (NULL, (GThreadFunc)controller_switch_ptz, controller_thread);
-				}
+					if (controller_is_used && controller_ip_address_is_valid) {
+						controller_thread = g_malloc (sizeof (ptz_thread_t));
+						controller_thread->ptz_ptr = new_ptz;
+						controller_thread->thread = g_thread_new (NULL, (GThreadFunc)controller_switch_ptz, controller_thread);
+					}
+				} else hide_control_window ();
 			} else hide_control_window ();
 
 			ask_to_connect_ptz_to_ctrl_opv (new_ptz);
