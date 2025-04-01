@@ -18,31 +18,35 @@ $(PROG): Linux/gresources.o $(OBJS)
 Linux/gresources.o: Linux/gresources.xml
 	@(cd Linux && $(MAKE) gresources.o)
 
-ptz.o: ptz.h
+cameras_set.o: main_window.h protocol.h settings.h
 
-cameras_set.o: ptz.h
+control_window.o: cameras_set.h controller.h main_window.h protocol.h sw_p_08.h tally.h
 
-memory.o: ptz.h
+controller.o: protocol.h
 
-control_window.o: ptz.h
+error.o: cameras_set.h
 
-settings.o: ptz.h
+interface.o: cameras_set.h main_window.h settings.h
 
-protocol.o: ptz.h
+main_window.o: cameras_set.h control_window.h controller.h error.h interface.h protocol.h settings.h sw_p_08.h tally.h trackball.h update_notification.h
 
-controller.o: ptz.h
+memory.o: cameras_set.h controller.h interface.h main_window.h protocol.h settings.h
 
-update_notification.o: ptz.h
+protocol.o: error.h update_notification.h
 
-sw_p_08.o: ptz.h
+ptz.o: control_window.h controller.h error.h interface.h main_window.h protocol.h settings.h sw_p_08.h tally.h
 
-tally.o: ptz.h
+settings.o: cameras_set.h control_window.h controller.h interface.h main_window.h protocol.h sw_p_08.h tally.h trackball.h update_notification.h
 
-error.o: ptz.h
+sw_p_08.o: cameras_set.h control_window.h main_window.h protocol.h settings.h
 
-main_window.o: ptz.h
+tally.o: cameras_set.h control_window.h interface.h protocol.h
 
-.c.o:
+trackball.o: settings.h
+
+update_notification.o: cameras_set.h control_window.h protocol.h error.h
+
+%.o: %.c ptz.h %.h
 	$(CC) $(CFLAGS) $<
 
 Win32/pixbufs.o: $(PNG) $(PIXBUF)
