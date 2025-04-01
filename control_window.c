@@ -190,7 +190,7 @@ gboolean control_window_key_release (GtkWidget *gtk_window, GdkEventKey *event)
 
 gboolean control_window_button_press (GtkWidget *window, GdkEventButton *event)
 {
-	if ((gdk_event_get_source_device ((GdkEvent *)event) == trackball) && (event->button > 0 ) && (event->button <= 10)) {
+	if ((gdk_event_get_source_device ((GdkEvent *)event) == trackball) && (event->button > 0) && (event->button <= 10)) {
 		switch (trackball_button_action[event->button - 1]) {
 			case 1: gtk_widget_set_state_flags (control_window_zoom_tele_button, GTK_STATE_FLAG_ACTIVE, FALSE);
 				send_ptz_control_command (current_ptz, zoom_tele_speed_cmd, TRUE);
@@ -253,9 +253,9 @@ gboolean control_window_motion_notify (GtkWidget *gtk_window, GdkEventMotion *ev
 
 			control_window_pan_speed = 0;
 			control_window_tilt_speed = 0;
-		} else {
-			pan_tilt_is_moving = TRUE;
 
+			pan_tilt_is_moving = TRUE;
+		} else {
 			pan_speed = (int)((event->x_root - control_window_x) / 4) + 50;
 			if (pan_speed < 1) pan_speed = 1;
 			else if (pan_speed > 99) pan_speed = 99;
@@ -311,7 +311,7 @@ gboolean control_window_motion_notify (GtkWidget *gtk_window, GdkEventMotion *ev
 
 gboolean control_window_button_release (GtkWidget *gtk_window, GdkEventButton *event)
 {
-	if ((gdk_event_get_source_device ((GdkEvent *)event) == trackball) && (event->button > 0 ) && (event->button <= 10)) {
+	if ((gdk_event_get_source_device ((GdkEvent *)event) == trackball) && (event->button > 0) && (event->button <= 10)) {
 		switch (event->button - 1) {
 			case 1: send_ptz_control_command (current_ptz, zoom_stop_cmd, TRUE);
 				gtk_widget_unset_state_flags (GTK_WIDGET (control_window_zoom_tele_button), GTK_STATE_FLAG_ACTIVE);
@@ -773,7 +773,7 @@ gboolean pad_motion_notify (GtkWidget *widget, GdkEventMotion *event)
 	int pan_speed, tilt_speed;
 	struct timeval current_time, elapsed_time;
 
-	if (event->state & GDK_BUTTON1_MASK) {
+	if ((event->state & GDK_BUTTON1_MASK) && (gdk_event_get_source_device ((GdkEvent *)event) != trackball)) {
 		pan_speed = (int)((event->x - control_window_x) / 4) + 50;
 		if (pan_speed < 1) pan_speed = 1;
 		else if (pan_speed > 99) pan_speed = 99;
