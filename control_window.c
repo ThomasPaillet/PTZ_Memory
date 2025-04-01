@@ -25,6 +25,7 @@
 #include "protocol.h"
 #include "sw_p_08.h"
 #include "tally.h"
+#include "trackball.h"
 
 
 #ifdef _WIN32
@@ -46,6 +47,8 @@ GtkWidget *control_window_focus_box;
 
 GtkWidget *control_window_otaf_button;
 GtkWidget *control_window_focus_level_bar_drawing_area;
+GtkWidget *control_window_focus_far_button;
+GtkWidget *control_window_focus_near_button;
 
 GtkWidget *control_window_zoom_level_bar_drawing_area;
 GtkWidget *control_window_zoom_tele_button;
@@ -188,16 +191,24 @@ gboolean control_window_key_release (GtkWidget *gtk_window, GdkEventKey *event)
 
 gboolean control_window_button_press (GtkWidget *window, GdkEventButton *event)
 {
-	if (gdk_event_get_source_device ((GdkEvent *)event) == trackball) {
-		switch (event->button) {
-			case 2: gtk_widget_set_state_flags (control_window_otaf_button, GTK_STATE_FLAG_ACTIVE, FALSE);
-				send_cam_control_command (current_ptz, "OSE:69:1");
-				break;
-			case 8: gtk_widget_set_state_flags (control_window_zoom_tele_button, GTK_STATE_FLAG_ACTIVE, FALSE);
+	if ((gdk_event_get_source_device ((GdkEvent *)event) == trackball) && (event->button >= 0 ) && (event->button < 10)) {
+		switch (trackball_button_action[event->button]) {
+			case 1: gtk_widget_set_state_flags (control_window_zoom_tele_button, GTK_STATE_FLAG_ACTIVE, FALSE);
 				send_ptz_control_command (current_ptz, zoom_tele_speed_cmd, TRUE);
 				break;
-			case 3: gtk_widget_set_state_flags (control_window_zoom_wide_button, GTK_STATE_FLAG_ACTIVE, FALSE);
+			case 2: gtk_widget_set_state_flags (control_window_zoom_wide_button, GTK_STATE_FLAG_ACTIVE, FALSE);
 				send_ptz_control_command (current_ptz, zoom_wide_speed_cmd, TRUE);
+				break;
+			case 3: gtk_widget_set_state_flags (control_window_otaf_button, GTK_STATE_FLAG_ACTIVE, FALSE);
+				send_cam_control_command (current_ptz, "OSE:69:1");
+				break;
+			case 4: gtk_widget_set_state_flags (control_window_focus_far_button, GTK_STATE_FLAG_ACTIVE, FALSE);
+				send_ptz_control_command (current_ptz, focus_far_speed_cmd, TRUE);
+				break;
+			case 5: gtk_widget_set_state_flags (control_window_focus_near_button, GTK_STATE_FLAG_ACTIVE, FALSE);
+				send_ptz_control_command (current_ptz, focus_near_speed_cmd, TRUE);
+				break;
+			case 6: send_ptz_control_command (current_ptz, pan_tilt_stop_cmd, TRUE);
 				break;
 		}
 	}
@@ -299,15 +310,19 @@ gboolean control_window_button_release (GtkWidget *gtk_window, GdkEventButton *e
 {
 	if (gdk_event_get_source_device ((GdkEvent *)event) == trackball) {
 		switch (event->button) {
-			case 1: send_ptz_control_command (current_ptz, pan_tilt_stop_cmd, TRUE);
-				break;
-			case 2: gtk_widget_unset_state_flags (GTK_WIDGET (control_window_otaf_button), GTK_STATE_FLAG_ACTIVE);
-				break;
-			case 8: send_ptz_control_command (current_ptz, zoom_stop_cmd, TRUE);
+			case 1: send_ptz_control_command (current_ptz, zoom_stop_cmd, TRUE);
 				gtk_widget_unset_state_flags (GTK_WIDGET (control_window_zoom_tele_button), GTK_STATE_FLAG_ACTIVE);
 				break;
-			case 3: send_ptz_control_command (current_ptz, zoom_stop_cmd, TRUE);
+			case 2: send_ptz_control_command (current_ptz, zoom_stop_cmd, TRUE);
 				gtk_widget_unset_state_flags (GTK_WIDGET (control_window_zoom_wide_button), GTK_STATE_FLAG_ACTIVE);
+				break;
+			case 3: gtk_widget_unset_state_flags (GTK_WIDGET (control_window_otaf_button), GTK_STATE_FLAG_ACTIVE);
+				break;
+			case 4: send_ptz_control_command (current_ptz, focus_stop_cmd, TRUE);
+				gtk_widget_unset_state_flags (GTK_WIDGET (control_window_focus_far_button), GTK_STATE_FLAG_ACTIVE);
+				break;
+			case 5: send_ptz_control_command (current_ptz, focus_stop_cmd, TRUE);
+				gtk_widget_unset_state_flags (GTK_WIDGET (control_window_focus_near_button), GTK_STATE_FLAG_ACTIVE);
 				break;
 		}
 	}
@@ -1359,12 +1374,12 @@ void create_control_window (void)
 #elif defined (__linux)
 				image = gtk_image_new_from_resource ("/org/PTZ-Memory/images/up.png");
 #endif
-				widget = gtk_button_new ();
-				gtk_button_set_image (GTK_BUTTON (widget), image);
-				gtk_widget_set_margin_bottom (widget, MARGIN_VALUE);
-				g_signal_connect (G_OBJECT (widget), "button_press_event", G_CALLBACK (focus_far_button_pressed), NULL);
-				g_signal_connect (G_OBJECT (widget), "button_release_event", G_CALLBACK (focus_speed_button_released), NULL);
-			gtk_box_pack_start (GTK_BOX (control_window_focus_box), widget, FALSE, FALSE, 0);
+				control_window_focus_far_button = gtk_button_new ();
+				gtk_button_set_image (GTK_BUTTON (control_window_focus_far_button), image);
+				gtk_widget_set_margin_bottom (control_window_focus_far_button, MARGIN_VALUE);
+				g_signal_connect (G_OBJECT (control_window_focus_far_button), "button_press_event", G_CALLBACK (focus_far_button_pressed), NULL);
+				g_signal_connect (G_OBJECT (control_window_focus_far_button), "button_release_event", G_CALLBACK (focus_speed_button_released), NULL);
+			gtk_box_pack_start (GTK_BOX (control_window_focus_box), control_window_focus_far_button, FALSE, FALSE, 0);
 
 				control_window_otaf_button = gtk_button_new_with_label ("OTAF");
 				g_signal_connect (G_OBJECT (control_window_otaf_button), "button_press_event", G_CALLBACK (one_touch_auto_focus_button_pressed), NULL);
@@ -1375,12 +1390,12 @@ void create_control_window (void)
 #elif defined (__linux)
 				image = gtk_image_new_from_resource ("/org/PTZ-Memory/images/down.png");
 #endif
-				widget = gtk_button_new ();
-				gtk_button_set_image (GTK_BUTTON (widget), image);
-				gtk_widget_set_margin_top (widget, MARGIN_VALUE);
-				g_signal_connect (G_OBJECT (widget), "button_press_event", G_CALLBACK (focus_near_button_pressed), NULL);
-				g_signal_connect (G_OBJECT (widget), "button_release_event", G_CALLBACK (focus_speed_button_released), NULL);
-			gtk_box_pack_start (GTK_BOX (control_window_focus_box), widget, FALSE, FALSE, 0);
+				control_window_focus_near_button = gtk_button_new ();
+				gtk_button_set_image (GTK_BUTTON (control_window_focus_near_button), image);
+				gtk_widget_set_margin_top (control_window_focus_near_button, MARGIN_VALUE);
+				g_signal_connect (G_OBJECT (control_window_focus_near_button), "button_press_event", G_CALLBACK (focus_near_button_pressed), NULL);
+				g_signal_connect (G_OBJECT (control_window_focus_near_button), "button_release_event", G_CALLBACK (focus_speed_button_released), NULL);
+			gtk_box_pack_start (GTK_BOX (control_window_focus_box), control_window_focus_near_button, FALSE, FALSE, 0);
 		gtk_box_set_center_widget (GTK_BOX (box), control_window_focus_box);
 		gtk_grid_attach (GTK_GRID (grid), box, 0, 1, 1, 6);
 
@@ -1432,13 +1447,12 @@ void create_control_window (void)
 #elif defined (__linux)
 			image = gtk_image_new_from_resource ("/org/PTZ-Memory/images/up.png");
 #endif
-			widget = gtk_button_new ();
-			gtk_button_set_image (GTK_BUTTON (widget), image);
-			gtk_widget_set_size_request (widget, 50, 20);
-			gtk_widget_set_margin_bottom (widget, MARGIN_VALUE);
-			g_signal_connect (G_OBJECT (widget), "button_press_event", G_CALLBACK (zoom_tele_button_pressed), NULL);
-			g_signal_connect (G_OBJECT (widget), "button_release_event", G_CALLBACK (zoom_speed_button_released), NULL);
-			control_window_zoom_tele_button = widget;
+			control_window_zoom_tele_button = gtk_button_new ();
+			gtk_button_set_image (GTK_BUTTON (control_window_zoom_tele_button), image);
+			gtk_widget_set_size_request (control_window_zoom_tele_button, 50, 20);
+			gtk_widget_set_margin_bottom (control_window_zoom_tele_button, MARGIN_VALUE);
+			g_signal_connect (G_OBJECT (control_window_zoom_tele_button), "button_press_event", G_CALLBACK (zoom_tele_button_pressed), NULL);
+			g_signal_connect (G_OBJECT (control_window_zoom_tele_button), "button_release_event", G_CALLBACK (zoom_speed_button_released), NULL);
 		gtk_grid_attach (GTK_GRID (grid), widget, 1, 2, 1, 1);
 
 #ifdef _WIN32
@@ -1446,13 +1460,12 @@ void create_control_window (void)
 #elif defined (__linux)
 			image = gtk_image_new_from_resource ("/org/PTZ-Memory/images/down.png");
 #endif
-			widget = gtk_button_new ();
-			gtk_button_set_image (GTK_BUTTON (widget), image);
-			gtk_widget_set_size_request (widget, 50, 20);
-			gtk_widget_set_margin_top (widget, MARGIN_VALUE);
-			g_signal_connect (G_OBJECT (widget), "button_press_event", G_CALLBACK (zoom_wide_button_pressed), NULL);
-			g_signal_connect (G_OBJECT (widget), "button_release_event", G_CALLBACK (zoom_speed_button_released), NULL);
-			control_window_zoom_wide_button = widget;
+			control_window_zoom_wide_button = gtk_button_new ();
+			gtk_button_set_image (GTK_BUTTON (control_window_zoom_wide_button), image);
+			gtk_widget_set_size_request (control_window_zoom_wide_button, 50, 20);
+			gtk_widget_set_margin_top (control_window_zoom_wide_button, MARGIN_VALUE);
+			g_signal_connect (G_OBJECT (control_window_zoom_wide_button), "button_press_event", G_CALLBACK (zoom_wide_button_pressed), NULL);
+			g_signal_connect (G_OBJECT (control_window_zoom_wide_button), "button_release_event", G_CALLBACK (zoom_speed_button_released), NULL);
 		gtk_grid_attach (GTK_GRID (grid), widget, 1, 3, 1, 1);
 	gtk_grid_attach (GTK_GRID (main_grid), grid, 5, 2, 1, 2);
 
