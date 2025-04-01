@@ -36,7 +36,7 @@ typedef struct cameras_set_s {
 
 	int number_of_ghost_cameras;
 
-	interface_param_t interface;
+	interface_param_t interface_param;
 
 	GtkWidget *linked_memories_names_entries;
 	GtkWidget *entry_widgets_padding;
