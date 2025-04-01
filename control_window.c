@@ -146,7 +146,7 @@ gboolean control_window_key_press (GtkWidget *gtk_window, GdkEventKey *event)
 		i = event->keyval - GDK_KEY_F1;
 
 		if (i != current_ptz->index) {
-			if (i < current_cameras_set->number_of_cameras)) {
+			if (i < current_cameras_set->number_of_cameras) {
 				new_ptz = current_cameras_set->cameras[i];
 
 				if (new_ptz->active && gtk_widget_get_sensitive (new_ptz->name_grid)) {
@@ -1281,11 +1281,11 @@ void show_control_window (ptz_t *ptz, GtkWindowPosition position)
 	gtk_widget_queue_draw (control_window_zoom_level_bar_drawing_area);
 
 	if (control_window_is_hidden) {
-		gtk_event_box_set_above_child (GTK_EVENT_BOX (main_event_box), TRUE);
-
 		gtk_window_set_position (GTK_WINDOW (control_window_gtk_window), position);
 
 		gtk_widget_show_all (control_window_gtk_window);
+
+		gtk_event_box_set_above_child (GTK_EVENT_BOX (main_event_box), TRUE);
 	}
 }
 
