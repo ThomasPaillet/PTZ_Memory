@@ -375,7 +375,7 @@ gboolean main_window_scroll (GtkWidget *widget, GdkEventScroll *event)
 	return GDK_EVENT_STOP;
 }
 
-gboolean main_event_box_events (GtkWidget *window, GdkEventKey *event)
+gboolean main_event_box_events (void)
 {
 	if (current_ptz != NULL) hide_control_window ();
 
@@ -488,10 +488,12 @@ void create_main_window (void)
 	gtk_box_pack_end (GTK_BOX (box1), box2, FALSE, FALSE, 0);
 
 	main_event_box = gtk_event_box_new ();
+	gtk_widget_set_events (main_event_box, gtk_widget_get_events (main_event_box) | GDK_POINTER_MOTION_MASK);
 	g_signal_connect (G_OBJECT (main_event_box), "button-press-event", G_CALLBACK (main_event_box_events), NULL);
 	g_signal_connect (G_OBJECT (main_event_box), "button-release-event", G_CALLBACK (main_event_box_events), NULL);
 	g_signal_connect (G_OBJECT (main_event_box), "key-press-event", G_CALLBACK (main_event_box_events), NULL);
 	g_signal_connect (G_OBJECT (main_event_box), "key-release-event", G_CALLBACK (main_event_box_events), NULL);
+	g_signal_connect (G_OBJECT (main_event_box), "motion-notify-event", G_CALLBACK (control_window_motion_notify), NULL);
 
 	gtk_container_add (GTK_CONTAINER (main_event_box), box1);
 	gtk_container_add (GTK_CONTAINER (main_window), main_event_box);
@@ -628,3 +630,4 @@ int main (int argc, char** argv)
 
 	return 0;
 }
+
