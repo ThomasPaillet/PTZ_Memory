@@ -493,7 +493,8 @@ void create_main_window (void)
 	g_signal_connect (G_OBJECT (main_event_box), "button-release-event", G_CALLBACK (main_event_box_events), NULL);
 	g_signal_connect (G_OBJECT (main_event_box), "key-press-event", G_CALLBACK (main_event_box_events), NULL);
 	g_signal_connect (G_OBJECT (main_event_box), "key-release-event", G_CALLBACK (main_event_box_events), NULL);
-	g_signal_connect (G_OBJECT (main_event_box), "motion-notify-event", G_CALLBACK (control_window_motion_notify), NULL);
+	main_event_box_motion_notify_handler_id = g_signal_connect (G_OBJECT (main_event_box), "motion-notify-event", G_CALLBACK (control_window_motion_notify), NULL);
+	g_signal_handler_block (main_event_box, main_event_box_motion_notify_handler_id);
 
 	gtk_container_add (GTK_CONTAINER (main_event_box), box1);
 	gtk_container_add (GTK_CONTAINER (main_window), main_event_box);
