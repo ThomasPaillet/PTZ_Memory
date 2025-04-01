@@ -1264,15 +1264,12 @@ void update_control_window_tally (void)
 
 void show_control_window (ptz_t *ptz, GtkWindowPosition position)
 {
-	if (current_ptz == NULL) {
-		current_ptz = ptz;
+	gboolean control_window_is_hidden;
 
-		gtk_event_box_set_above_child (GTK_EVENT_BOX (main_event_box), TRUE);
+	if (current_ptz == NULL) control_window_is_hidden = TRUE;
+	else control_window_is_hidden = FALSE;
 
-		gtk_window_set_position (GTK_WINDOW (control_window_gtk_window), position);
-
-		gtk_widget_show_all (control_window_gtk_window);
-	}
+	current_ptz = ptz;
 
 	update_auto_focus_state ();
 
@@ -1280,6 +1277,14 @@ void show_control_window (ptz_t *ptz, GtkWindowPosition position)
 
 	gtk_widget_queue_draw (control_window_focus_level_bar_drawing_area);
 	gtk_widget_queue_draw (control_window_zoom_level_bar_drawing_area);
+
+	if (control_window_is_hidden) {
+		gtk_event_box_set_above_child (GTK_EVENT_BOX (main_event_box), TRUE);
+
+		gtk_window_set_position (GTK_WINDOW (control_window_gtk_window), position);
+
+		gtk_widget_show_all (control_window_gtk_window);
+	}
 }
 
 gboolean hide_control_window (void)
