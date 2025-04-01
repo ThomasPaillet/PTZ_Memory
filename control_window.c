@@ -1460,7 +1460,7 @@ void create_control_window (void)
 			gtk_widget_set_margin_bottom (control_window_zoom_tele_button, MARGIN_VALUE);
 			g_signal_connect (G_OBJECT (control_window_zoom_tele_button), "button_press_event", G_CALLBACK (zoom_tele_button_pressed), NULL);
 			g_signal_connect (G_OBJECT (control_window_zoom_tele_button), "button_release_event", G_CALLBACK (zoom_speed_button_released), NULL);
-		gtk_grid_attach (GTK_GRID (grid), widget, 1, 2, 1, 1);
+		gtk_grid_attach (GTK_GRID (grid), control_window_zoom_tele_button, 1, 2, 1, 1);
 
 #ifdef _WIN32
 			image = gtk_image_new_from_pixbuf (pixbuf_down);
@@ -1473,7 +1473,7 @@ void create_control_window (void)
 			gtk_widget_set_margin_top (control_window_zoom_wide_button, MARGIN_VALUE);
 			g_signal_connect (G_OBJECT (control_window_zoom_wide_button), "button_press_event", G_CALLBACK (zoom_wide_button_pressed), NULL);
 			g_signal_connect (G_OBJECT (control_window_zoom_wide_button), "button_release_event", G_CALLBACK (zoom_speed_button_released), NULL);
-		gtk_grid_attach (GTK_GRID (grid), widget, 1, 3, 1, 1);
+		gtk_grid_attach (GTK_GRID (grid), control_window_zoom_wide_button, 1, 3, 1, 1);
 	gtk_grid_attach (GTK_GRID (main_grid), grid, 5, 2, 1, 2);
 
 	gtk_container_add (GTK_CONTAINER (control_window_gtk_window), main_grid);
