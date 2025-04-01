@@ -19,6 +19,7 @@
 
 #include "trackball.h"
 
+#include "main_window.h"
 #include "settings.h"
 
 
