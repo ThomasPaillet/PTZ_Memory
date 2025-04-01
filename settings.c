@@ -729,40 +729,40 @@ void load_config_file (void)
 
 		cameras_set_tmp->number_of_ghost_cameras = 0;
 
-		fread (&cameras_set_tmp->interface, sizeof (interface_param_t), 1, config_file);
+		fread (&cameras_set_tmp->layout, sizeof (interface_param_t), 1, config_file);
 
-		if (cameras_set_tmp->interface.thumbnail_size < 0.5) cameras_set_tmp->interface.thumbnail_size = 0.5;
-		else if (cameras_set_tmp->interface.thumbnail_size > 1.0) cameras_set_tmp->interface.thumbnail_size = 1.0;
+		if (cameras_set_tmp->layout.thumbnail_size < 0.5) cameras_set_tmp->layout.thumbnail_size = 0.5;
+		else if (cameras_set_tmp->layout.thumbnail_size > 1.0) cameras_set_tmp->layout.thumbnail_size = 1.0;
 
-		cameras_set_tmp->interface.thumbnail_width = 320 * cameras_set_tmp->interface.thumbnail_size;
-		cameras_set_tmp->interface.thumbnail_height = 180 * cameras_set_tmp->interface.thumbnail_size;
+		cameras_set_tmp->layout.thumbnail_width = 320 * cameras_set_tmp->layout.thumbnail_size;
+		cameras_set_tmp->layout.thumbnail_height = 180 * cameras_set_tmp->layout.thumbnail_size;
 
-		if (cameras_set_tmp->interface.memories_name_color_red < 0.0) cameras_set_tmp->interface.memories_name_color_red = 0.0;
-		else if (cameras_set_tmp->interface.memories_name_color_red > 1.0) cameras_set_tmp->interface.memories_name_color_red = 1.0;
+		if (cameras_set_tmp->layout.memories_name_color_red < 0.0) cameras_set_tmp->layout.memories_name_color_red = 0.0;
+		else if (cameras_set_tmp->layout.memories_name_color_red > 1.0) cameras_set_tmp->layout.memories_name_color_red = 1.0;
 
-		if (cameras_set_tmp->interface.memories_name_color_green < 0.0) cameras_set_tmp->interface.memories_name_color_green = 0.0;
-		else if (cameras_set_tmp->interface.memories_name_color_green > 1.0) cameras_set_tmp->interface.memories_name_color_green = 1.0;
+		if (cameras_set_tmp->layout.memories_name_color_green < 0.0) cameras_set_tmp->layout.memories_name_color_green = 0.0;
+		else if (cameras_set_tmp->layout.memories_name_color_green > 1.0) cameras_set_tmp->layout.memories_name_color_green = 1.0;
 
-		if (cameras_set_tmp->interface.memories_name_color_blue < 0.0) cameras_set_tmp->interface.memories_name_color_blue = 0.0;
-		else if (cameras_set_tmp->interface.memories_name_color_blue > 1.0) cameras_set_tmp->interface.memories_name_color_blue = 1.0;
+		if (cameras_set_tmp->layout.memories_name_color_blue < 0.0) cameras_set_tmp->layout.memories_name_color_blue = 0.0;
+		else if (cameras_set_tmp->layout.memories_name_color_blue > 1.0) cameras_set_tmp->layout.memories_name_color_blue = 1.0;
 
-		if (cameras_set_tmp->interface.memories_name_backdrop_color_red < 0.0) cameras_set_tmp->interface.memories_name_backdrop_color_red = 0.0;
-		else if (cameras_set_tmp->interface.memories_name_backdrop_color_red > 1.0) cameras_set_tmp->interface.memories_name_backdrop_color_red = 1.0;
+		if (cameras_set_tmp->layout.memories_name_backdrop_color_red < 0.0) cameras_set_tmp->layout.memories_name_backdrop_color_red = 0.0;
+		else if (cameras_set_tmp->layout.memories_name_backdrop_color_red > 1.0) cameras_set_tmp->layout.memories_name_backdrop_color_red = 1.0;
 
-		if (cameras_set_tmp->interface.memories_name_backdrop_color_green < 0.0) cameras_set_tmp->interface.memories_name_backdrop_color_green = 0.0;
-		else if (cameras_set_tmp->interface.memories_name_backdrop_color_green > 1.0) cameras_set_tmp->interface.memories_name_backdrop_color_green = 1.0;
+		if (cameras_set_tmp->layout.memories_name_backdrop_color_green < 0.0) cameras_set_tmp->layout.memories_name_backdrop_color_green = 0.0;
+		else if (cameras_set_tmp->layout.memories_name_backdrop_color_green > 1.0) cameras_set_tmp->layout.memories_name_backdrop_color_green = 1.0;
 
-		if (cameras_set_tmp->interface.memories_name_backdrop_color_blue < 0.0) cameras_set_tmp->interface.memories_name_backdrop_color_blue = 0.0;
-		else if (cameras_set_tmp->interface.memories_name_backdrop_color_blue > 1.0) cameras_set_tmp->interface.memories_name_backdrop_color_blue = 1.0;
+		if (cameras_set_tmp->layout.memories_name_backdrop_color_blue < 0.0) cameras_set_tmp->layout.memories_name_backdrop_color_blue = 0.0;
+		else if (cameras_set_tmp->layout.memories_name_backdrop_color_blue > 1.0) cameras_set_tmp->layout.memories_name_backdrop_color_blue = 1.0;
 
-		if (cameras_set_tmp->interface.memories_name_backdrop_color_alpha < 0.0) cameras_set_tmp->interface.memories_name_backdrop_color_alpha = 0.0;
-		else if (cameras_set_tmp->interface.memories_name_backdrop_color_alpha > 1.0) cameras_set_tmp->interface.memories_name_backdrop_color_alpha = 1.0;
+		if (cameras_set_tmp->layout.memories_name_backdrop_color_alpha < 0.0) cameras_set_tmp->layout.memories_name_backdrop_color_alpha = 0.0;
+		else if (cameras_set_tmp->layout.memories_name_backdrop_color_alpha > 1.0) cameras_set_tmp->layout.memories_name_backdrop_color_alpha = 1.0;
 
-		if ((cameras_set_tmp->interface.memories_button_vertical_margins < 0) || (cameras_set_tmp->interface.memories_button_vertical_margins > 50)) cameras_set_tmp->interface.memories_button_vertical_margins = 0;
+		if ((cameras_set_tmp->layout.memories_button_vertical_margins < 0) || (cameras_set_tmp->layout.memories_button_vertical_margins > 50)) cameras_set_tmp->layout.memories_button_vertical_margins = 0;
 
-		if ((cameras_set_tmp->interface.memories_button_horizontal_margins < 0) || (cameras_set_tmp->interface.memories_button_horizontal_margins > 50)) cameras_set_tmp->interface.memories_button_horizontal_margins = 0;
+		if ((cameras_set_tmp->layout.memories_button_horizontal_margins < 0) || (cameras_set_tmp->layout.memories_button_horizontal_margins > 50)) cameras_set_tmp->layout.memories_button_horizontal_margins = 0;
 
-		interface_default = cameras_set_tmp->interface;
+		interface_default = cameras_set_tmp->layout;
 
 		for (j = 0; j < cameras_set_tmp->number_of_cameras; j++) {
 			ptz = g_malloc (sizeof (ptz_t));
@@ -777,7 +777,7 @@ void load_config_file (void)
 			fread (&ptz->active, sizeof (gboolean), 1, config_file);
 
 			if (ptz->active) {
-				if (cameras_set_tmp->interface.orientation) create_ptz_widgets_horizontal (ptz);
+				if (cameras_set_tmp->layout.orientation) create_ptz_widgets_horizontal (ptz);
 				else create_ptz_widgets_vertical (ptz);
 
 				fread (ptz->ip_address, sizeof (char), 16, config_file);
@@ -811,10 +811,10 @@ void load_config_file (void)
 					fread (pixbuf_data, sizeof (guint8), pixbuf_byte_length, config_file);
 
 					ptz->memories[index].full_pixbuf = gdk_pixbuf_new_from_data (pixbuf_data, GDK_COLORSPACE_RGB, FALSE, 8, 320, 180, pixbuf_rowstride, (GdkPixbufDestroyNotify)g_free, NULL);
-					if (cameras_set_tmp->interface.thumbnail_width == 320) {
+					if (cameras_set_tmp->layout.thumbnail_width == 320) {
 						ptz->memories[index].image = gtk_image_new_from_pixbuf (ptz->memories[index].full_pixbuf);
 					} else {
-						ptz->memories[index].scaled_pixbuf = gdk_pixbuf_scale_simple (ptz->memories[index].full_pixbuf, cameras_set_tmp->interface.thumbnail_width, cameras_set_tmp->interface.thumbnail_height, GDK_INTERP_BILINEAR);
+						ptz->memories[index].scaled_pixbuf = gdk_pixbuf_scale_simple (ptz->memories[index].full_pixbuf, cameras_set_tmp->layout.thumbnail_width, cameras_set_tmp->layout.thumbnail_height, GDK_INTERP_BILINEAR);
 						ptz->memories[index].image = gtk_image_new_from_pixbuf (ptz->memories[index].scaled_pixbuf);
 					}
 					gtk_button_set_image (GTK_BUTTON (ptz->memories[index].button), ptz->memories[index].image);
@@ -825,7 +825,7 @@ void load_config_file (void)
 			} else {
 				cameras_set_tmp->number_of_ghost_cameras++;
 
-				if (cameras_set_tmp->interface.orientation) create_ghost_ptz_widgets_horizontal (ptz);
+				if (cameras_set_tmp->layout.orientation) create_ghost_ptz_widgets_horizontal (ptz);
 				else create_ghost_ptz_widgets_vertical (ptz);
 			}
 		}
@@ -924,7 +924,7 @@ void save_config_file (void)
 		fwrite (cameras_set_itr->name, sizeof (char), CAMERAS_SET_NAME_LENGTH, config_file);
 		fwrite (&cameras_set_itr->number_of_cameras, sizeof (int), 1, config_file);
 
-		fwrite (&cameras_set_itr->interface, sizeof (interface_param_t), 1, config_file);
+		fwrite (&cameras_set_itr->layout, sizeof (interface_param_t), 1, config_file);
 
 		for (j = 0; j < cameras_set_itr->number_of_cameras; j++) {
 			ptz = cameras_set_itr->cameras[j];
