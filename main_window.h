@@ -31,6 +31,7 @@ extern const char warning_txt[];
 
 extern GtkWidget *main_window;
 extern GtkWidget *main_event_box;
+extern gulong main_event_box_motion_notify_handler_id;
 extern GtkWidget *main_window_notebook;
 
 extern GtkWidget *interface_button;
