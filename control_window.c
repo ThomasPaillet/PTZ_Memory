@@ -86,82 +86,82 @@ gboolean control_window_key_press (GtkWidget *gtk_window, GdkEventKey *event)
 	ptz_t *new_ptz;
 	ptz_thread_t *controller_thread;
 
-		if (event->keyval == GDK_KEY_Escape) {
-			hide_control_window ();
+	if (event->keyval == GDK_KEY_Escape) {
+		hide_control_window ();
 
-			return GDK_EVENT_STOP;
-		} else if ((event->keyval == GDK_KEY_Up) || (event->keyval == GDK_KEY_KP_Up)) {
-			pan_tilt_speed_cmd[4] = '5';
-			pan_tilt_speed_cmd[5] = '0';
+		return GDK_EVENT_STOP;
+	} else if ((event->keyval == GDK_KEY_Up) || (event->keyval == GDK_KEY_KP_Up)) {
+		pan_tilt_speed_cmd[4] = '5';
+		pan_tilt_speed_cmd[5] = '0';
 
-			pan_tilt_speed_cmd[6] = '7';
-			pan_tilt_speed_cmd[7] = '5';
+		pan_tilt_speed_cmd[6] = '7';
+		pan_tilt_speed_cmd[7] = '5';
 
-			send_ptz_control_command (current_ptz, pan_tilt_speed_cmd, TRUE);
-			pan_tilt_is_moving = TRUE;
-		} else if ((event->keyval == GDK_KEY_Down) || (event->keyval == GDK_KEY_KP_Down)) {
-			pan_tilt_speed_cmd[4] = '5';
-			pan_tilt_speed_cmd[5] = '0';
+		send_ptz_control_command (current_ptz, pan_tilt_speed_cmd, TRUE);
+		pan_tilt_is_moving = TRUE;
+	} else if ((event->keyval == GDK_KEY_Down) || (event->keyval == GDK_KEY_KP_Down)) {
+		pan_tilt_speed_cmd[4] = '5';
+		pan_tilt_speed_cmd[5] = '0';
 
-			pan_tilt_speed_cmd[6] = '2';
-			pan_tilt_speed_cmd[7] = '5';
+		pan_tilt_speed_cmd[6] = '2';
+		pan_tilt_speed_cmd[7] = '5';
 
-			send_ptz_control_command (current_ptz, pan_tilt_speed_cmd, TRUE);
-			pan_tilt_is_moving = TRUE;
-		} else if ((event->keyval == GDK_KEY_Left) || (event->keyval == GDK_KEY_KP_Left)) {
-			pan_tilt_speed_cmd[4] = '2';
-			pan_tilt_speed_cmd[5] = '5';
+		send_ptz_control_command (current_ptz, pan_tilt_speed_cmd, TRUE);
+		pan_tilt_is_moving = TRUE;
+	} else if ((event->keyval == GDK_KEY_Left) || (event->keyval == GDK_KEY_KP_Left)) {
+		pan_tilt_speed_cmd[4] = '2';
+		pan_tilt_speed_cmd[5] = '5';
 
-			pan_tilt_speed_cmd[6] = '5';
-			pan_tilt_speed_cmd[7] = '0';
+		pan_tilt_speed_cmd[6] = '5';
+		pan_tilt_speed_cmd[7] = '0';
 
-			send_ptz_control_command (current_ptz, pan_tilt_speed_cmd, TRUE);
-			pan_tilt_is_moving = TRUE;
-		} else if ((event->keyval == GDK_KEY_Right) || (event->keyval == GDK_KEY_KP_Right)) {
-			pan_tilt_speed_cmd[4] = '7';
-			pan_tilt_speed_cmd[5] = '5';
+		send_ptz_control_command (current_ptz, pan_tilt_speed_cmd, TRUE);
+		pan_tilt_is_moving = TRUE;
+	} else if ((event->keyval == GDK_KEY_Right) || (event->keyval == GDK_KEY_KP_Right)) {
+		pan_tilt_speed_cmd[4] = '7';
+		pan_tilt_speed_cmd[5] = '5';
 
-			pan_tilt_speed_cmd[6] = '5';
-			pan_tilt_speed_cmd[7] = '0';
+		pan_tilt_speed_cmd[6] = '5';
+		pan_tilt_speed_cmd[7] = '0';
 
-			send_ptz_control_command (current_ptz, pan_tilt_speed_cmd, TRUE);
-			pan_tilt_is_moving = TRUE;
-		} else if ((event->keyval == GDK_KEY_Page_Up) || (event->keyval == GDK_KEY_KP_Page_Up)) {
-			gtk_widget_set_state_flags (control_window_zoom_tele_button, GTK_STATE_FLAG_ACTIVE, FALSE);
-			send_ptz_control_command (current_ptz, zoom_tele_speed_cmd, TRUE);
-			zoom_is_moving = TRUE;
-		} else if ((event->keyval == GDK_KEY_Page_Down) || (event->keyval == GDK_KEY_KP_Page_Down)) {
-			gtk_widget_set_state_flags (control_window_zoom_wide_button, GTK_STATE_FLAG_ACTIVE, FALSE);
-			send_ptz_control_command (current_ptz, zoom_wide_speed_cmd, TRUE);
-			zoom_is_moving = TRUE;
-		} else if (((event->keyval == GDK_KEY_Home) || (event->keyval == GDK_KEY_KP_Home)) && !current_ptz->auto_focus) {
-			gtk_widget_set_state_flags (control_window_otaf_button, GTK_STATE_FLAG_ACTIVE, FALSE);
-			send_cam_control_command (current_ptz, "OSE:69:1");
-		} else if ((event->state & GDK_MOD1_MASK) && ((event->keyval == GDK_KEY_q) || (event->keyval == GDK_KEY_Q))) {
-			hide_control_window ();
+		send_ptz_control_command (current_ptz, pan_tilt_speed_cmd, TRUE);
+		pan_tilt_is_moving = TRUE;
+	} else if ((event->keyval == GDK_KEY_Page_Up) || (event->keyval == GDK_KEY_KP_Page_Up)) {
+		gtk_widget_set_state_flags (control_window_zoom_tele_button, GTK_STATE_FLAG_ACTIVE, FALSE);
+		send_ptz_control_command (current_ptz, zoom_tele_speed_cmd, TRUE);
+		zoom_is_moving = TRUE;
+	} else if ((event->keyval == GDK_KEY_Page_Down) || (event->keyval == GDK_KEY_KP_Page_Down)) {
+		gtk_widget_set_state_flags (control_window_zoom_wide_button, GTK_STATE_FLAG_ACTIVE, FALSE);
+		send_ptz_control_command (current_ptz, zoom_wide_speed_cmd, TRUE);
+		zoom_is_moving = TRUE;
+	} else if (((event->keyval == GDK_KEY_Home) || (event->keyval == GDK_KEY_KP_Home)) && !current_ptz->auto_focus) {
+		gtk_widget_set_state_flags (control_window_otaf_button, GTK_STATE_FLAG_ACTIVE, FALSE);
+		send_cam_control_command (current_ptz, "OSE:69:1");
+	} else if ((event->state & GDK_MOD1_MASK) && ((event->keyval == GDK_KEY_q) || (event->keyval == GDK_KEY_Q))) {
+		hide_control_window ();
 
-			show_exit_confirmation_window ();
+		show_exit_confirmation_window ();
 
-			return GDK_EVENT_STOP;
-		} else if ((GDK_KEY_F1 <= event->keyval) && (event->keyval <= GDK_KEY_F15)) {
-			i = event->keyval - GDK_KEY_F1;
+		return GDK_EVENT_STOP;
+	} else if ((GDK_KEY_F1 <= event->keyval) && (event->keyval <= GDK_KEY_F15)) {
+		i = event->keyval - GDK_KEY_F1;
 
-			if ((i != current_ptz->index) && (i < current_cameras_set->number_of_cameras)) {
-				new_ptz = current_cameras_set->cameras[i];
+		if ((i != current_ptz->index) && (i < current_cameras_set->number_of_cameras)) {
+			new_ptz = current_cameras_set->cameras[i];
 
-				if (new_ptz->active && gtk_widget_get_sensitive (new_ptz->name_grid)) {
-					show_control_window (new_ptz, 0);
+			if (new_ptz->active && gtk_widget_get_sensitive (new_ptz->name_grid)) {
+				show_control_window (new_ptz, 0);
 
-					if (controller_is_used && controller_ip_address_is_valid) {
-						controller_thread = g_malloc (sizeof (ptz_thread_t));
-						controller_thread->ptz_ptr = new_ptz;
-						controller_thread->thread = g_thread_new (NULL, (GThreadFunc)controller_switch_ptz, controller_thread);
-					}
-				} else hide_control_window ();
+				if (controller_is_used && controller_ip_address_is_valid) {
+					controller_thread = g_malloc (sizeof (ptz_thread_t));
+					controller_thread->ptz_ptr = new_ptz;
+					controller_thread->thread = g_thread_new (NULL, (GThreadFunc)controller_switch_ptz, controller_thread);
+				}
+			} else hide_control_window ();
 
-				ask_to_connect_ptz_to_ctrl_opv (new_ptz);
-			}
-		} else if ((event->state & GDK_MOD1_MASK) && ((event->keyval == GDK_KEY_i) || (event->keyval == GDK_KEY_I))) send_jpeg_image_request_cmd (current_ptz);
+			ask_to_connect_ptz_to_ctrl_opv (new_ptz);
+		}
+	} else if ((event->state & GDK_MOD1_MASK) && ((event->keyval == GDK_KEY_i) || (event->keyval == GDK_KEY_I))) send_jpeg_image_request_cmd (current_ptz);
 
 	return GDK_EVENT_PROPAGATE;
 }
@@ -195,18 +195,22 @@ gboolean control_window_button_press (GtkWidget *window, GdkEventButton *event)
 		switch (trackball_button_action[event->button]) {
 			case 1: gtk_widget_set_state_flags (control_window_zoom_tele_button, GTK_STATE_FLAG_ACTIVE, FALSE);
 				send_ptz_control_command (current_ptz, zoom_tele_speed_cmd, TRUE);
+				zoom_is_moving = TRUE;
 				break;
 			case 2: gtk_widget_set_state_flags (control_window_zoom_wide_button, GTK_STATE_FLAG_ACTIVE, FALSE);
 				send_ptz_control_command (current_ptz, zoom_wide_speed_cmd, TRUE);
+				zoom_is_moving = TRUE;
 				break;
 			case 3: gtk_widget_set_state_flags (control_window_otaf_button, GTK_STATE_FLAG_ACTIVE, FALSE);
 				send_cam_control_command (current_ptz, "OSE:69:1");
 				break;
 			case 4: gtk_widget_set_state_flags (control_window_focus_far_button, GTK_STATE_FLAG_ACTIVE, FALSE);
 				send_ptz_control_command (current_ptz, focus_far_speed_cmd, TRUE);
+				focus_is_moving = TRUE;
 				break;
 			case 5: gtk_widget_set_state_flags (control_window_focus_near_button, GTK_STATE_FLAG_ACTIVE, FALSE);
 				send_ptz_control_command (current_ptz, focus_near_speed_cmd, TRUE);
+				focus_is_moving = TRUE;
 				break;
 			case 6: send_ptz_control_command (current_ptz, pan_tilt_stop_cmd, TRUE);
 				break;
@@ -312,17 +316,21 @@ gboolean control_window_button_release (GtkWidget *gtk_window, GdkEventButton *e
 		switch (event->button) {
 			case 1: send_ptz_control_command (current_ptz, zoom_stop_cmd, TRUE);
 				gtk_widget_unset_state_flags (GTK_WIDGET (control_window_zoom_tele_button), GTK_STATE_FLAG_ACTIVE);
+				zoom_is_moving = FALSE;
 				break;
 			case 2: send_ptz_control_command (current_ptz, zoom_stop_cmd, TRUE);
 				gtk_widget_unset_state_flags (GTK_WIDGET (control_window_zoom_wide_button), GTK_STATE_FLAG_ACTIVE);
+				zoom_is_moving = FALSE;
 				break;
 			case 3: gtk_widget_unset_state_flags (GTK_WIDGET (control_window_otaf_button), GTK_STATE_FLAG_ACTIVE);
 				break;
 			case 4: send_ptz_control_command (current_ptz, focus_stop_cmd, TRUE);
 				gtk_widget_unset_state_flags (GTK_WIDGET (control_window_focus_far_button), GTK_STATE_FLAG_ACTIVE);
+				focus_is_moving = FALSE;
 				break;
 			case 5: send_ptz_control_command (current_ptz, focus_stop_cmd, TRUE);
 				gtk_widget_unset_state_flags (GTK_WIDGET (control_window_focus_near_button), GTK_STATE_FLAG_ACTIVE);
+				focus_is_moving = FALSE;
 				break;
 		}
 	}
@@ -1282,7 +1290,7 @@ gboolean hide_control_window (void)
 		control_window_focus_timeout_id = 0;
 	}
 
-	if (focus_is_moving == TRUE) {
+	if (focus_is_moving) {
 		if (current_ptz->is_on) send_ptz_control_command (current_ptz, focus_stop_cmd, FALSE);
 		focus_is_moving = FALSE;
 	}
@@ -1292,7 +1300,7 @@ gboolean hide_control_window (void)
 		control_window_pan_tilt_timeout_id = 0;
 	}
 
-	if (pan_tilt_is_moving == TRUE) {
+	if (pan_tilt_is_moving) {
 		if (current_ptz->is_on) send_ptz_control_command (current_ptz, pan_tilt_stop_cmd, TRUE);
 		pan_tilt_is_moving = FALSE;
 	}
@@ -1302,7 +1310,7 @@ gboolean hide_control_window (void)
 		control_window_zoom_timeout_id = 0;
 	}
 
-	if (zoom_is_moving == TRUE) {
+	if (zoom_is_moving) {
 		if (current_ptz->is_on) send_ptz_control_command (current_ptz, zoom_stop_cmd, FALSE);
 		zoom_is_moving = FALSE;
 	}
