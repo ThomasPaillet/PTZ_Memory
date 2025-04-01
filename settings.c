@@ -904,7 +904,7 @@ void load_config_file (void)
 
 	fread (trackball_button_action, sizeof (gint), 10, config_file);
 	for (i = 0; i < 10; i++ ) {
-		if ((trackball_button_action[i] < 0) || (trackball_button_action[i] > 5)) trackball_button_action[i] = 0;
+		if ((trackball_button_action[i] < 0) || (trackball_button_action[i] > 6)) trackball_button_action[i] = 0;
 	}
 
 	fclose (config_file);
