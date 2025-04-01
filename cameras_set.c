@@ -437,6 +437,15 @@ gboolean cameras_set_confirmation_window_key_press (GtkWidget *confirmation_wind
 		cameras_set_configuration_window_ok (NULL, cameras_set);
 
 		return GDK_EVENT_STOP;
+	} else if ((event->state & GDK_MOD1_MASK) && ((event->keyval == GDK_KEY_q) || (event->keyval == GDK_KEY_Q))) {
+		cameras_set_configuration_window_cancel ();
+
+		gtk_widget_destroy (settings_window);
+		settings_window = NULL;
+
+		show_exit_confirmation_window ();
+
+		return GDK_EVENT_STOP;
 	}
 
 	return GDK_EVENT_PROPAGATE;
