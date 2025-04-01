@@ -190,8 +190,8 @@ gboolean control_window_key_release (GtkWidget *gtk_window, GdkEventKey *event)
 
 gboolean control_window_button_press (GtkWidget *window, GdkEventButton *event)
 {
-	if ((gdk_event_get_source_device ((GdkEvent *)event) == trackball) && (event->button >= 0 ) && (event->button < 10)) {
-		switch (trackball_button_action[event->button]) {
+	if ((gdk_event_get_source_device ((GdkEvent *)event) == trackball) && (event->button > 0 ) && (event->button <= 10)) {
+		switch (trackball_button_action[event->button - 1]) {
 			case 1: gtk_widget_set_state_flags (control_window_zoom_tele_button, GTK_STATE_FLAG_ACTIVE, FALSE);
 				send_ptz_control_command (current_ptz, zoom_tele_speed_cmd, TRUE);
 				zoom_is_moving = TRUE;
@@ -311,8 +311,8 @@ gboolean control_window_motion_notify (GtkWidget *gtk_window, GdkEventMotion *ev
 
 gboolean control_window_button_release (GtkWidget *gtk_window, GdkEventButton *event)
 {
-	if (gdk_event_get_source_device ((GdkEvent *)event) == trackball) {
-		switch (event->button) {
+	if ((gdk_event_get_source_device ((GdkEvent *)event) == trackball) && (event->button > 0 ) && (event->button <= 10)) {
+		switch (event->button - 1) {
 			case 1: send_ptz_control_command (current_ptz, zoom_stop_cmd, TRUE);
 				gtk_widget_unset_state_flags (GTK_WIDGET (control_window_zoom_tele_button), GTK_STATE_FLAG_ACTIVE);
 				zoom_is_moving = FALSE;
@@ -1264,13 +1264,6 @@ void update_control_window_tally (void)
 
 void show_control_window (ptz_t *ptz, GtkWindowPosition position)
 {
-	update_auto_focus_state ();
-
-	update_control_window_tally ();
-
-	gtk_widget_queue_draw (control_window_focus_level_bar_drawing_area);
-	gtk_widget_queue_draw (control_window_zoom_level_bar_drawing_area);
-
 	if (current_ptz == NULL) {
 		current_ptz = ptz;
 
@@ -1280,6 +1273,13 @@ void show_control_window (ptz_t *ptz, GtkWindowPosition position)
 
 		gtk_widget_show_all (control_window_gtk_window);
 	}
+
+	update_auto_focus_state ();
+
+	update_control_window_tally ();
+
+	gtk_widget_queue_draw (control_window_focus_level_bar_drawing_area);
+	gtk_widget_queue_draw (control_window_zoom_level_bar_drawing_area);
 }
 
 gboolean hide_control_window (void)
