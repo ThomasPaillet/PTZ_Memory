@@ -28,7 +28,8 @@ typedef struct interface_param_s {
 	gboolean orientation;
 
 	gdouble thumbnail_size;
-	int thumbnail_width, thumbnail_height;
+	int thumbnail_width;
+	int thumbnail_height;
 
 	double memories_name_color_red;
 	double memories_name_color_green;
