@@ -20,7 +20,7 @@ Linux/gresources.o: Linux/gresources.xml
 
 cameras_set.o: main_window.h protocol.h settings.h
 
-control_window.o: cameras_set.h controller.h main_window.h protocol.h sw_p_08.h tally.h
+control_window.o: cameras_set.h controller.h main_window.h protocol.h sw_p_08.h tally.h trackball.h
 
 controller.o: protocol.h
 
