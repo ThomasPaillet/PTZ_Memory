@@ -1287,11 +1287,18 @@ void show_control_window (ptz_t *ptz, GtkWindowPosition position)
 		gtk_widget_show_all (control_window_gtk_window);
 
 		gtk_event_box_set_above_child (GTK_EVENT_BOX (main_event_box), TRUE);
+		g_signal_handler_unblock (main_event_box, main_event_box_motion_notify_handler_id);
 	}
 }
 
 gboolean hide_control_window (void)
 {
+	g_signal_handler_block (main_event_box, main_event_box_motion_notify_handler_id);
+	gtk_event_box_set_above_child (GTK_EVENT_BOX (main_event_box), FALSE);
+
+	gtk_widget_hide (control_window_gtk_window);
+
+
 	if (control_window_focus_timeout_id != 0) {
 		g_source_remove (control_window_focus_timeout_id);
 		control_window_focus_timeout_id = 0;
@@ -1321,10 +1328,6 @@ gboolean hide_control_window (void)
 		if (current_ptz->is_on) send_ptz_control_command (current_ptz, zoom_stop_cmd, FALSE);
 		zoom_is_moving = FALSE;
 	}
-
-	gtk_event_box_set_above_child (GTK_EVENT_BOX (main_event_box), FALSE);
-
-	gtk_widget_hide (control_window_gtk_window);
 
 	current_ptz = NULL;
 
