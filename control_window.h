@@ -36,6 +36,8 @@ extern char zoom_wide_speed_cmd[5];
 extern char zoom_tele_speed_cmd[5];
 
 
+gboolean control_window_motion_notify (GtkWidget *window, GdkEventMotion *event);
+
 gboolean update_auto_focus_state (void);
 
 void update_control_window_tally (void);
