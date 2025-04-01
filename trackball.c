@@ -32,6 +32,8 @@ GtkWidget *trackball_buttons;
 char *trackball_name = NULL;
 size_t trackball_name_len = 0;
 
+int pan_tilt_stop_sensibility = 5;
+
 gint trackball_button_action[10] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
 gboolean button_pressed[10] = { FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE };
