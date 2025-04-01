@@ -27,6 +27,7 @@
 #include "protocol.h"
 #include "sw_p_08.h"
 #include "tally.h"
+#include "trackball.h"
 #include "update_notification.h"
 
 #include <string.h>
@@ -58,15 +59,17 @@ GtkEntryBuffer *controller_ip_entry_buffer[4];
 int focus_speed = 25;
 int zoom_speed = 25;
 
-GtkWidget *pointing_devices_combo_box = NULL;
 
-char *trackball_name = NULL;
-size_t trackball_name_len = 0;
-
-
-gboolean about_window_key_press (GtkWidget *about_window)
+gboolean about_window_key_press (GtkWidget *about_window, GdkEventKey *event)
 {
 	gtk_widget_destroy (about_window);
+
+	if ((event->state & GDK_MOD1_MASK) && ((event->keyval == GDK_KEY_q) || (event->keyval == GDK_KEY_Q))) {
+		gtk_widget_destroy (settings_window);
+		settings_window = NULL;
+
+		show_exit_confirmation_window ();
+	}
 
 	return GDK_EVENT_STOP;
 }
@@ -215,18 +218,16 @@ void settings_list_box_row_selected (GtkListBox *list_box, GtkListBoxRow *row)
 gboolean settings_window_key_press (GtkWidget *window, GdkEventKey *event)
 {
 	if (event->keyval == GDK_KEY_Escape) {
-		pointing_devices_combo_box = NULL;
-
 		gtk_widget_destroy (settings_window);
+		settings_window = NULL;
 
 		return GDK_EVENT_STOP;
 	} else if ((event->state & GDK_MOD1_MASK) && ((event->keyval == GDK_KEY_q) || (event->keyval == GDK_KEY_Q))) {
-		pointing_devices_combo_box = NULL;
-
 		gtk_widget_destroy (settings_window);
+		settings_window = NULL;
 
 		show_exit_confirmation_window ();
-		
+
 		return GDK_EVENT_STOP;
 	}
 
@@ -371,36 +372,10 @@ void tsl_umd_v5_udp_port_entry_activate (GtkEntry *entry, GtkEntryBuffer *entry_
 	backup_needed = TRUE;
 }
 
-void pointing_devices_changed (void)
-{
-	GList *glist;
-
-	g_free (trackball_name);
-	trackball_name = gtk_combo_box_text_get_active_text (GTK_COMBO_BOX_TEXT (pointing_devices_combo_box));
-	trackball_name_len = strlen (trackball_name);
-
-	for (glist = pointing_devices; glist != NULL; glist = glist->next) {
-		if (memcmp (gdk_device_get_name (glist->data), trackball_name, trackball_name_len) == 0) {
-			trackball = glist->data;
-			break;
-		}
-	}
-
-	backup_needed = TRUE;
-}
-
-void pan_tilt_stop_sensibility_value_changed (GtkRange *range)
-{
-	pan_tilt_stop_sensibility = gtk_range_get_value (range);
-
-	backup_needed = TRUE;
-}
-
 gboolean destroy_settings_window (void)
 {
-	pointing_devices_combo_box = NULL;
-
 	gtk_widget_destroy (settings_window);
+	settings_window = NULL;
 
 	return GDK_EVENT_STOP;
 }
@@ -705,44 +680,7 @@ void show_settings_window (void)
 		gtk_container_add (GTK_CONTAINER (frame), box2);
 	gtk_box_pack_start (GTK_BOX (box1), frame, FALSE, FALSE, 0);
 
-		frame = gtk_frame_new ("Trackball/Joystick");
-		gtk_frame_set_label_align (GTK_FRAME (frame), 0.5, 0.5);
-		gtk_container_set_border_width (GTK_CONTAINER (frame), MARGIN_VALUE);
-			box2 = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
-				box3 = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
-				gtk_widget_set_margin_top (box3, MARGIN_VALUE);
-				gtk_widget_set_margin_start (box3, MARGIN_VALUE);
-				gtk_widget_set_margin_end (box3, MARGIN_VALUE);
-				gtk_widget_set_margin_bottom (box3, MARGIN_VALUE);
-					pointing_devices_combo_box =  gtk_combo_box_text_new ();
-					gtk_combo_box_text_insert_text (GTK_COMBO_BOX_TEXT (pointing_devices_combo_box), 0, "");
-					gtk_combo_box_set_active (GTK_COMBO_BOX (pointing_devices_combo_box), 0);
-					for (glist = pointing_devices, i = 1; glist != NULL; glist = glist->next, i++) {
-						gtk_combo_box_text_insert_text (GTK_COMBO_BOX_TEXT (pointing_devices_combo_box), i, gdk_device_get_name (glist->data));
-						if ((trackball_name_len > 0) && (memcmp (gdk_device_get_name (glist->data), trackball_name, trackball_name_len) == 0)) gtk_combo_box_set_active (GTK_COMBO_BOX (pointing_devices_combo_box), i);
-					}
-					g_signal_connect (G_OBJECT (pointing_devices_combo_box), "changed", G_CALLBACK (pointing_devices_changed), NULL);
-				gtk_box_pack_start (GTK_BOX (box3), pointing_devices_combo_box, TRUE, TRUE, 0);
-			gtk_box_pack_start (GTK_BOX (box2), box3, FALSE, FALSE, 0);
-
-				box3 = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
-				gtk_widget_set_margin_top (box3, MARGIN_VALUE);
-				gtk_widget_set_margin_start (box3, MARGIN_VALUE);
-				gtk_widget_set_margin_end (box3, MARGIN_VALUE);
-				gtk_widget_set_margin_bottom (box3, MARGIN_VALUE);
-					box4 = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
-						widget =  gtk_label_new ("Sensibilité à l'arrêt");
-					gtk_box_pack_start (GTK_BOX (box4), widget, FALSE, FALSE, 0);
-						widget = gtk_scale_new_with_range (GTK_ORIENTATION_HORIZONTAL, 0.0, 20.0, 1.0);
-						gtk_scale_set_value_pos (GTK_SCALE (widget), GTK_POS_RIGHT);
-						gtk_scale_set_draw_value (GTK_SCALE (widget), TRUE);
-						gtk_scale_set_has_origin (GTK_SCALE (widget), FALSE);
-						gtk_range_set_value (GTK_RANGE (widget), pan_tilt_stop_sensibility);
-						g_signal_connect (G_OBJECT (widget), "value-changed", G_CALLBACK (pan_tilt_stop_sensibility_value_changed), NULL);
-					gtk_box_pack_start (GTK_BOX (box4), widget, TRUE, TRUE, 0);
-				gtk_box_pack_start (GTK_BOX (box3), box4, TRUE, TRUE, 0);
-			gtk_box_pack_start (GTK_BOX (box2), box3, FALSE, FALSE, 0);
-		gtk_container_add (GTK_CONTAINER (frame), box2);
+		frame = create_trackball_settings_frame ();
 	gtk_box_pack_start (GTK_BOX (box1), frame, FALSE, FALSE, 0);
 
 		box2 = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
