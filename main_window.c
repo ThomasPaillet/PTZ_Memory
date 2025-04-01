@@ -47,6 +47,8 @@ const char application_name_txt[] = "Mémoires Pan Tilt Zoom pour caméras PTZ P
 const char warning_txt[] = "Attention !";
 
 GtkWidget *main_window, *main_event_box, *main_window_notebook;
+gulong main_event_box_motion_notify_handler_id;
+
 GtkWidget *interface_button;
 GtkWidget *store_toggle_button, *delete_toggle_button, *link_toggle_button;
 GtkWidget *switch_cameras_on_button, *switch_cameras_off_button;
