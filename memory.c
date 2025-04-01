@@ -44,11 +44,11 @@ gboolean free_memory_thread (memory_thread_t *memory_thread)
 gboolean update_button (memory_t *memory)
 {
 	if (memory->image == NULL) {
-		if (current_cameras_set->interface.thumbnail_width == 320) memory->image = gtk_image_new_from_pixbuf (memory->full_pixbuf);
+		if (current_cameras_set->layout.thumbnail_width == 320) memory->image = gtk_image_new_from_pixbuf (memory->full_pixbuf);
 		else memory->image = gtk_image_new_from_pixbuf (memory->scaled_pixbuf);
 		gtk_button_set_image (GTK_BUTTON (memory->button), memory->image);
 	} else {
-		if (current_cameras_set->interface.thumbnail_width == 320) gtk_image_set_from_pixbuf (GTK_IMAGE (memory->image), memory->full_pixbuf);
+		if (current_cameras_set->layout.thumbnail_width == 320) gtk_image_set_from_pixbuf (GTK_IMAGE (memory->image), memory->full_pixbuf);
 		else gtk_image_set_from_pixbuf (GTK_IMAGE (memory->image), memory->scaled_pixbuf);
 	}
 
@@ -66,9 +66,9 @@ gpointer save_memory (memory_thread_t *memory_thread)
 	if (ptz->model == AW_HE130) send_thumbnail_320_request_cmd (memory);
 	else send_thumbnail_640_request_cmd (memory);
 
-	if (current_cameras_set->interface.thumbnail_width != 320) {
+	if (current_cameras_set->layout.thumbnail_width != 320) {
 		if (!memory->empty) g_object_unref (G_OBJECT (memory->scaled_pixbuf));
-		memory->scaled_pixbuf = gdk_pixbuf_scale_simple (memory->full_pixbuf, current_cameras_set->interface.thumbnail_width, current_cameras_set->interface.thumbnail_height, GDK_INTERP_BILINEAR);
+		memory->scaled_pixbuf = gdk_pixbuf_scale_simple (memory->full_pixbuf, current_cameras_set->layout.thumbnail_width, current_cameras_set->layout.thumbnail_height, GDK_INTERP_BILINEAR);
 	}
 
 	g_mutex_lock (&ptz->lens_information_mutex);
@@ -244,7 +244,7 @@ gboolean memory_button_button_press_event (GtkButton *button, GdkEventButton *ev
 			gtk_widget_destroy (memory->image);
 			memory->image = NULL;
 			g_object_unref (G_OBJECT (memory->full_pixbuf));
-			if (current_cameras_set->interface.thumbnail_width != 320) g_object_unref (G_OBJECT (memory->scaled_pixbuf));
+			if (current_cameras_set->layout.thumbnail_width != 320) g_object_unref (G_OBJECT (memory->scaled_pixbuf));
 
 			memory->name[0] = '\0';
 
@@ -301,14 +301,14 @@ gboolean memory_name_draw (GtkWidget *widget, cairo_t *cr, char *name)
 	PangoFontDescription *desc;
 
 	if (name[0] != '\0') {
-		cairo_set_source_rgba (cr, current_cameras_set->interface.memories_name_backdrop_color_red, current_cameras_set->interface.memories_name_backdrop_color_green, current_cameras_set->interface.memories_name_backdrop_color_blue, current_cameras_set->interface.memories_name_backdrop_color_alpha);
-		cairo_rectangle (cr, 5.0, current_cameras_set->interface.thumbnail_height + 5.0 - (20.0 * current_cameras_set->interface.thumbnail_size), current_cameras_set->interface.thumbnail_width, 20.0 * current_cameras_set->interface.thumbnail_size);
+		cairo_set_source_rgba (cr, current_cameras_set->layout.memories_name_backdrop_color_red, current_cameras_set->layout.memories_name_backdrop_color_green, current_cameras_set->layout.memories_name_backdrop_color_blue, current_cameras_set->layout.memories_name_backdrop_color_alpha);
+		cairo_rectangle (cr, 5.0, current_cameras_set->layout.thumbnail_height + 5.0 - (20.0 * current_cameras_set->layout.thumbnail_size), current_cameras_set->layout.thumbnail_width, 20.0 * current_cameras_set->layout.thumbnail_size);
 		cairo_fill (cr);
 
-		cairo_set_source_rgb (cr, current_cameras_set->interface.memories_name_color_red, current_cameras_set->interface.memories_name_color_green, current_cameras_set->interface.memories_name_color_blue);
+		cairo_set_source_rgb (cr, current_cameras_set->layout.memories_name_color_red, current_cameras_set->layout.memories_name_color_green, current_cameras_set->layout.memories_name_color_blue);
 		pl = pango_cairo_create_layout (cr);
 
-		cairo_translate (cr, 5.0 + 16.0 * (10 - (strlen (name) / 2)) * current_cameras_set->interface.thumbnail_size, current_cameras_set->interface.thumbnail_height - (19.0 * current_cameras_set->interface.thumbnail_size) + (1.0 - current_cameras_set->interface.thumbnail_size) * 4.0);
+		cairo_translate (cr, 5.0 + 16.0 * (10 - (strlen (name) / 2)) * current_cameras_set->layout.thumbnail_size, current_cameras_set->layout.thumbnail_height - (19.0 * current_cameras_set->layout.thumbnail_size) + (1.0 - current_cameras_set->layout.thumbnail_size) * 4.0);
 
 		pango_layout_set_text (pl, name, -1);
 		desc = pango_font_description_from_string (memory_name_font);
@@ -328,20 +328,20 @@ gboolean memory_outline_draw (GtkWidget *widget, cairo_t *cr, memory_t *memory)
 	if (memory->is_loaded) {
 		cairo_set_source_rgba (cr, 0.8, 0.545, 0.0, 1.0);
 //Top
-		cairo_rectangle (cr, 3.0, 2.0, current_cameras_set->interface.thumbnail_width + 4.0, 1.0);
+		cairo_rectangle (cr, 3.0, 2.0, current_cameras_set->layout.thumbnail_width + 4.0, 1.0);
 		cairo_fill (cr);
-		cairo_rectangle (cr, 2.0, 3.0, current_cameras_set->interface.thumbnail_width + 6.0, 2.0);
+		cairo_rectangle (cr, 2.0, 3.0, current_cameras_set->layout.thumbnail_width + 6.0, 2.0);
 		cairo_fill (cr);
 //Bottom
-		cairo_rectangle (cr, 2.0, 5.0 + current_cameras_set->interface.thumbnail_height, current_cameras_set->interface.thumbnail_width + 6.0, 2.0);
+		cairo_rectangle (cr, 2.0, 5.0 + current_cameras_set->layout.thumbnail_height, current_cameras_set->layout.thumbnail_width + 6.0, 2.0);
 		cairo_fill (cr);
-		cairo_rectangle (cr, 3.0, 7.0 + current_cameras_set->interface.thumbnail_height, current_cameras_set->interface.thumbnail_width + 4.0, 1.0);
+		cairo_rectangle (cr, 3.0, 7.0 + current_cameras_set->layout.thumbnail_height, current_cameras_set->layout.thumbnail_width + 4.0, 1.0);
 		cairo_fill (cr);
 //Left
-		cairo_rectangle (cr, 2.0, 5.0, 3.0, current_cameras_set->interface.thumbnail_height);
+		cairo_rectangle (cr, 2.0, 5.0, 3.0, current_cameras_set->layout.thumbnail_height);
 		cairo_fill (cr);
 //Right
-		cairo_rectangle (cr, 5.0 + current_cameras_set->interface.thumbnail_width, 5.0, 3.0, current_cameras_set->interface.thumbnail_height);
+		cairo_rectangle (cr, 5.0 + current_cameras_set->layout.thumbnail_width, 5.0, 3.0, current_cameras_set->layout.thumbnail_height);
 		cairo_fill (cr);
 	}
 
