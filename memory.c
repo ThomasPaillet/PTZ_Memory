@@ -27,7 +27,7 @@
 #include "settings.h"
 
 
-typedef struct {
+typedef struct memory_thread_s {
 	memory_t *memory_ptr;
 	GThread *thread;
 } memory_thread_t;
