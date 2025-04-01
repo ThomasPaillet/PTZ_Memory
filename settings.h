@@ -33,11 +33,6 @@ extern GtkWidget *settings_window;
 extern GtkWidget *settings_list_box;
 extern GtkWidget *settings_new_button;
 
-extern GtkWidget *pointing_devices_combo_box;
-
-extern char *trackball_name;
-extern size_t trackball_name_len;
-
 
 void show_settings_window (void);
 
