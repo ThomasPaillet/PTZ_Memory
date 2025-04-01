@@ -29,8 +29,6 @@ extern ptz_t *current_ptz;
 extern GtkWidget *control_window_focus_level_bar_drawing_area;
 extern GtkWidget *control_window_zoom_level_bar_drawing_area;
 
-extern int pan_tilt_stop_sensibility;
-
 extern char focus_near_speed_cmd[5];
 extern char focus_far_speed_cmd[5];
 
