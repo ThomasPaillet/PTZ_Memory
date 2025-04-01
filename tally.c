@@ -102,17 +102,17 @@ gboolean ghost_ptz_tally_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 	return GDK_EVENT_PROPAGATE;
 }
 
-gboolean control_window_tally_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
+gboolean control_window_tally_draw (GtkWidget *widget, cairo_t *cr)
 {
-	if (ptz->tally_data & 0x30) {
-		if ((ptz->tally_data & 0x10) && !(ptz->tally_data & 0x20)) cairo_set_source_rgb (cr, ptz->tally_brightness, 0.0, 0.0);
-		else if ((ptz->tally_data & 0x20) && !(ptz->tally_data & 0x10)) cairo_set_source_rgb (cr, 0.0, ptz->tally_brightness, 0.0);
-		else cairo_set_source_rgb (cr, 0.941176471 * ptz->tally_brightness, 0.764705882 * ptz->tally_brightness, 0.0);
-	} else if (ptz->tally_data & 0x03) {
-		if (!ptz->tally_1_is_on) {
-			if ((ptz->tally_data & 0x01) && !(ptz->tally_data & 0x02)) cairo_set_source_rgb (cr, ptz->tally_brightness, 0.0, 0.0);
-			else if ((ptz->tally_data & 0x02) && !(ptz->tally_data & 0x01)) cairo_set_source_rgb (cr, 0.0, ptz->tally_brightness, 0.0);
-			else cairo_set_source_rgb (cr, 0.941176471 * ptz->tally_brightness, 0.764705882 * ptz->tally_brightness, 0.0);
+	if (current_ptz->tally_data & 0x30) {
+		if ((current_ptz->tally_data & 0x10) && !(current_ptz->tally_data & 0x20)) cairo_set_source_rgb (cr, current_ptz->tally_brightness, 0.0, 0.0);
+		else if ((current_ptz->tally_data & 0x20) && !(current_ptz->tally_data & 0x10)) cairo_set_source_rgb (cr, 0.0, current_ptz->tally_brightness, 0.0);
+		else cairo_set_source_rgb (cr, 0.941176471 * current_ptz->tally_brightness, 0.764705882 * current_ptz->tally_brightness, 0.0);
+	} else if (current_ptz->tally_data & 0x03) {
+		if (!current_ptz->tally_1_is_on) {
+			if ((current_ptz->tally_data & 0x01) && !(current_ptz->tally_data & 0x02)) cairo_set_source_rgb (cr, current_ptz->tally_brightness, 0.0, 0.0);
+			else if ((current_ptz->tally_data & 0x02) && !(current_ptz->tally_data & 0x01)) cairo_set_source_rgb (cr, 0.0, current_ptz->tally_brightness, 0.0);
+			else cairo_set_source_rgb (cr, 0.941176471 * current_ptz->tally_brightness, 0.764705882 * current_ptz->tally_brightness, 0.0);
 		}
 	} else cairo_set_source_rgb (cr, 0.176470588, 0.196078431, 0.203921569);
 
@@ -201,7 +201,7 @@ gboolean ghost_ptz_name_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 	return GDK_EVENT_PROPAGATE;
 }
 
-gboolean control_window_name_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
+gboolean control_window_name_draw (GtkWidget *widget, cairo_t *cr)
 {
 	PangoLayout *pl;
 	PangoFontDescription *desc;
@@ -210,24 +210,24 @@ gboolean control_window_name_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 
 	cairo_paint (cr);
 
-	if (ptz->tally_data & 0x30) {
-		if ((ptz->tally_data & 0x10) && !(ptz->tally_data & 0x20)) cairo_set_source_rgb (cr, ptz->tally_brightness, 0.0, 0.0);
-		else if ((ptz->tally_data & 0x20) && !(ptz->tally_data & 0x10)) cairo_set_source_rgb (cr, 0.0, ptz->tally_brightness, 0.0);
-		else cairo_set_source_rgb (cr, 0.941176471 * ptz->tally_brightness, 0.764705882 * ptz->tally_brightness, 0.0);
-	} else if (ptz->tally_data & 0x03) {
-		if (!ptz->tally_1_is_on) {
-			if ((ptz->tally_data & 0x01) && !(ptz->tally_data & 0x02)) cairo_set_source_rgb (cr, ptz->tally_brightness, 0.0, 0.0);
-			else if ((ptz->tally_data & 0x02) && !(ptz->tally_data & 0x01)) cairo_set_source_rgb (cr, 0.0, ptz->tally_brightness, 0.0);
-			else cairo_set_source_rgb (cr, 0.941176471 * ptz->tally_brightness, 0.764705882 * ptz->tally_brightness, 0.0);
+	if (current_ptz->tally_data & 0x30) {
+		if ((current_ptz->tally_data & 0x10) && !(current_ptz->tally_data & 0x20)) cairo_set_source_rgb (cr, current_ptz->tally_brightness, 0.0, 0.0);
+		else if ((current_ptz->tally_data & 0x20) && !(current_ptz->tally_data & 0x10)) cairo_set_source_rgb (cr, 0.0, current_ptz->tally_brightness, 0.0);
+		else cairo_set_source_rgb (cr, 0.941176471 * current_ptz->tally_brightness, 0.764705882 * current_ptz->tally_brightness, 0.0);
+	} else if (current_ptz->tally_data & 0x03) {
+		if (!current_ptz->tally_1_is_on) {
+			if ((current_ptz->tally_data & 0x01) && !(current_ptz->tally_data & 0x02)) cairo_set_source_rgb (cr, current_ptz->tally_brightness, 0.0, 0.0);
+			else if ((current_ptz->tally_data & 0x02) && !(current_ptz->tally_data & 0x01)) cairo_set_source_rgb (cr, 0.0, current_ptz->tally_brightness, 0.0);
+			else cairo_set_source_rgb (cr, 0.941176471 * current_ptz->tally_brightness, 0.764705882 * current_ptz->tally_brightness, 0.0);
 		}
 	} else cairo_set_source_rgb (cr, 0.933333333, 0.933333333, 0.925490196);
 
 	pl = pango_cairo_create_layout (cr);
 
-	if (ptz->name[1] == '\0') cairo_translate (cr, 18, 0);
+	if (current_ptz->name[1] == '\0') cairo_translate (cr, 18, 0);
 	else cairo_translate (cr, 5, 0);
 
-	pango_layout_set_text (pl, ptz->name, -1);
+	pango_layout_set_text (pl, current_ptz->name, -1);
 	desc = pango_font_description_from_string ("Courier Bold 30");
 	pango_layout_set_font_description (pl, desc);
 	pango_font_description_free (desc);
