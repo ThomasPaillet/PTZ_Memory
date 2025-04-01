@@ -25,7 +25,7 @@
 #include "protocol.h"
 
 
-typedef struct {
+typedef struct tsl_umd_v5_packet_s {
 	guint16 total_byte_count;
 	guint8 minor_version_number;
 	guint8 flags;
@@ -73,10 +73,7 @@ gboolean ptz_tally_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 			else if ((ptz->tally_data & 0x02) && !(ptz->tally_data & 0x01)) cairo_set_source_rgb (cr, 0.0, ptz->tally_brightness, 0.0);
 			else cairo_set_source_rgb (cr, 0.941176471 * ptz->tally_brightness, 0.764705882 * ptz->tally_brightness, 0.0);
 		}
-	} else {
-		if (!gtk_widget_is_sensitive (widget) || (GTK_STATE_FLAG_BACKDROP & gtk_widget_get_state_flags (widget))) cairo_set_source_rgb (cr, 0.2, 0.223529412, 0.231372549);
-		else cairo_set_source_rgb (cr, 0.176470588, 0.196078431, 0.203921569);
-	}
+	} else cairo_set_source_rgb (cr, 0.2, 0.223529412, 0.231372549);
 
 	cairo_paint (cr);
 
@@ -127,8 +124,8 @@ gboolean ptz_name_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 	PangoFontDescription *desc;
 
 	if ((gtk_widget_is_sensitive (widget)) && !(GTK_STATE_FLAG_BACKDROP & gtk_widget_get_state_flags (widget))) {
-		if (ptz->enter_notify_name_drawing_area) cairo_set_source_rgb (cr, 0.2, 0.223529412, 0.231372549);
-		else cairo_set_source_rgb (cr, 0.176470588, 0.196078431, 0.203921569);
+		if (ptz->enter_notify_name_drawing_area) cairo_set_source_rgb (cr, 0.176470588, 0.196078431, 0.203921569);
+		else cairo_set_source_rgb (cr, 0.2, 0.223529412, 0.231372549);
 	} else cairo_set_source_rgb (cr, 0.2, 0.223529412, 0.231372549);
 
 	cairo_paint (cr);
