@@ -30,6 +30,8 @@ extern GdkDevice *trackball;
 extern char *trackball_name;
 extern size_t trackball_name_len;
 
+extern gint trackball_button_action[10];
+
 
 void device_added_to_seat (GdkSeat *seat, GdkDevice *device);
 
