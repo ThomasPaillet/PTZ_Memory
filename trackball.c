@@ -130,7 +130,10 @@ void pointing_devices_changed (void)
 		}
 
 		gtk_widget_set_sensitive (trackball_buttons, TRUE);
-	} else gtk_widget_set_sensitive (trackball_buttons, FALSE);
+	} else {
+		trackball = NULL;
+		gtk_widget_set_sensitive (trackball_buttons, FALSE);
+	}
 
 	backup_needed = TRUE;
 }
@@ -152,7 +155,7 @@ void trackball_button_action_changed (GtkComboBox *combo_box, gpointer index)
 gboolean combo_box_outline_draw (GtkWidget *widget, cairo_t *cr, gpointer index)
 {
 	if (button_pressed[GPOINTER_TO_INT (index)]) cairo_set_source_rgba (cr, 0.8, 0.545, 0.0, 1.0);
-//	else cairo_set_source_rgb (cr, 0.176470588, 0.196078431, 0.203921569);
+	else cairo_set_source_rgb (cr, 0.2, 0.223529412, 0.231372549);
 
 	cairo_paint (cr);
 
