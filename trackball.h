@@ -30,6 +30,8 @@ extern GdkDevice *trackball;
 extern char *trackball_name;
 extern size_t trackball_name_len;
 
+extern int pan_tilt_stop_sensibility;
+
 extern gint trackball_button_action[10];
 
 
