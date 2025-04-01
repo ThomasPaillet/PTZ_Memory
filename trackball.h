@@ -35,6 +35,10 @@ void device_added_to_seat (GdkSeat *seat, GdkDevice *device);
 
 void device_removed_from_seat (GdkSeat *seat, GdkDevice *device);
 
+gboolean trackball_settings_button_press (GtkWidget *window, GdkEventButton *event);
+
+gboolean trackball_settings_button_release (GtkWidget *gtk_window, GdkEventButton *event);
+
 GtkWidget* create_trackball_settings_frame (void);
 
 
