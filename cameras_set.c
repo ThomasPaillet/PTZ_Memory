@@ -1243,7 +1243,7 @@ void update_current_cameras_set_vertical_margins (void)
 					gtk_widget_set_margin_end (ptz->memories[j].button, interface_default.memories_button_vertical_margins);
 				}
 			}
-		} else gtk_widget_set_size_request (ptz->ghost_body, ((interface_default.thumbnail_width + 10) + (2 * interface_default.memories_button_vertical_margins)) * MAX_MEMORIES, interface_default.thumbnail_height / 2);
+		} else if (interface_default.orientation) gtk_widget_set_size_request (ptz->ghost_body, ((interface_default.thumbnail_width + 10) + (2 * interface_default.memories_button_vertical_margins)) * MAX_MEMORIES, interface_default.thumbnail_height / 2);
 	}
 
 	if (interface_default.orientation) {
@@ -1276,7 +1276,7 @@ void update_current_cameras_set_horizontal_margins (void)
 					gtk_widget_set_margin_bottom (ptz->memories[j].button, interface_default.memories_button_horizontal_margins);
 				}
 			}
-		} else gtk_widget_set_size_request (ptz->ghost_body, interface_default.thumbnail_height / 2, ((interface_default.thumbnail_height + 10) + (2 * interface_default.memories_button_horizontal_margins)) * MAX_MEMORIES);
+		} else if (!interface_default.orientation) gtk_widget_set_size_request (ptz->ghost_body, interface_default.thumbnail_height / 2, ((interface_default.thumbnail_height + 10) + (2 * interface_default.memories_button_horizontal_margins)) * MAX_MEMORIES);
 	}
 
 	if (!interface_default.orientation) {
