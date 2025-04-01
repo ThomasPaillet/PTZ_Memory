@@ -74,21 +74,23 @@ void device_removed_from_seat (GdkSeat *seat, GdkDevice *device)
 	if (device == trackball) trackball = NULL;
 
 	if (settings_window != NULL) {
-		gtk_combo_box_text_remove_all (GTK_COMBO_BOX_TEXT (pointing_devices_combo_box));
 		gtk_widget_set_sensitive (trackball_buttons, FALSE);
 
+		g_signal_handler_block (pointing_devices_combo_box, pointing_devices_combo_box_handler_id);
+		gtk_combo_box_text_remove_all (GTK_COMBO_BOX_TEXT (pointing_devices_combo_box));
+
 		gtk_combo_box_text_insert_text (GTK_COMBO_BOX_TEXT (pointing_devices_combo_box), 0, "");
+
 		for (glist = pointing_devices, i = 1; glist != NULL; glist = glist->next, i++) {
 			gtk_combo_box_text_insert_text (GTK_COMBO_BOX_TEXT (pointing_devices_combo_box), i, gdk_device_get_name (glist->data));
 
 			if ((trackball_name_len > 0) && (memcmp (gdk_device_get_name (glist->data), trackball_name, trackball_name_len) == 0)) {
-				g_signal_handler_block (pointing_devices_combo_box, pointing_devices_combo_box_handler_id);
 				gtk_combo_box_set_active (GTK_COMBO_BOX (pointing_devices_combo_box), i);
-				g_signal_handler_unblock (pointing_devices_combo_box, pointing_devices_combo_box_handler_id);
 
 				gtk_widget_set_sensitive (trackball_buttons, TRUE);
 			}
 		}
+		g_signal_handler_unblock (pointing_devices_combo_box, pointing_devices_combo_box_handler_id);
 	}
 }
 
@@ -281,7 +283,7 @@ GtkWidget* create_trackball_settings_frame (void)
 		gtk_box_pack_start (GTK_BOX (box1), trackball_buttons, FALSE, FALSE, 0);
 	gtk_container_add (GTK_CONTAINER (frame), box1);
 
-	if (trackball_name_len < 1) gtk_widget_set_sensitive (trackball_buttons, FALSE);
+	if ((trackball_name_len < 1) || (gtk_combo_box_get_active (GTK_COMBO_BOX (pointing_devices_combo_box))) == 0) gtk_widget_set_sensitive (trackball_buttons, FALSE);
 
 	return frame;
 }
