@@ -93,8 +93,8 @@ void device_removed_from_seat (GdkSeat *seat, GdkDevice *device)
 
 gboolean trackball_settings_button_press (GtkWidget *window, GdkEventButton *event)
 {
-	if ((gdk_event_get_source_device ((GdkEvent *)event) == trackball) && (event->button >= 0 ) && (event->button < 10)) {
-		button_pressed[event->button] = TRUE;
+	if ((gdk_event_get_source_device ((GdkEvent *)event) == trackball) && (event->button > 0 ) && (event->button <= 10)) {
+		button_pressed[event->button - 1] = TRUE;
 
 		gtk_widget_queue_draw (trackball_buttons);
 	}
@@ -104,8 +104,8 @@ gboolean trackball_settings_button_press (GtkWidget *window, GdkEventButton *eve
 
 gboolean trackball_settings_button_release (GtkWidget *window, GdkEventButton *event)
 {
-	if ((gdk_event_get_source_device ((GdkEvent *)event) == trackball) && (event->button >= 0 ) && (event->button < 10)) {
-		button_pressed[event->button] = FALSE;
+	if ((gdk_event_get_source_device ((GdkEvent *)event) == trackball) && (event->button > 0 ) && (event->button <= 10)) {
+		button_pressed[event->button - 1] = FALSE;
 
 		gtk_widget_queue_draw (trackball_buttons);
 	}
@@ -154,7 +154,7 @@ gboolean combo_box_outline_draw (GtkWidget *widget, cairo_t *cr, gpointer index)
 	if (button_pressed[GPOINTER_TO_INT (index)]) cairo_set_source_rgba (cr, 0.8, 0.545, 0.0, 1.0);
 //	else cairo_set_source_rgb (cr, 0.176470588, 0.196078431, 0.203921569);
 
-	cairo_fill (cr);
+	cairo_paint (cr);
 
 	return GDK_EVENT_PROPAGATE;
 }
