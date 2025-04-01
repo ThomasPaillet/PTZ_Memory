@@ -401,6 +401,8 @@ void show_settings_window (void)
 	gtk_window_set_position (GTK_WINDOW (settings_window), GTK_WIN_POS_CENTER_ON_PARENT);
 	g_signal_connect (G_OBJECT (settings_window), "key-press-event", G_CALLBACK (settings_window_key_press), NULL);
 	g_signal_connect (G_OBJECT (settings_window), "delete-event", G_CALLBACK (destroy_settings_window), NULL);
+	g_signal_connect (G_OBJECT (settings_window), "button-press-event", G_CALLBACK (trackball_settings_button_press), NULL);
+	g_signal_connect (G_OBJECT (settings_window), "button-release-event", G_CALLBACK (trackball_settings_button_release), NULL);
 
 	box1 = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
 		frame = gtk_frame_new ("Ensembles de caméras");
@@ -900,6 +902,11 @@ void load_config_file (void)
 	fread (&pan_tilt_stop_sensibility, sizeof (int), 1, config_file);
 	if ((pan_tilt_stop_sensibility < 0) || (pan_tilt_stop_sensibility > 20)) pan_tilt_stop_sensibility = 5;
 
+	fread (trackball_button_action, sizeof (gint), 10, config_file);
+	for (i = 0; i < 10; i++ ) {
+		if ((trackball_button_action[i] < 0) || (trackball_button_action[i] > 5)) trackball_button_action[i] = 0;
+	}
+
 	fclose (config_file);
 }
 
@@ -981,6 +988,8 @@ void save_config_file (void)
 	if (trackball_name_len > 0) fwrite (trackball_name, sizeof (char), trackball_name_len, config_file);
 
 	fwrite (&pan_tilt_stop_sensibility, sizeof (int), 1, config_file);
+
+	fwrite (trackball_button_action, sizeof (gint), 10, config_file);
 
 	fclose (config_file);
 }
