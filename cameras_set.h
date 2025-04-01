@@ -36,7 +36,11 @@ typedef struct cameras_set_s {
 
 	int number_of_ghost_cameras;
 
-	interface_param_t interface_param;
+	interface_param_t layout;
+
+	GtkWidget *page;
+	gint page_num;
+	GtkWidget *page_box;
 
 	GtkWidget *linked_memories_names_entries;
 	GtkWidget *entry_widgets_padding;
@@ -57,10 +61,6 @@ typedef struct cameras_set_s {
 	GtkAdjustment *memories_scrollbar_adjustment;
 
 	GtkAdjustment *scrolled_window_adjustment;
-
-	GtkWidget *page;
-	gint page_num;
-	GtkWidget *page_box;
 
 	GtkWidget *list_box_row;
 
