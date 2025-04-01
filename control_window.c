@@ -79,7 +79,7 @@ char pan_tilt_speed_cmd[9] = "#PTS5050";
 char pan_tilt_stop_cmd[9] = "#PTS5050";
 
 
-gboolean control_window_key_press (GtkWidget *gtk_window, GdkEventKey *event)
+gboolean control_window_key_press (GtkWidget *window, GdkEventKey *event)
 {
 	int i;
 	ptz_t *new_ptz;
@@ -167,7 +167,7 @@ gboolean control_window_key_press (GtkWidget *gtk_window, GdkEventKey *event)
 	return GDK_EVENT_PROPAGATE;
 }
 
-gboolean control_window_key_release (GtkWidget *gtk_window, GdkEventKey *event)
+gboolean control_window_key_release (GtkWidget *window, GdkEventKey *event)
 {
 	if ((event->keyval == GDK_KEY_Up) || (event->keyval == GDK_KEY_Down) || (event->keyval == GDK_KEY_Left) || (event->keyval == GDK_KEY_Right)) {
 		send_ptz_control_command (current_ptz, pan_tilt_stop_cmd, TRUE);
@@ -221,6 +221,34 @@ gboolean control_window_button_press (GtkWidget *window, GdkEventButton *event)
 	return GDK_EVENT_PROPAGATE;
 }
 
+gboolean control_window_button_release (GtkWidget *window, GdkEventButton *event)
+{
+	if ((gdk_event_get_source_device ((GdkEvent *)event) == trackball) && (event->button > 0) && (event->button <= 10)) {
+		switch (event->button - 1) {
+			case 1: send_ptz_control_command (current_ptz, zoom_stop_cmd, TRUE);
+				gtk_widget_unset_state_flags (GTK_WIDGET (control_window_zoom_tele_button), GTK_STATE_FLAG_ACTIVE);
+				zoom_is_moving = FALSE;
+				break;
+			case 2: send_ptz_control_command (current_ptz, zoom_stop_cmd, TRUE);
+				gtk_widget_unset_state_flags (GTK_WIDGET (control_window_zoom_wide_button), GTK_STATE_FLAG_ACTIVE);
+				zoom_is_moving = FALSE;
+				break;
+			case 3: gtk_widget_unset_state_flags (GTK_WIDGET (control_window_otaf_button), GTK_STATE_FLAG_ACTIVE);
+				break;
+			case 4: send_ptz_control_command (current_ptz, focus_stop_cmd, TRUE);
+				gtk_widget_unset_state_flags (GTK_WIDGET (control_window_focus_far_button), GTK_STATE_FLAG_ACTIVE);
+				focus_is_moving = FALSE;
+				break;
+			case 5: send_ptz_control_command (current_ptz, focus_stop_cmd, TRUE);
+				gtk_widget_unset_state_flags (GTK_WIDGET (control_window_focus_near_button), GTK_STATE_FLAG_ACTIVE);
+				focus_is_moving = FALSE;
+				break;
+		}
+	}
+
+	return GDK_EVENT_PROPAGATE;
+}
+
 gboolean pan_tilt_speed_cmd_delayed (ptz_t *ptz)
 {
 	pan_tilt_speed_cmd[4] = '0' + (control_window_pan_speed / 10);
@@ -243,7 +271,7 @@ gboolean pan_tilt_speed_cmd_delayed (ptz_t *ptz)
 	return G_SOURCE_REMOVE;
 }
 
-gboolean control_window_motion_notify (GtkWidget *gtk_window, GdkEventMotion *event)
+gboolean control_window_motion_notify (GtkWidget *window, GdkEventMotion *event)
 {
 	int pan_speed, tilt_speed;
 	struct timeval current_time, elapsed_time;
@@ -301,38 +329,11 @@ gboolean control_window_motion_notify (GtkWidget *gtk_window, GdkEventMotion *ev
 
 					current_ptz->last_time = current_time;
 					send_ptz_control_command (current_ptz, pan_tilt_speed_cmd, FALSE);
+					pan_tilt_is_moving = TRUE;
 				} else {
 					control_window_pan_tilt_timeout_id = g_timeout_add (130, (GSourceFunc)pan_tilt_speed_cmd_delayed, current_ptz);
 				}
 			}
-		}
-	}
-
-	return GDK_EVENT_PROPAGATE;
-}
-
-gboolean control_window_button_release (GtkWidget *gtk_window, GdkEventButton *event)
-{
-	if ((gdk_event_get_source_device ((GdkEvent *)event) == trackball) && (event->button > 0) && (event->button <= 10)) {
-		switch (event->button - 1) {
-			case 1: send_ptz_control_command (current_ptz, zoom_stop_cmd, TRUE);
-				gtk_widget_unset_state_flags (GTK_WIDGET (control_window_zoom_tele_button), GTK_STATE_FLAG_ACTIVE);
-				zoom_is_moving = FALSE;
-				break;
-			case 2: send_ptz_control_command (current_ptz, zoom_stop_cmd, TRUE);
-				gtk_widget_unset_state_flags (GTK_WIDGET (control_window_zoom_wide_button), GTK_STATE_FLAG_ACTIVE);
-				zoom_is_moving = FALSE;
-				break;
-			case 3: gtk_widget_unset_state_flags (GTK_WIDGET (control_window_otaf_button), GTK_STATE_FLAG_ACTIVE);
-				break;
-			case 4: send_ptz_control_command (current_ptz, focus_stop_cmd, TRUE);
-				gtk_widget_unset_state_flags (GTK_WIDGET (control_window_focus_far_button), GTK_STATE_FLAG_ACTIVE);
-				focus_is_moving = FALSE;
-				break;
-			case 5: send_ptz_control_command (current_ptz, focus_stop_cmd, TRUE);
-				gtk_widget_unset_state_flags (GTK_WIDGET (control_window_focus_near_button), GTK_STATE_FLAG_ACTIVE);
-				focus_is_moving = FALSE;
-				break;
 		}
 	}
 
@@ -1321,11 +1322,11 @@ gboolean hide_control_window (void)
 		zoom_is_moving = FALSE;
 	}
 
-	current_ptz = NULL;
+	gtk_event_box_set_above_child (GTK_EVENT_BOX (main_event_box), FALSE);
 
 	gtk_widget_hide (control_window_gtk_window);
 
-	gtk_event_box_set_above_child (GTK_EVENT_BOX (main_event_box), FALSE);
+	current_ptz = NULL;
 
 	return GDK_EVENT_STOP;
 }
@@ -1340,11 +1341,11 @@ void create_control_window (void)
 	gtk_window_set_skip_pager_hint (GTK_WINDOW (control_window_gtk_window), FALSE);
 	gtk_window_set_transient_for (GTK_WINDOW (control_window_gtk_window), GTK_WINDOW (main_window));
 	gtk_window_set_resizable (GTK_WINDOW (control_window_gtk_window), FALSE);
-	g_signal_connect (G_OBJECT (control_window_gtk_window), "button-press-event", G_CALLBACK (control_window_button_press), NULL);
-	g_signal_connect (G_OBJECT (control_window_gtk_window), "motion-notify-event", G_CALLBACK (control_window_motion_notify), NULL);
-	g_signal_connect (G_OBJECT (control_window_gtk_window), "button-release-event", G_CALLBACK (control_window_button_release), NULL);
 	g_signal_connect (G_OBJECT (control_window_gtk_window), "key-press-event", G_CALLBACK (control_window_key_press), NULL);
 	g_signal_connect (G_OBJECT (control_window_gtk_window), "key-release-event", G_CALLBACK (control_window_key_release), NULL);
+	g_signal_connect (G_OBJECT (control_window_gtk_window), "button-press-event", G_CALLBACK (control_window_button_press), NULL);
+	g_signal_connect (G_OBJECT (control_window_gtk_window), "button-release-event", G_CALLBACK (control_window_button_release), NULL);
+	g_signal_connect (G_OBJECT (control_window_gtk_window), "motion-notify-event", G_CALLBACK (control_window_motion_notify), NULL);
 	g_signal_connect (G_OBJECT (control_window_gtk_window), "delete-event", G_CALLBACK (hide_control_window), NULL);
 
 	main_grid = gtk_grid_new ();
