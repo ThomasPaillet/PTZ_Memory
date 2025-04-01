@@ -42,7 +42,7 @@ sw_p_08.o: cameras_set.h control_window.h main_window.h protocol.h settings.h
 
 tally.o: cameras_set.h control_window.h interface.h protocol.h
 
-trackball.o: settings.h
+trackball.o: main_window.h settings.h
 
 update_notification.o: cameras_set.h control_window.h protocol.h error.h
 
