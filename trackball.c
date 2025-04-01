@@ -223,6 +223,7 @@ GtkWidget* create_trackball_settings_frame (void)
 						gtk_combo_box_text_insert_text (GTK_COMBO_BOX_TEXT (widget), 3, "OTAF");
 						gtk_combo_box_text_insert_text (GTK_COMBO_BOX_TEXT (widget), 4, "Focus +");
 						gtk_combo_box_text_insert_text (GTK_COMBO_BOX_TEXT (widget), 5, "Focus -");
+						gtk_combo_box_set_active (GTK_COMBO_BOX (widget), trackball_button_action[i]);
 						g_signal_connect (G_OBJECT (widget), "changed", G_CALLBACK (trackball_button_action_changed), GINT_TO_POINTER (i));
 					gtk_grid_attach (GTK_GRID (grid2), widget, 1, 1, 1, 1);
 
@@ -257,6 +258,7 @@ GtkWidget* create_trackball_settings_frame (void)
 						gtk_combo_box_text_insert_text (GTK_COMBO_BOX_TEXT (widget), 3, "OTAF");
 						gtk_combo_box_text_insert_text (GTK_COMBO_BOX_TEXT (widget), 4, "Focus +");
 						gtk_combo_box_text_insert_text (GTK_COMBO_BOX_TEXT (widget), 5, "Focus -");
+						gtk_combo_box_set_active (GTK_COMBO_BOX (widget), trackball_button_action[i + 5]);
 						g_signal_connect (G_OBJECT (widget), "changed", G_CALLBACK (trackball_button_action_changed), GINT_TO_POINTER (i + 5));
 					gtk_grid_attach (GTK_GRID (grid2), widget, 1, 1, 1, 1);
 
