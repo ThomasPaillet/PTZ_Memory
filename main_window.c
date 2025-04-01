@@ -28,6 +28,7 @@
 #include "settings.h"
 #include "sw_p_08.h"
 #include "tally.h"
+#include "trackball.h"
 #include "update_notification.h"
 
 
@@ -51,9 +52,6 @@ GtkWidget *store_toggle_button, *delete_toggle_button, *link_toggle_button;
 GtkWidget *switch_cameras_on_button, *switch_cameras_off_button;
 
 gboolean fullscreen = TRUE;
-
-GList *pointing_devices = NULL;
-GdkDevice *trackball = NULL;
 
 
 gboolean digit_key_press (GtkEntry *entry, GdkEventKey *event)
@@ -497,39 +495,6 @@ void create_main_window (void)
 
 	gtk_container_add (GTK_CONTAINER (main_event_box), box1);
 	gtk_container_add (GTK_CONTAINER (main_window), main_event_box);
-}
-
-void device_added_to_seat (GdkSeat *seat, GdkDevice *device)
-{
-	if (memcmp (gdk_device_get_name (device), trackball_name, trackball_name_len) == 0) trackball = device;
-
-	pointing_devices = g_list_prepend (pointing_devices, device);
-
-	if (pointing_devices_combo_box != NULL) {
-		gtk_combo_box_text_insert_text (GTK_COMBO_BOX_TEXT (pointing_devices_combo_box), 1, gdk_device_get_name (device));
-
-		if (memcmp (gdk_device_get_name (device), trackball_name, trackball_name_len) == 0) gtk_combo_box_set_active (GTK_COMBO_BOX (pointing_devices_combo_box), 1);
-	}
-}
-
-void device_removed_from_seat (GdkSeat *seat, GdkDevice *device)
-{
-	GList *glist;
-	int i;
-
-	if (device == trackball) trackball = NULL;
-
-	pointing_devices = g_list_remove (pointing_devices, device);
-
-	if (pointing_devices_combo_box != NULL) {
-		gtk_combo_box_text_remove_all (GTK_COMBO_BOX_TEXT (pointing_devices_combo_box));
-
-		gtk_combo_box_text_insert_text (GTK_COMBO_BOX_TEXT (pointing_devices_combo_box), 0, "");
-		for (glist = pointing_devices, i = 1; glist != NULL; glist = glist->next, i++) {
-			gtk_combo_box_text_insert_text (GTK_COMBO_BOX_TEXT (pointing_devices_combo_box), i, gdk_device_get_name (glist->data));
-			if ((trackball_name_len > 0) && (memcmp (gdk_device_get_name (glist->data), trackball_name, trackball_name_len) == 0)) gtk_combo_box_set_active (GTK_COMBO_BOX (pointing_devices_combo_box), i);
-		}
-	}
 }
 
 #ifdef _WIN32
