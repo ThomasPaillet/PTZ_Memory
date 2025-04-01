@@ -341,7 +341,7 @@ gtk_grid_attach (GTK_GRID (grid), p##_scale, 1, y, 1, 1);
 
 void create_interface_settings_window (void)
 {
-	GtkWidget *box1, *frame, *box2, *box3, *widget;
+	GtkWidget *box1, *frame, *box2, *box3, *grid, *widget;
 
 	interface_settings_window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_title (GTK_WINDOW (interface_settings_window), interface_settings_txt + 1);
