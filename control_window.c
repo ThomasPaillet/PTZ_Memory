@@ -224,7 +224,7 @@ gboolean control_window_button_press (GtkWidget *window, GdkEventButton *event)
 gboolean control_window_button_release (GtkWidget *window, GdkEventButton *event)
 {
 	if ((gdk_event_get_source_device ((GdkEvent *)event) == trackball) && (event->button > 0) && (event->button <= 10)) {
-		switch (event->button - 1) {
+		switch (trackball_button_action[event->button - 1]) {
 			case 1: send_ptz_control_command (current_ptz, zoom_stop_cmd, TRUE);
 				gtk_widget_unset_state_flags (GTK_WIDGET (control_window_zoom_tele_button), GTK_STATE_FLAG_ACTIVE);
 				zoom_is_moving = FALSE;
