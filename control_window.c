@@ -295,8 +295,8 @@ gboolean control_window_motion_notify (GtkWidget *window, GdkEventMotion *event)
 			else if (tilt_speed > 99) tilt_speed = 99;
 
 			if (pan_tilt_stop_sensibility > 0) {
-				if (((pan_speed > 50) && (pan_speed < control_window_pan_speed)) || ((pan_speed < 50) && (pan_speed > control_window_pan_speed)) && \
-					((tilt_speed > 50) && (tilt_speed < control_window_pan_speed)) || ((tilt_speed < 50) && (tilt_speed > control_window_pan_speed)) && \
+				if ((((pan_speed > 50) && (pan_speed < control_window_pan_speed)) || ((pan_speed < 50) && (pan_speed > control_window_pan_speed))) && \
+					(((tilt_speed > 50) && (tilt_speed < control_window_pan_speed)) || ((tilt_speed < 50) && (tilt_speed > control_window_pan_speed))) && \
 					(pan_speed >= 50 - pan_tilt_stop_sensibility) && (pan_speed <= 50 + pan_tilt_stop_sensibility) && (tilt_speed >= 50 - pan_tilt_stop_sensibility) && (tilt_speed <= 50 + pan_tilt_stop_sensibility)) {
 					send_ptz_control_command (current_ptz, pan_tilt_stop_cmd, TRUE);
 					pan_tilt_is_moving = FALSE;
