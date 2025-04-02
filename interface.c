@@ -94,8 +94,8 @@ void orientation_check_button_toggled (GtkToggleButton *togglebutton)
 				gtk_widget_set_sensitive (current_cameras_set->cameras[i]->memories_grid, FALSE);
 			}
 		} else {
-			if (current_cameras_set->layout.orientation) create_ghost_ptz_widgets_horizontal (current_cameras_set->cameras[i]);
-			else create_ghost_ptz_widgets_vertical (current_cameras_set->cameras[i]);
+			if (current_cameras_set->layout.orientation) create_ghost_ptz_widgets_horizontal (ptz);
+			else create_ghost_ptz_widgets_vertical (ptz);
 		}
 	}
 
