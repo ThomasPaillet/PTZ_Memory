@@ -33,6 +33,7 @@ GtkWidget *trackball_buttons;
 char *trackball_name = NULL;
 size_t trackball_name_len = 0;
 
+gdouble trackball_sensibility = 4.0;
 int pan_tilt_stop_sensibility = 5;
 
 gint trackball_button_action[10] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
@@ -141,6 +142,13 @@ void pointing_devices_changed (void)
 	backup_needed = TRUE;
 }
 
+void trackball_sensibility_value_changed (GtkRange *range)
+{
+	trackball_sensibility = gtk_range_get_value (range);
+
+	backup_needed = TRUE;
+}
+
 void pan_tilt_stop_sensibility_value_changed (GtkRange *range)
 {
 	pan_tilt_stop_sensibility = gtk_range_get_value (range);
@@ -155,12 +163,82 @@ void trackball_button_action_changed (GtkComboBox *combo_box, gpointer index)
 	backup_needed = TRUE;
 }
 
-gboolean combo_box_outline_draw (GtkWidget *widget, cairo_t *cr, gpointer index)
+gboolean combo_box_outline_top_draw (GtkWidget *widget, cairo_t *cr, gpointer index)
 {
-	if (button_pressed[GPOINTER_TO_INT (index)]) cairo_set_source_rgba (cr, 0.8, 0.545, 0.0, 1.0);
-	else cairo_set_source_rgb (cr, 0.2, 0.223529412, 0.231372549);
+	gint width;
 
-	cairo_paint (cr);
+	if (button_pressed[GPOINTER_TO_INT (index)]) {
+		width = gtk_widget_get_allocated_width (widget);
+
+		cairo_set_source_rgb (cr, 0.8, 0.545, 0.0);
+
+		cairo_rectangle (cr, 3.0, 2.0, width - 6.0, 1.0);
+		cairo_fill (cr);
+		cairo_rectangle (cr, 2.0, 3.0, width - 4.0, 2.0);
+		cairo_fill (cr);
+	} else {
+		cairo_set_source_rgb (cr, 0.2, 0.223529412, 0.231372549);
+		cairo_paint (cr);
+	}
+
+	return GDK_EVENT_PROPAGATE;
+}
+
+gboolean combo_box_outline_left_draw (GtkWidget *widget, cairo_t *cr, gpointer index)
+{
+	gint height;
+
+	if (button_pressed[GPOINTER_TO_INT (index)]) {
+		height = gtk_widget_get_allocated_height (widget);
+
+		cairo_set_source_rgb (cr, 0.8, 0.545, 0.0);
+
+		cairo_rectangle (cr, 2.0, 0.0, 3.0, height);
+		cairo_fill (cr);
+	} else {
+		cairo_set_source_rgb (cr, 0.2, 0.223529412, 0.231372549);
+		cairo_paint (cr);
+	}
+
+	return GDK_EVENT_PROPAGATE;
+}
+
+gboolean combo_box_outline_right_draw (GtkWidget *widget, cairo_t *cr, gpointer index)
+{
+	gint height;
+
+	if (button_pressed[GPOINTER_TO_INT (index)]) {
+		height = gtk_widget_get_allocated_height (widget);
+
+		cairo_set_source_rgb (cr, 0.8, 0.545, 0.0);
+
+		cairo_rectangle (cr, 0.0, 0.0, 3.0, height);
+		cairo_fill (cr);
+	} else {
+		cairo_set_source_rgb (cr, 0.2, 0.223529412, 0.231372549);
+		cairo_paint (cr);
+	}
+
+	return GDK_EVENT_PROPAGATE;
+}
+
+gboolean combo_box_outline_bottom_draw (GtkWidget *widget, cairo_t *cr, gpointer index)
+{
+	gint width;
+
+	if (button_pressed[GPOINTER_TO_INT (index)]) {
+		width = gtk_widget_get_allocated_width (widget);
+
+		cairo_set_source_rgb (cr, 0.8, 0.545, 0.0);
+
+		cairo_rectangle (cr, 2.0, 0.0, width - 4.0, 2.0);
+		cairo_fill (cr);
+		cairo_rectangle (cr, 3.0, 2.0, width - 6.0, 1.0);
+		cairo_fill (cr);
+	} else {
+		cairo_set_source_rgb (cr, 0.2, 0.223529412, 0.231372549);
+		cairo_paint (cr);
+	}
 
 	return GDK_EVENT_PROPAGATE;
 }
@@ -197,7 +275,24 @@ GtkWidget* create_trackball_settings_frame (void)
 				gtk_widget_set_margin_start (box2, MARGIN_VALUE);
 				gtk_widget_set_margin_end (box2, MARGIN_VALUE);
 				gtk_widget_set_margin_bottom (box2, MARGIN_VALUE);
-					widget =  gtk_label_new ("Sensibilité à l'arrêt");
+					widget =  gtk_label_new ("Sensibilité");
+				gtk_box_pack_start (GTK_BOX (box2), widget, FALSE, FALSE, 0);
+
+					widget = gtk_scale_new_with_range (GTK_ORIENTATION_HORIZONTAL, 1.0, 8.0, 0.5);
+					gtk_scale_set_value_pos (GTK_SCALE (widget), GTK_POS_RIGHT);
+					gtk_scale_set_draw_value (GTK_SCALE (widget), TRUE);
+					gtk_scale_set_has_origin (GTK_SCALE (widget), FALSE);
+					gtk_range_set_value (GTK_RANGE (widget), trackball_sensibility);
+					g_signal_connect (G_OBJECT (widget), "value-changed", G_CALLBACK (trackball_sensibility_value_changed), NULL);
+				gtk_box_pack_start (GTK_BOX (box2), widget, TRUE, TRUE, 0);
+			gtk_box_pack_start (GTK_BOX (trackball_buttons), box2, FALSE, FALSE, 0);
+
+				box2 = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
+				gtk_widget_set_margin_top (box2, MARGIN_VALUE);
+				gtk_widget_set_margin_start (box2, MARGIN_VALUE);
+				gtk_widget_set_margin_end (box2, MARGIN_VALUE);
+				gtk_widget_set_margin_bottom (box2, MARGIN_VALUE);
+					widget =  gtk_label_new ("Seuil minimal d'arrêt");
 				gtk_box_pack_start (GTK_BOX (box2), widget, FALSE, FALSE, 0);
 
 					widget = gtk_scale_new_with_range (GTK_ORIENTATION_HORIZONTAL, 0.0, 20.0, 1.0);
@@ -214,12 +309,12 @@ GtkWidget* create_trackball_settings_frame (void)
 					grid2 = gtk_grid_new ();
 						widget = gtk_drawing_area_new ();
 						gtk_widget_set_size_request (widget, MARGIN_VALUE, MARGIN_VALUE);
-						g_signal_connect (G_OBJECT (widget), "draw", G_CALLBACK (combo_box_outline_draw), GINT_TO_POINTER (i));
+						g_signal_connect (G_OBJECT (widget), "draw", G_CALLBACK (combo_box_outline_top_draw), GINT_TO_POINTER (i));
 					gtk_grid_attach (GTK_GRID (grid2), widget, 0, 0, 3, 1);
 
 						widget = gtk_drawing_area_new ();
 						gtk_widget_set_size_request (widget, MARGIN_VALUE, MARGIN_VALUE);
-						g_signal_connect (G_OBJECT (widget), "draw", G_CALLBACK (combo_box_outline_draw), GINT_TO_POINTER (i));
+						g_signal_connect (G_OBJECT (widget), "draw", G_CALLBACK (combo_box_outline_left_draw), GINT_TO_POINTER (i));
 					gtk_grid_attach (GTK_GRID (grid2), widget, 0, 1, 1, 1);
 
 						widget =  gtk_combo_box_text_new ();
@@ -236,12 +331,12 @@ GtkWidget* create_trackball_settings_frame (void)
 
 						widget = gtk_drawing_area_new ();
 						gtk_widget_set_size_request (widget, MARGIN_VALUE, MARGIN_VALUE);
-						g_signal_connect (G_OBJECT (widget), "draw", G_CALLBACK (combo_box_outline_draw), GINT_TO_POINTER (i));
+						g_signal_connect (G_OBJECT (widget), "draw", G_CALLBACK (combo_box_outline_right_draw), GINT_TO_POINTER (i));
 					gtk_grid_attach (GTK_GRID (grid2), widget, 2, 1, 1, 1);
 
 						widget = gtk_drawing_area_new ();
 						gtk_widget_set_size_request (widget, MARGIN_VALUE, MARGIN_VALUE);
-						g_signal_connect (G_OBJECT (widget), "draw", G_CALLBACK (combo_box_outline_draw), GINT_TO_POINTER (i));
+						g_signal_connect (G_OBJECT (widget), "draw", G_CALLBACK (combo_box_outline_bottom_draw), GINT_TO_POINTER (i));
 					gtk_grid_attach (GTK_GRID (grid2), widget, 0, 2, 3, 1);
 				gtk_grid_attach (GTK_GRID (grid1), grid2, i, 0, 1, 1);
 				}
@@ -250,12 +345,12 @@ GtkWidget* create_trackball_settings_frame (void)
 					grid2 = gtk_grid_new ();
 						widget = gtk_drawing_area_new ();
 						gtk_widget_set_size_request (widget, MARGIN_VALUE, MARGIN_VALUE);
-						g_signal_connect (G_OBJECT (widget), "draw", G_CALLBACK (combo_box_outline_draw), GINT_TO_POINTER (i + 5));
+						g_signal_connect (G_OBJECT (widget), "draw", G_CALLBACK (combo_box_outline_top_draw), GINT_TO_POINTER (i + 5));
 					gtk_grid_attach (GTK_GRID (grid2), widget, 0, 0, 3, 1);
 
 						widget = gtk_drawing_area_new ();
 						gtk_widget_set_size_request (widget, MARGIN_VALUE, MARGIN_VALUE);
-						g_signal_connect (G_OBJECT (widget), "draw", G_CALLBACK (combo_box_outline_draw), GINT_TO_POINTER (i + 5));
+						g_signal_connect (G_OBJECT (widget), "draw", G_CALLBACK (combo_box_outline_left_draw), GINT_TO_POINTER (i + 5));
 					gtk_grid_attach (GTK_GRID (grid2), widget, 0, 1, 1, 1);
 
 						widget =  gtk_combo_box_text_new ();
@@ -272,12 +367,12 @@ GtkWidget* create_trackball_settings_frame (void)
 
 						widget = gtk_drawing_area_new ();
 						gtk_widget_set_size_request (widget, MARGIN_VALUE, MARGIN_VALUE);
-						g_signal_connect (G_OBJECT (widget), "draw", G_CALLBACK (combo_box_outline_draw), GINT_TO_POINTER (i + 5));
+						g_signal_connect (G_OBJECT (widget), "draw", G_CALLBACK (combo_box_outline_right_draw), GINT_TO_POINTER (i + 5));
 					gtk_grid_attach (GTK_GRID (grid2), widget, 2, 1, 1, 1);
 
 						widget = gtk_drawing_area_new ();
 						gtk_widget_set_size_request (widget, MARGIN_VALUE, MARGIN_VALUE);
-						g_signal_connect (G_OBJECT (widget), "draw", G_CALLBACK (combo_box_outline_draw), GINT_TO_POINTER (i + 5));
+						g_signal_connect (G_OBJECT (widget), "draw", G_CALLBACK (combo_box_outline_bottom_draw), GINT_TO_POINTER (i + 5));
 					gtk_grid_attach (GTK_GRID (grid2), widget, 0, 2, 3, 1);
 				gtk_grid_attach (GTK_GRID (grid1), grid2, i, 1, 1, 1);
 				}
