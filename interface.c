@@ -55,7 +55,8 @@ gulong memories_name_backdrop_color_red_scale_handler_id, memories_name_backdrop
 
 void orientation_check_button_toggled (GtkToggleButton *togglebutton)
 {
-	int i;
+	int i, j;
+	ptz_t *ptz;
 	char memories_name[MAX_MEMORIES][MEMORIES_NAME_LENGTH + 1];
 
 	interface_default.orientation = current_cameras_set->layout.orientation = gtk_toggle_button_get_active (togglebutton);
@@ -68,9 +69,25 @@ void orientation_check_button_toggled (GtkToggleButton *togglebutton)
 	gtk_widget_destroy (current_cameras_set->page_box);
 
 	for (i = 0; i < current_cameras_set->number_of_cameras; i++) {
-		if (current_cameras_set->cameras[i]->active) {
-			if (current_cameras_set->layout.orientation) create_ptz_widgets_horizontal (current_cameras_set->cameras[i]);
-			else create_ptz_widgets_vertical (current_cameras_set->cameras[i]);
+		ptz = current_cameras_set->cameras[i];
+
+		if (ptz->active) {
+			if (current_cameras_set->layout.orientation) create_ptz_widgets_horizontal (ptz);
+			else create_ptz_widgets_vertical (ptz);
+
+			for (j = 0; j < MAX_MEMORIES; j++) {
+				if (!ptz->memories[j].empty) {
+					if (current_cameras_set->layout.thumbnail_width == 320) {
+						ptz->memories[j].image = gtk_image_new_from_pixbuf (ptz->memories[j].full_pixbuf);
+					} else {
+						g_object_unref (G_OBJECT (ptz->memories[j].scaled_pixbuf));
+		
+						ptz->memories[j].scaled_pixbuf = gdk_pixbuf_scale_simple (ptz->memories[j].full_pixbuf, current_cameras_set->layout.thumbnail_width, current_cameras_set->layout.thumbnail_height, GDK_INTERP_BILINEAR);
+						ptz->memories[j].image = gtk_image_new_from_pixbuf (ptz->memories[j].scaled_pixbuf);
+					}
+					gtk_button_set_image (GTK_BUTTON (ptz->memories[j].button), ptz->memories[j].image);
+				}
+			}
 
 			if (!current_cameras_set->cameras[i]->is_on) {
 				gtk_widget_set_sensitive (current_cameras_set->cameras[i]->name_grid, FALSE);
@@ -162,8 +179,9 @@ void thumbnail_size_value_changed (GtkRange *range)
 
 					if (old_thumbnail_width != 320) g_object_unref (G_OBJECT (ptz->memories[j].scaled_pixbuf));
 
-					if (current_cameras_set->layout.thumbnail_width == 320) ptz->memories[j].image = gtk_image_new_from_pixbuf (ptz->memories[j].full_pixbuf);
-					else {
+					if (current_cameras_set->layout.thumbnail_width == 320) {
+						ptz->memories[j].image = gtk_image_new_from_pixbuf (ptz->memories[j].full_pixbuf);
+					} else {
 						ptz->memories[j].scaled_pixbuf = gdk_pixbuf_scale_simple (ptz->memories[j].full_pixbuf, current_cameras_set->layout.thumbnail_width, current_cameras_set->layout.thumbnail_height, GDK_INTERP_BILINEAR);
 						ptz->memories[j].image = gtk_image_new_from_pixbuf (ptz->memories[j].scaled_pixbuf);
 					}
