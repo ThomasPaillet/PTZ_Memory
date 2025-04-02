@@ -96,7 +96,7 @@ void device_removed_from_seat (GdkSeat *seat, GdkDevice *device)
 
 gboolean trackball_settings_button_press (GtkWidget *window, GdkEventButton *event)
 {
-	if ((gdk_event_get_source_device ((GdkEvent *)event) == trackball) && (event->button > 0 ) && (event->button <= 10)) {
+	if ((gdk_event_get_source_device ((GdkEvent *)event) == trackball) && (event->button > 0) && (event->button <= 10)) {
 		button_pressed[event->button - 1] = TRUE;
 
 		gtk_widget_queue_draw (trackball_buttons);
@@ -107,7 +107,7 @@ gboolean trackball_settings_button_press (GtkWidget *window, GdkEventButton *eve
 
 gboolean trackball_settings_button_release (GtkWidget *window, GdkEventButton *event)
 {
-	if ((gdk_event_get_source_device ((GdkEvent *)event) == trackball) && (event->button > 0 ) && (event->button <= 10)) {
+	if ((gdk_event_get_source_device ((GdkEvent *)event) == trackball) && (event->button > 0) && (event->button <= 10)) {
 		button_pressed[event->button - 1] = FALSE;
 
 		gtk_widget_queue_draw (trackball_buttons);
@@ -229,6 +229,7 @@ GtkWidget* create_trackball_settings_frame (void)
 						gtk_combo_box_text_insert_text (GTK_COMBO_BOX_TEXT (widget), 3, "OTAF");
 						gtk_combo_box_text_insert_text (GTK_COMBO_BOX_TEXT (widget), 4, "Focus +");
 						gtk_combo_box_text_insert_text (GTK_COMBO_BOX_TEXT (widget), 5, "Focus -");
+						gtk_combo_box_text_insert_text (GTK_COMBO_BOX_TEXT (widget), 6, "Stop");
 						gtk_combo_box_set_active (GTK_COMBO_BOX (widget), trackball_button_action[i]);
 						g_signal_connect (G_OBJECT (widget), "changed", G_CALLBACK (trackball_button_action_changed), GINT_TO_POINTER (i));
 					gtk_grid_attach (GTK_GRID (grid2), widget, 1, 1, 1, 1);
@@ -264,6 +265,7 @@ GtkWidget* create_trackball_settings_frame (void)
 						gtk_combo_box_text_insert_text (GTK_COMBO_BOX_TEXT (widget), 3, "OTAF");
 						gtk_combo_box_text_insert_text (GTK_COMBO_BOX_TEXT (widget), 4, "Focus +");
 						gtk_combo_box_text_insert_text (GTK_COMBO_BOX_TEXT (widget), 5, "Focus -");
+						gtk_combo_box_text_insert_text (GTK_COMBO_BOX_TEXT (widget), 6, "Stop");
 						gtk_combo_box_set_active (GTK_COMBO_BOX (widget), trackball_button_action[i + 5]);
 						g_signal_connect (G_OBJECT (widget), "changed", G_CALLBACK (trackball_button_action_changed), GINT_TO_POINTER (i + 5));
 					gtk_grid_attach (GTK_GRID (grid2), widget, 1, 1, 1, 1);
