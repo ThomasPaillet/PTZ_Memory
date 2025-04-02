@@ -898,6 +898,9 @@ void load_config_file (void)
 		}
 	}
 
+	fread (&trackball_sensibility, sizeof (gdouble), 1, config_file);
+	if ((trackball_sensibility < 1.0) || (trackball_sensibility > 8.0)) trackball_sensibility = 4.0;
+
 	fread (&pan_tilt_stop_sensibility, sizeof (int), 1, config_file);
 	if ((pan_tilt_stop_sensibility < 0) || (pan_tilt_stop_sensibility > 20)) pan_tilt_stop_sensibility = 5;
 
@@ -985,6 +988,8 @@ void save_config_file (void)
 	fwrite (&trackball_name_len, sizeof (size_t), 1, config_file);
 
 	if (trackball_name_len > 0) fwrite (trackball_name, sizeof (char), trackball_name_len, config_file);
+
+	fwrite (&trackball_sensibility, sizeof (gdouble), 1, config_file);
 
 	fwrite (&pan_tilt_stop_sensibility, sizeof (int), 1, config_file);
 
