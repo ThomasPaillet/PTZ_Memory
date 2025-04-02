@@ -149,7 +149,7 @@ gboolean ptz_name_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 	else cairo_translate (cr, 10 * current_cameras_set->layout.thumbnail_size, 20 * current_cameras_set->layout.thumbnail_size);
 
 	pango_layout_set_text (pl, ptz->name, -1);
-	desc = pango_font_description_from_string (ptz_name_font);
+	desc = pango_font_description_from_string (current_cameras_set->layout.ptz_name_font);
 	pango_layout_set_font_description (pl, desc);
 	pango_font_description_free (desc);
 
@@ -187,7 +187,7 @@ gboolean ghost_ptz_name_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 	else cairo_translate (cr, 30 * current_cameras_set->layout.thumbnail_size, -10 * current_cameras_set->layout.thumbnail_size);
 
 	pango_layout_set_text (pl, ptz->name, -1);
-	desc = pango_font_description_from_string (ghost_ptz_name_font);
+	desc = pango_font_description_from_string (current_cameras_set->layout.ghost_ptz_name_font);
 	pango_layout_set_font_description (pl, desc);
 	pango_font_description_free (desc);
 
