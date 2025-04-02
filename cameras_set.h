@@ -48,8 +48,11 @@ typedef struct cameras_set_s {
 	GtkAdjustment *entry_scrolled_window_adjustment;
 
 	GtkWidget *name_grid_box;
+	char ptz_name_font[17];
+	char ghost_ptz_name_font[17];
 
 	GtkWidget *memories_grid_box;
+	char memory_name_font[17];
 	GtkAdjustment *memories_scrolled_window_adjustment;
 
 	GtkWidget *linked_memories_names_labels;
