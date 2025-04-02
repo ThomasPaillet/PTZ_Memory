@@ -738,6 +738,10 @@ void load_config_file (void)
 		cameras_set_tmp->layout.thumbnail_width = 320 * cameras_set_tmp->layout.thumbnail_size;
 		cameras_set_tmp->layout.thumbnail_height = 180 * cameras_set_tmp->layout.thumbnail_size;
 
+		sprintf (cameras_set_tmp->layout.ptz_name_font + 13, "%d", (int)(100.0 * cameras_set_tmp->layout.thumbnail_size));
+		sprintf (cameras_set_tmp->layout.ghost_ptz_name_font + 13, "%d", (int)(80.0 * cameras_set_tmp->layout.thumbnail_size));
+		sprintf (cameras_set_tmp->layout.memory_name_font + 13, "%d", (int)(20.0 * cameras_set_tmp->layout.thumbnail_size));
+
 		if (cameras_set_tmp->layout.memories_name_color_red < 0.0) cameras_set_tmp->layout.memories_name_color_red = 0.0;
 		else if (cameras_set_tmp->layout.memories_name_color_red > 1.0) cameras_set_tmp->layout.memories_name_color_red = 1.0;
 
