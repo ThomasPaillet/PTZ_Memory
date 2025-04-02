@@ -286,19 +286,23 @@ gboolean control_window_motion_notify (GtkWidget *window, GdkEventMotion *event)
 
 			pan_tilt_is_moving = TRUE;
 		} else {
-			pan_speed = (int)((event->x_root - control_window_x) / 4) + 50;
+			pan_speed = (int)((event->x_root - control_window_x) / trackball_sensibility) + 50;
 			if (pan_speed < 1) pan_speed = 1;
 			else if (pan_speed > 99) pan_speed = 99;
 
-			tilt_speed = (int)((control_window_y - event->y_root) / 4) + 50;
+			tilt_speed = (int)((control_window_y - event->y_root) / trackball_sensibility) + 50;
 			if (tilt_speed < 1) tilt_speed = 1;
 			else if (tilt_speed > 99) tilt_speed = 99;
 
-			if ((pan_speed < control_window_pan_speed) && (pan_speed < pan_tilt_stop_sensibility) && (tilt_speed < control_window_tilt_speed) && (tilt_speed < pan_tilt_stop_sensibility)) {
-				send_ptz_control_command (current_ptz, pan_tilt_stop_cmd, TRUE);
-				pan_tilt_is_moving = FALSE;
-
-				return GDK_EVENT_PROPAGATE;
+			if (pan_tilt_stop_sensibility > 0) {
+				if (((pan_speed > 50) && (pan_speed < control_window_pan_speed)) || ((pan_speed < 50) && (pan_speed > control_window_pan_speed)) && \
+					((tilt_speed > 50) && (tilt_speed < control_window_pan_speed)) || ((tilt_speed < 50) && (tilt_speed > control_window_pan_speed)) && \
+					(pan_speed >= 50 - pan_tilt_stop_sensibility) && (pan_speed <= 50 + pan_tilt_stop_sensibility) && (tilt_speed >= 50 - pan_tilt_stop_sensibility) && (tilt_speed <= 50 + pan_tilt_stop_sensibility)) {
+					send_ptz_control_command (current_ptz, pan_tilt_stop_cmd, TRUE);
+					pan_tilt_is_moving = FALSE;
+	
+					return GDK_EVENT_PROPAGATE;
+				}
 			}
 
 			control_window_pan_speed = pan_speed;
@@ -308,7 +312,6 @@ gboolean control_window_motion_notify (GtkWidget *window, GdkEventMotion *event)
 			timersub (&current_time, &current_ptz->last_time, &elapsed_time);
 
 			if ((elapsed_time.tv_sec == 0) && (elapsed_time.tv_usec < 130000)) {
-
 				if (control_window_pan_tilt_timeout_id == 0) {
 					if (control_window_zoom_timeout_id == 0)
 						control_window_pan_tilt_timeout_id = g_timeout_add ((130000 - elapsed_time.tv_usec) / 1000, (GSourceFunc)pan_tilt_speed_cmd_delayed, current_ptz);
@@ -763,7 +766,7 @@ gboolean focus_level_bar_draw (GtkWidget *widget, cairo_t *cr)
 
 gboolean pad_button_press (GtkWidget *widget, GdkEventButton *event)
 {
-	if (gdk_event_get_source_device ((GdkEvent *)event) != trackball) {
+	if ((event->state & GDK_BUTTON1_MASK) && (gdk_event_get_source_device ((GdkEvent *)event) != trackball)) {
 		control_window_x = event->x;
 		control_window_y = event->y;
 	}
@@ -777,11 +780,11 @@ gboolean pad_motion_notify (GtkWidget *widget, GdkEventMotion *event)
 	struct timeval current_time, elapsed_time;
 
 	if ((event->state & GDK_BUTTON1_MASK) && (gdk_event_get_source_device ((GdkEvent *)event) != trackball)) {
-		pan_speed = (int)((event->x - control_window_x) / 4) + 50;
+		pan_speed = (int)((event->x - control_window_x) / 4.0) + 50;
 		if (pan_speed < 1) pan_speed = 1;
 		else if (pan_speed > 99) pan_speed = 99;
 
-		tilt_speed = (int)((control_window_y - event->y) / 4) + 50;
+		tilt_speed = (int)((control_window_y - event->y) / 4.0) + 50;
 		if (tilt_speed < 1) tilt_speed = 1;
 		else if (tilt_speed > 99) tilt_speed = 99;
 
@@ -826,14 +829,16 @@ gboolean pad_motion_notify (GtkWidget *widget, GdkEventMotion *event)
 
 gboolean pad_button_release (GtkWidget *widget, GdkEventButton *event)
 {
-	if ((pan_tilt_is_moving == TRUE) && (event->state & GDK_BUTTON1_MASK) && (gdk_event_get_source_device ((GdkEvent *)event) != trackball)) {
+	if ((event->state & GDK_BUTTON1_MASK) && (gdk_event_get_source_device ((GdkEvent *)event) != trackball)) {
 		if (control_window_pan_tilt_timeout_id != 0) {
 			g_source_remove (control_window_pan_tilt_timeout_id);
 			control_window_pan_tilt_timeout_id = 0;
 		}
 
-		send_ptz_control_command (current_ptz, pan_tilt_stop_cmd, TRUE);
-		pan_tilt_is_moving = FALSE;
+		if (pan_tilt_is_moving) {
+			send_ptz_control_command (current_ptz, pan_tilt_stop_cmd, TRUE);
+			pan_tilt_is_moving = FALSE;
+		}
 	}
 
 	return GDK_EVENT_PROPAGATE;
