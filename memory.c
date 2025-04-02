@@ -311,7 +311,7 @@ gboolean memory_name_draw (GtkWidget *widget, cairo_t *cr, char *name)
 		cairo_translate (cr, 5.0 + 16.0 * (10 - (strlen (name) / 2)) * current_cameras_set->layout.thumbnail_size, current_cameras_set->layout.thumbnail_height - (19.0 * current_cameras_set->layout.thumbnail_size) + (1.0 - current_cameras_set->layout.thumbnail_size) * 4.0);
 
 		pango_layout_set_text (pl, name, -1);
-		desc = pango_font_description_from_string (memory_name_font);
+		desc = pango_font_description_from_string (current_cameras_set->layout.memory_name_font);
 		pango_layout_set_font_description (pl, desc);
 		pango_font_description_free (desc);
 
