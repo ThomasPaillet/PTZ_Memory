@@ -31,6 +31,10 @@ typedef struct interface_param_s {
 	int thumbnail_width;
 	int thumbnail_height;
 
+	char ptz_name_font[17];
+	char ghost_ptz_name_font[17];
+	char memory_name_font[17];
+
 	double memories_name_color_red;
 	double memories_name_color_green;
 	double memories_name_color_blue;
@@ -51,10 +55,6 @@ typedef struct interface_param_s {
 extern interface_param_t interface_default;
 
 extern const char interface_settings_txt[];
-
-extern char ptz_name_font[];
-extern char ghost_ptz_name_font[];
-extern char memory_name_font[];
 
 
 void show_interface_settings_window (void);
