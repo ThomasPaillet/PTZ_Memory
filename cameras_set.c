@@ -915,8 +915,8 @@ void create_horizontal_linked_memories_names_entries (cameras_set_t *cameras_set
 				for (i = 0; i < MAX_MEMORIES; i++) {
 					cameras_set->entry_widgets[i] = gtk_entry_new ();
 					gtk_widget_set_size_request (cameras_set->entry_widgets[i], cameras_set->layout.thumbnail_width + 6, 34);
-					gtk_widget_set_margin_start (cameras_set->entry_widgets[i], 2 + cameras_set->layout.memories_button_vertical_margins);
-					gtk_widget_set_margin_end (cameras_set->entry_widgets[i], 2 + cameras_set->layout.memories_button_vertical_margins);
+					if (i != 0) gtk_widget_set_margin_start (cameras_set->entry_widgets[i], 2 + cameras_set->layout.memories_button_vertical_margins);
+					if (i != MAX_MEMORIES -1) gtk_widget_set_margin_end (cameras_set->entry_widgets[i], 2 + cameras_set->layout.memories_button_vertical_margins);
 					gtk_entry_set_max_length (GTK_ENTRY (cameras_set->entry_widgets[i]), MEMORIES_NAME_LENGTH);
 					gtk_entry_set_width_chars (GTK_ENTRY (cameras_set->entry_widgets[i]), MEMORIES_NAME_LENGTH);
 					gtk_entry_set_alignment (GTK_ENTRY (cameras_set->entry_widgets[i]), 0.5);
@@ -949,8 +949,8 @@ void create_vertical_linked_memories_names_entries (cameras_set_t *cameras_set)
 				for (i = 0; i < MAX_MEMORIES; i++) {
 					cameras_set->entry_widgets[i] = gtk_entry_new ();
 					gtk_widget_set_size_request (cameras_set->entry_widgets[i], 160, cameras_set->layout.thumbnail_height + 10);
-					gtk_widget_set_margin_top (cameras_set->entry_widgets[i], cameras_set->layout.memories_button_horizontal_margins);
-					gtk_widget_set_margin_bottom (cameras_set->entry_widgets[i], cameras_set->layout.memories_button_horizontal_margins);
+					if (i != 0) gtk_widget_set_margin_top (cameras_set->entry_widgets[i], cameras_set->layout.memories_button_horizontal_margins);
+					if (i != MAX_MEMORIES -1) gtk_widget_set_margin_bottom (cameras_set->entry_widgets[i], cameras_set->layout.memories_button_horizontal_margins);
 					gtk_entry_set_max_length (GTK_ENTRY (cameras_set->entry_widgets[i]), MEMORIES_NAME_LENGTH);
 					gtk_entry_set_width_chars (GTK_ENTRY (cameras_set->entry_widgets[i]), MEMORIES_NAME_LENGTH);
 					gtk_entry_set_alignment (GTK_ENTRY (cameras_set->entry_widgets[i]), 0.5);
@@ -983,8 +983,8 @@ void create_horizontal_linked_memories_names_labels (cameras_set_t *cameras_set)
 				for (i = 0; i < MAX_MEMORIES; i++) {
 					cameras_set->memories_labels[i] = gtk_label_new (NULL);
 					gtk_widget_set_size_request (cameras_set->memories_labels[i], cameras_set->layout.thumbnail_width + 10, 20);
-					gtk_widget_set_margin_start (cameras_set->memories_labels[i], cameras_set->layout.memories_button_vertical_margins);
-					gtk_widget_set_margin_end (cameras_set->memories_labels[i], cameras_set->layout.memories_button_vertical_margins);
+					if (i != 0) gtk_widget_set_margin_start (cameras_set->memories_labels[i], cameras_set->layout.memories_button_vertical_margins);
+					if (i != MAX_MEMORIES -1) gtk_widget_set_margin_end (cameras_set->memories_labels[i], cameras_set->layout.memories_button_vertical_margins);
 					gtk_label_set_xalign (GTK_LABEL (cameras_set->memories_labels[i]), 0.5);
 					gtk_box_pack_start (GTK_BOX (box), cameras_set->memories_labels[i], FALSE, FALSE, 0);
 					g_signal_connect (G_OBJECT (cameras_set->entry_widgets[i]), "activate", G_CALLBACK (entry_activate), cameras_set->memories_labels[i]);
@@ -1017,8 +1017,8 @@ void create_vertical_linked_memories_names_labels (cameras_set_t *cameras_set)
 					cameras_set->memories_labels[i] = gtk_label_new (NULL);
 					gtk_label_set_angle (GTK_LABEL (cameras_set->memories_labels[i]), 270);
 					gtk_widget_set_size_request (cameras_set->memories_labels[i], 20, cameras_set->layout.thumbnail_height + 10);
-					gtk_widget_set_margin_top (cameras_set->memories_labels[i], cameras_set->layout.memories_button_horizontal_margins);
-					gtk_widget_set_margin_bottom (cameras_set->memories_labels[i], cameras_set->layout.memories_button_horizontal_margins);
+					if (i != 0) gtk_widget_set_margin_top (cameras_set->memories_labels[i], cameras_set->layout.memories_button_horizontal_margins);
+					if (i != MAX_MEMORIES -1) gtk_widget_set_margin_bottom (cameras_set->memories_labels[i], cameras_set->layout.memories_button_horizontal_margins);
 					gtk_label_set_xalign (GTK_LABEL (cameras_set->memories_labels[i]), 0.5);
 					gtk_box_pack_start (GTK_BOX (box), cameras_set->memories_labels[i], FALSE, FALSE, 0);
 					g_signal_connect (G_OBJECT (cameras_set->entry_widgets[i]), "activate", G_CALLBACK (entry_activate), cameras_set->memories_labels[i]);
@@ -1239,19 +1239,24 @@ void update_current_cameras_set_vertical_margins (void)
 				gtk_widget_set_margin_end (ptz->tally[4], interface_default.memories_button_vertical_margins);
 			} else {
 				for (j = 0; j < MAX_MEMORIES; j++) {
-					gtk_widget_set_margin_start (ptz->memories[j].button, interface_default.memories_button_vertical_margins);
-					gtk_widget_set_margin_end (ptz->memories[j].button, interface_default.memories_button_vertical_margins);
+					if (j != 0) gtk_widget_set_margin_start (ptz->memories[j].button, interface_default.memories_button_vertical_margins);
+					if (j != MAX_MEMORIES -1) gtk_widget_set_margin_end (ptz->memories[j].button, interface_default.memories_button_vertical_margins);
 				}
 			}
-		} else if (interface_default.orientation) gtk_widget_set_size_request (ptz->ghost_body, ((interface_default.thumbnail_width + 10) + (2 * interface_default.memories_button_vertical_margins)) * MAX_MEMORIES, interface_default.thumbnail_height / 2);
+		} else if (interface_default.orientation) gtk_widget_set_size_request (ptz->ghost_body, ((interface_default.thumbnail_width + 10) * MAX_MEMORIES) + (interface_default.memories_button_vertical_margins * 2 * (MAX_MEMORIES - 1)), interface_default.thumbnail_height / 2);
 	}
 
 	if (interface_default.orientation) {
 		for (j = 0; j < MAX_MEMORIES; j++) {
-			gtk_widget_set_margin_start (current_cameras_set->entry_widgets[j], 2 + interface_default.memories_button_vertical_margins);
-			gtk_widget_set_margin_end (current_cameras_set->entry_widgets[j], 2 + interface_default.memories_button_vertical_margins);
-			gtk_widget_set_margin_start (current_cameras_set->memories_labels[j], interface_default.memories_button_vertical_margins);
-			gtk_widget_set_margin_end (current_cameras_set->memories_labels[j], interface_default.memories_button_vertical_margins);
+			if (j != 0) {
+				gtk_widget_set_margin_start (current_cameras_set->entry_widgets[j], 2 + interface_default.memories_button_vertical_margins);
+				gtk_widget_set_margin_start (current_cameras_set->memories_labels[j], interface_default.memories_button_vertical_margins);
+			}
+
+			if (j != MAX_MEMORIES -1) {
+				gtk_widget_set_margin_end (current_cameras_set->entry_widgets[j], 2 + interface_default.memories_button_vertical_margins);
+				gtk_widget_set_margin_end (current_cameras_set->memories_labels[j], interface_default.memories_button_vertical_margins);
+			}
 		}
 	}
 }
@@ -1272,19 +1277,24 @@ void update_current_cameras_set_horizontal_margins (void)
 				gtk_widget_set_margin_bottom (ptz->tally[4], interface_default.memories_button_horizontal_margins);
 			} else {
 				for (j = 0; j < MAX_MEMORIES; j++) {
-					gtk_widget_set_margin_top (ptz->memories[j].button, interface_default.memories_button_horizontal_margins);
-					gtk_widget_set_margin_bottom (ptz->memories[j].button, interface_default.memories_button_horizontal_margins);
+					if (j != 0) gtk_widget_set_margin_top (ptz->memories[j].button, interface_default.memories_button_horizontal_margins);
+					if (j != MAX_MEMORIES -1) gtk_widget_set_margin_bottom (ptz->memories[j].button, interface_default.memories_button_horizontal_margins);
 				}
 			}
-		} else if (!interface_default.orientation) gtk_widget_set_size_request (ptz->ghost_body, interface_default.thumbnail_height / 2, ((interface_default.thumbnail_height + 10) + (2 * interface_default.memories_button_horizontal_margins)) * MAX_MEMORIES);
+		} else if (!interface_default.orientation) gtk_widget_set_size_request (ptz->ghost_body, interface_default.thumbnail_height / 2, ((interface_default.thumbnail_height + 10) * MAX_MEMORIES) + (interface_default.memories_button_horizontal_margins * 2 * (MAX_MEMORIES - 1)));
 	}
 
 	if (!interface_default.orientation) {
 		for (j = 0; j < MAX_MEMORIES; j++) {
-			gtk_widget_set_margin_top (current_cameras_set->entry_widgets[j], interface_default.memories_button_horizontal_margins);
-			gtk_widget_set_margin_bottom (current_cameras_set->entry_widgets[j], interface_default.memories_button_horizontal_margins);
-			gtk_widget_set_margin_top (current_cameras_set->memories_labels[j], interface_default.memories_button_horizontal_margins);
-			gtk_widget_set_margin_bottom (current_cameras_set->memories_labels[j], interface_default.memories_button_horizontal_margins);
+			if (j != 0) {
+				gtk_widget_set_margin_top (current_cameras_set->entry_widgets[j], interface_default.memories_button_horizontal_margins);
+				gtk_widget_set_margin_top (current_cameras_set->memories_labels[j], interface_default.memories_button_horizontal_margins);
+			}
+
+			if (j != MAX_MEMORIES -1) {
+				gtk_widget_set_margin_bottom (current_cameras_set->entry_widgets[j], interface_default.memories_button_horizontal_margins);
+				gtk_widget_set_margin_bottom (current_cameras_set->memories_labels[j], interface_default.memories_button_horizontal_margins);
+			}
 		}
 	}
 }
