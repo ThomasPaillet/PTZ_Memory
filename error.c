@@ -210,10 +210,8 @@ PTZ_ERROR_S(Motor_Disconnect_Error,0x56,"Motor Disconnect Error",AW_UE150)
 gboolean error_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 {
 	if (ptz->error_code == 0x00) {
-		if ((gtk_widget_is_sensitive (widget)) && !(GTK_STATE_FLAG_BACKDROP & gtk_widget_get_state_flags (widget))) {
-			if (ptz->enter_notify_name_drawing_area) cairo_set_source_rgb (cr, 0.2, 0.223529412, 0.231372549);
-			else cairo_set_source_rgb (cr, 0.176470588, 0.196078431, 0.203921569);
-		} else cairo_set_source_rgb (cr, 0.2, 0.223529412, 0.231372549);
+		if (gtk_widget_is_sensitive (widget) && (ptz->enter_notify_name_drawing_area)) cairo_set_source_rgb (cr, 0.2, 0.223529412, 0.231372549);
+		else cairo_set_source_rgb (cr, 0.176470588, 0.196078431, 0.203921569);
 	} else if (ptz->error_code == CAMERA_IS_UNREACHABLE_ERROR) cairo_set_source_rgb (cr, 0.8, 0.0, 0.0);
 	else cairo_set_source_rgb (cr, 0.960784314, 0.474509804, 0.0);
 
