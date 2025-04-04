@@ -73,7 +73,7 @@ gboolean ptz_tally_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 			else if ((ptz->tally_data & 0x02) && !(ptz->tally_data & 0x01)) cairo_set_source_rgb (cr, 0.0, ptz->tally_brightness, 0.0);
 			else cairo_set_source_rgb (cr, 0.941176471 * ptz->tally_brightness, 0.764705882 * ptz->tally_brightness, 0.0);
 		}
-	} else cairo_set_source_rgb (cr, 0.2, 0.223529412, 0.231372549);
+	} else cairo_set_source_rgb (cr, 0.176470588, 0.196078431, 0.203921569);
 
 	cairo_paint (cr);
 
@@ -92,7 +92,7 @@ gboolean ghost_ptz_tally_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 			else if ((ptz->tally_data & 0x02) && !(ptz->tally_data & 0x01)) cairo_set_source_rgb (cr, 0.0, ptz->tally_brightness, 0.0);
 			else cairo_set_source_rgb (cr, 0.941176471 * ptz->tally_brightness, 0.764705882 * ptz->tally_brightness, 0.0);
 		}
-	} else cairo_set_source_rgb (cr, 0.2, 0.223529412, 0.231372549);
+	} else cairo_set_source_rgb (cr, 0.176470588, 0.196078431, 0.203921569);
 
 	cairo_paint (cr);
 
@@ -123,10 +123,8 @@ gboolean ptz_name_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 	PangoLayout *pl;
 	PangoFontDescription *desc;
 
-	if ((gtk_widget_is_sensitive (widget)) && !(GTK_STATE_FLAG_BACKDROP & gtk_widget_get_state_flags (widget))) {
-		if (ptz->enter_notify_name_drawing_area) cairo_set_source_rgb (cr, 0.2, 0.223529412, 0.231372549);
-		else cairo_set_source_rgb (cr, 0.176470588, 0.196078431, 0.203921569);
-	} else cairo_set_source_rgb (cr, 0.2, 0.223529412, 0.231372549);
+	if (gtk_widget_is_sensitive (widget) && (ptz->enter_notify_name_drawing_area)) cairo_set_source_rgb (cr, 0.2, 0.223529412, 0.231372549);
+	else cairo_set_source_rgb (cr, 0.176470588, 0.196078431, 0.203921569);
 
 	cairo_paint (cr);
 
@@ -140,7 +138,7 @@ gboolean ptz_name_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 			else if ((ptz->tally_data & 0x02) && !(ptz->tally_data & 0x01)) cairo_set_source_rgb (cr, 0.0, ptz->tally_brightness, 0.0);
 			else cairo_set_source_rgb (cr, 0.941176471 * ptz->tally_brightness, 0.764705882 * ptz->tally_brightness, 0.0);
 		}
-	} else if (gtk_widget_is_sensitive (widget)) cairo_set_source_rgb (cr, 0.933333333, 0.933333333, 0.925490196);
+	} else if ((gtk_widget_is_sensitive (widget)) && !(GTK_STATE_FLAG_BACKDROP & gtk_widget_get_state_flags (widget))) cairo_set_source_rgb (cr, 0.933333333, 0.933333333, 0.925490196);
 	else cairo_set_source_rgb (cr, 0.568627451, 0.580392157, 0.580392157);
 
 	pl = pango_cairo_create_layout (cr);
@@ -165,7 +163,7 @@ gboolean ghost_ptz_name_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 	PangoLayout *pl;
 	PangoFontDescription *desc;
 
-	cairo_set_source_rgb (cr, 0.2, 0.223529412, 0.231372549);
+	cairo_set_source_rgb (cr, 0.176470588, 0.196078431, 0.203921569);
 
 	cairo_paint (cr);
 
@@ -179,7 +177,7 @@ gboolean ghost_ptz_name_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 			else if ((ptz->tally_data & 0x02) && !(ptz->tally_data & 0x01)) cairo_set_source_rgb (cr, 0.0, ptz->tally_brightness, 0.0);
 			else cairo_set_source_rgb (cr, 0.941176471 * ptz->tally_brightness, 0.764705882 * ptz->tally_brightness, 0.0);
 		}
-	} else cairo_set_source_rgb (cr, 0.933333333, 0.933333333, 0.925490196);
+	} else cairo_set_source_rgb (cr, 0.568627451, 0.580392157, 0.580392157);
 
 	pl = pango_cairo_create_layout (cr);
 
