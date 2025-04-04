@@ -489,7 +489,7 @@ memories_grid
 
 gboolean ghost_body_draw (GtkWidget *widget, cairo_t *cr)
 {
-	cairo_set_source_rgb (cr, 0.2, 0.223529412, 0.231372549);
+	cairo_set_source_rgb (cr, 0.176470588, 0.196078431, 0.203921569);
 	cairo_paint (cr);
 
 	return GDK_EVENT_PROPAGATE;
