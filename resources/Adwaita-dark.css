@@ -84,6 +84,10 @@
   -GtkScrollbar-has-forward-stepper: false;
 }
 
+notebook {
+  background-color: rgb(44,50,51);
+}
+
 iconview {
   background-color: rgb(35,39,41);
   color: rgb(255,255,255);
@@ -3921,7 +3925,7 @@ notebook > header.right {
 }
 
 notebook > stack:not(:only-child) {
-  background-color: rgb(35,39,41);
+  background-color: rgb(44,50,51);
 }
 
 scrollbar slider:hover {
@@ -9486,7 +9490,7 @@ menu menuitem:hover:backdrop {
 }
 
 notebook > stack:not(:only-child):backdrop {
-  background-color: rgb(37,42,44);
+  background-color: rgb(44,50,51);
 }
 
 scrollbar slider:active:hover {
