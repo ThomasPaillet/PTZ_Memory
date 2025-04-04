@@ -332,8 +332,8 @@ name_grid                                       memories_grid
 		for (i = 0; i < MAX_MEMORIES; i++) {
 			ptz->memories[i].button = gtk_button_new ();
 			gtk_widget_set_size_request (ptz->memories[i].button, interface_default.thumbnail_width + 10, interface_default.thumbnail_height + 10);
-			gtk_widget_set_margin_start (ptz->memories[i].button, interface_default.memories_button_vertical_margins);
-			gtk_widget_set_margin_end (ptz->memories[i].button, interface_default.memories_button_vertical_margins);
+			if (i != 0) gtk_widget_set_margin_start (ptz->memories[i].button, interface_default.memories_button_vertical_margins);
+			if (i != MAX_MEMORIES -1) gtk_widget_set_margin_end (ptz->memories[i].button, interface_default.memories_button_vertical_margins);
 			ptz->memories[i].button_handler_id = g_signal_connect (G_OBJECT (ptz->memories[i].button), "button-press-event", G_CALLBACK (memory_button_button_press_event), ptz->memories + i);
 			g_signal_connect_after (G_OBJECT (ptz->memories[i].button), "draw", G_CALLBACK (memory_name_draw), ptz->memories[i].name);
 			g_signal_connect_after (G_OBJECT (ptz->memories[i].button), "draw", G_CALLBACK (memory_outline_draw), ptz->memories + i);
@@ -446,8 +446,8 @@ memories_grid
 		for (i = 0; i < MAX_MEMORIES; i++) {
 			ptz->memories[i].button = gtk_button_new ();
 			gtk_widget_set_size_request (ptz->memories[i].button, interface_default.thumbnail_width + 10, interface_default.thumbnail_height + 10);
-			gtk_widget_set_margin_top (ptz->memories[i].button, interface_default.memories_button_horizontal_margins);
-			gtk_widget_set_margin_bottom (ptz->memories[i].button, interface_default.memories_button_horizontal_margins);
+			if (i != 0) gtgtk_widget_set_margin_top (ptz->memories[i].button, interface_default.memories_button_horizontal_margins);
+			if (i != MAX_MEMORIES -1) gtgtk_widget_set_margin_bottom (ptz->memories[i].button, interface_default.memories_button_horizontal_margins);
 			ptz->memories[i].button_handler_id = g_signal_connect (G_OBJECT (ptz->memories[i].button), "button-press-event", G_CALLBACK (memory_button_button_press_event), ptz->memories + i);
 			g_signal_connect_after (G_OBJECT (ptz->memories[i].button), "draw", G_CALLBACK (memory_name_draw), ptz->memories[i].name);
 			g_signal_connect_after (G_OBJECT (ptz->memories[i].button), "draw", G_CALLBACK (memory_outline_draw), ptz->memories + i);
@@ -540,7 +540,7 @@ name_grid                    memories_grid
 	gtk_grid_attach (GTK_GRID (ptz->memories_grid), ptz->tally[3], 0, 0, MAX_MEMORIES, 1);
 
 		ptz->ghost_body = gtk_drawing_area_new ();
-		gtk_widget_set_size_request (ptz->ghost_body, ((interface_default.thumbnail_width + 10) + (2 * interface_default.memories_button_vertical_margins)) * MAX_MEMORIES, interface_default.thumbnail_height / 2);
+		gtk_widget_set_size_request (ptz->ghost_body, ((interface_default.thumbnail_width + 10) * MAX_MEMORIES) + (2 * interface_default.memories_button_vertical_margins * (MAX_MEMORIES - 1)), interface_default.thumbnail_height / 2);
 		g_signal_connect (G_OBJECT (ptz->ghost_body), "draw", G_CALLBACK (ghost_body_draw), NULL);
 	gtk_grid_attach (GTK_GRID (ptz->memories_grid), ptz->ghost_body, 0, 1, MAX_MEMORIES, 1);
 
@@ -609,7 +609,7 @@ memories_grid
 	gtk_grid_attach (GTK_GRID (ptz->memories_grid), ptz->tally[3], 0, 0, 1, MAX_MEMORIES);
 
 		ptz->ghost_body = gtk_drawing_area_new ();
-		gtk_widget_set_size_request (ptz->ghost_body, interface_default.thumbnail_height / 2, ((interface_default.thumbnail_height + 10) + (2 * interface_default.memories_button_horizontal_margins)) * MAX_MEMORIES);
+		gtk_widget_set_size_request (ptz->ghost_body, interface_default.thumbnail_height / 2, ((interface_default.thumbnail_height + 10) * MAX_MEMORIES) + (2 * interface_default.memories_button_horizontal_margins * (MAX_MEMORIES - 1)));
 		g_signal_connect (G_OBJECT (ptz->ghost_body), "draw", G_CALLBACK (ghost_body_draw), NULL);
 	gtk_grid_attach (GTK_GRID (ptz->memories_grid), ptz->ghost_body, 1, 0, 1, MAX_MEMORIES);
 
