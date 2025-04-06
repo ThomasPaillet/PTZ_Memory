@@ -771,7 +771,10 @@ void load_config_file (void)
 
 		if ((cameras_set_tmp->layout.memories_button_horizontal_margins < 0) || (cameras_set_tmp->layout.memories_button_horizontal_margins > 50)) cameras_set_tmp->layout.memories_button_horizontal_margins = 0;
 
-		interface_default = cameras_set_tmp->layout;
+		if (i == 0) {
+			current_cameras_set = cameras_set_tmp;
+			interface_default = cameras_set_tmp->layout;
+		}
 
 		for (j = 0; j < cameras_set_tmp->number_of_cameras; j++) {
 			ptz = g_malloc (sizeof (ptz_t));
