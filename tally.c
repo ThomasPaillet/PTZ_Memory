@@ -121,7 +121,6 @@ gboolean control_window_tally_draw (GtkWidget *widget, cairo_t *cr)
 gboolean ptz_name_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 {
 	PangoLayout *pl;
-	PangoFontDescription *desc;
 
 	if (gtk_widget_is_sensitive (widget) && (ptz->enter_notify_name_drawing_area)) cairo_set_source_rgb (cr, 0.2, 0.223529412, 0.231372549);
 	else cairo_set_source_rgb (cr, 0.176470588, 0.196078431, 0.203921569);
@@ -143,13 +142,16 @@ gboolean ptz_name_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 
 	pl = pango_cairo_create_layout (cr);
 
-	if (ptz->name[1] == '\0') cairo_translate (cr, 50 * current_cameras_set->layout.thumbnail_size, 20 * current_cameras_set->layout.thumbnail_size);
-	else cairo_translate (cr, 10 * current_cameras_set->layout.thumbnail_size, 20 * current_cameras_set->layout.thumbnail_size);
+	if (interface_default.orientation) {
+		if (ptz->name[1] == '\0') cairo_translate (cr, 50 * current_cameras_set->layout.thumbnail_size, 20 * current_cameras_set->layout.thumbnail_size);
+		else cairo_translate (cr, 10 * current_cameras_set->layout.thumbnail_size, 20 * current_cameras_set->layout.thumbnail_size);
+	} else {
+		if (ptz->name[1] == '\0') cairo_translate (cr, 50 * current_cameras_set->layout.thumbnail_size, 20 * current_cameras_set->layout.thumbnail_size);
+		else cairo_translate (cr, 10 * current_cameras_set->layout.thumbnail_size, 20 * current_cameras_set->layout.thumbnail_size);
+	}
 
 	pango_layout_set_text (pl, ptz->name, -1);
-	desc = pango_font_description_from_string (current_cameras_set->layout.ptz_name_font);
-	pango_layout_set_font_description (pl, desc);
-	pango_font_description_free (desc);
+	pango_layout_set_font_description (pl, current_cameras_set->layout.ptz_name_font_description);
 
 	pango_cairo_show_layout (cr, pl);
 
@@ -161,7 +163,6 @@ gboolean ptz_name_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 gboolean ghost_ptz_name_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 {
 	PangoLayout *pl;
-	PangoFontDescription *desc;
 
 	cairo_set_source_rgb (cr, 0.176470588, 0.196078431, 0.203921569);
 
@@ -181,13 +182,16 @@ gboolean ghost_ptz_name_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 
 	pl = pango_cairo_create_layout (cr);
 
-	if (ptz->name[1] == '\0') cairo_translate (cr, 60 * current_cameras_set->layout.thumbnail_size, -10 * current_cameras_set->layout.thumbnail_size);
-	else cairo_translate (cr, 30 * current_cameras_set->layout.thumbnail_size, -10 * current_cameras_set->layout.thumbnail_size);
+	if (interface_default.orientation) {
+		if (ptz->name[1] == '\0') cairo_translate (cr, 60 * current_cameras_set->layout.thumbnail_size, -10 * current_cameras_set->layout.thumbnail_size);
+		else cairo_translate (cr, 30 * current_cameras_set->layout.thumbnail_size, -10 * current_cameras_set->layout.thumbnail_size);
+	} else {
+		if (ptz->name[1] == '\0') cairo_translate (cr, 60 * current_cameras_set->layout.thumbnail_size, -10 * current_cameras_set->layout.thumbnail_size);
+		else cairo_translate (cr, 30 * current_cameras_set->layout.thumbnail_size, -10 * current_cameras_set->layout.thumbnail_size);
+	}
 
 	pango_layout_set_text (pl, ptz->name, -1);
-	desc = pango_font_description_from_string (current_cameras_set->layout.ghost_ptz_name_font);
-	pango_layout_set_font_description (pl, desc);
-	pango_font_description_free (desc);
+	pango_layout_set_font_description (pl, current_cameras_set->layout.ghost_ptz_name_font_description);
 
 	pango_cairo_show_layout (cr, pl);
 
@@ -199,7 +203,6 @@ gboolean ghost_ptz_name_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 gboolean control_window_name_draw (GtkWidget *widget, cairo_t *cr)
 {
 	PangoLayout *pl;
-	PangoFontDescription *desc;
 
 	cairo_set_source_rgb (cr, 0.2, 0.223529412, 0.231372549);
 
@@ -223,9 +226,7 @@ gboolean control_window_name_draw (GtkWidget *widget, cairo_t *cr)
 	else cairo_translate (cr, 5, 0);
 
 	pango_layout_set_text (pl, current_ptz->name, -1);
-	desc = pango_font_description_from_string ("Courier Bold 30");
-	pango_layout_set_font_description (pl, desc);
-	pango_font_description_free (desc);
+	pango_layout_set_font_description (pl, control_window_font_description);
 
 	pango_cairo_show_layout (cr, pl);
 
