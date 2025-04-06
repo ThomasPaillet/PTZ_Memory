@@ -26,6 +26,8 @@
 
 extern ptz_t *current_ptz;
 
+extern PangoFontDescription *control_window_font_description;
+
 extern GtkWidget *control_window_focus_level_bar_drawing_area;
 extern GtkWidget *control_window_zoom_level_bar_drawing_area;
 
