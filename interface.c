@@ -72,17 +72,17 @@ void orientation_check_button_toggled (GtkToggleButton *togglebutton)
 		ptz = current_cameras_set->cameras[i];
 
 		if (ptz->active) {
-			if (current_cameras_set->layout.orientation) create_ptz_widgets_horizontal (ptz);
+			if (interface_default.orientation) create_ptz_widgets_horizontal (ptz);
 			else create_ptz_widgets_vertical (ptz);
 
 			for (j = 0; j < MAX_MEMORIES; j++) {
 				if (!ptz->memories[j].empty) {
-					if (current_cameras_set->layout.thumbnail_width == 320) {
+					if (interface_default.thumbnail_width == 320) {
 						ptz->memories[j].image = gtk_image_new_from_pixbuf (ptz->memories[j].full_pixbuf);
 					} else {
 						g_object_unref (G_OBJECT (ptz->memories[j].scaled_pixbuf));
 		
-						ptz->memories[j].scaled_pixbuf = gdk_pixbuf_scale_simple (ptz->memories[j].full_pixbuf, current_cameras_set->layout.thumbnail_width, current_cameras_set->layout.thumbnail_height, GDK_INTERP_BILINEAR);
+						ptz->memories[j].scaled_pixbuf = gdk_pixbuf_scale_simple (ptz->memories[j].full_pixbuf, interface_default.thumbnail_width, interface_default.thumbnail_height, GDK_INTERP_BILINEAR);
 						ptz->memories[j].image = gtk_image_new_from_pixbuf (ptz->memories[j].scaled_pixbuf);
 					}
 					gtk_button_set_image (GTK_BUTTON (ptz->memories[j].button), ptz->memories[j].image);
@@ -94,7 +94,7 @@ void orientation_check_button_toggled (GtkToggleButton *togglebutton)
 				gtk_widget_set_sensitive (current_cameras_set->cameras[i]->memories_grid, FALSE);
 			}
 		} else {
-			if (current_cameras_set->layout.orientation) create_ghost_ptz_widgets_horizontal (ptz);
+			if (interface_default.orientation) create_ghost_ptz_widgets_horizontal (ptz);
 			else create_ghost_ptz_widgets_vertical (ptz);
 		}
 	}
@@ -108,8 +108,8 @@ void orientation_check_button_toggled (GtkToggleButton *togglebutton)
 
 	gtk_widget_show_all (current_cameras_set->page);
 
-	if (!current_cameras_set->layout.show_linked_memories_names_entries) gtk_widget_hide (current_cameras_set->linked_memories_names_entries);
-	if (!current_cameras_set->layout.show_linked_memories_names_labels) gtk_widget_hide (current_cameras_set->linked_memories_names_labels);
+	if (!interface_default.show_linked_memories_names_entries) gtk_widget_hide (current_cameras_set->linked_memories_names_entries);
+	if (!interface_default.show_linked_memories_names_labels) gtk_widget_hide (current_cameras_set->linked_memories_names_labels);
 
 	backup_needed = TRUE;
 }
@@ -118,7 +118,7 @@ void show_linked_memories_names_entries_check_button_toggled (GtkToggleButton *t
 {
 	interface_default.show_linked_memories_names_entries = current_cameras_set->layout.show_linked_memories_names_entries = gtk_toggle_button_get_active (togglebutton);
 
-	if (current_cameras_set->layout.show_linked_memories_names_entries) gtk_widget_show (current_cameras_set->linked_memories_names_entries);
+	if (interface_default.show_linked_memories_names_entries) gtk_widget_show (current_cameras_set->linked_memories_names_entries);
 	else gtk_widget_hide (current_cameras_set->linked_memories_names_entries);
 
 	backup_needed = TRUE;
@@ -128,7 +128,7 @@ void show_linked_memories_names_labels_check_button_toggled (GtkToggleButton *to
 {
 	interface_default.show_linked_memories_names_labels = current_cameras_set->layout.show_linked_memories_names_labels = gtk_toggle_button_get_active (togglebutton);
 
-	if (current_cameras_set->layout.show_linked_memories_names_labels) gtk_widget_show (current_cameras_set->linked_memories_names_labels);
+	if (interface_default.show_linked_memories_names_labels) gtk_widget_show (current_cameras_set->linked_memories_names_labels);
 	else gtk_widget_hide (current_cameras_set->linked_memories_names_labels);
 
 	backup_needed = TRUE;
@@ -140,26 +140,26 @@ void thumbnail_size_value_changed (GtkRange *range)
 	int i, j;
 	ptz_t *ptz;
 
-	old_thumbnail_width = current_cameras_set->layout.thumbnail_width;
+	old_thumbnail_width = interface_default.thumbnail_width;
 
 	interface_default.thumbnail_size = current_cameras_set->layout.thumbnail_size = gtk_range_get_value (range) / 100.0;
-	interface_default.thumbnail_width = current_cameras_set->layout.thumbnail_width = 320 * current_cameras_set->layout.thumbnail_size;
-	interface_default.thumbnail_height = current_cameras_set->layout.thumbnail_height = 180 * current_cameras_set->layout.thumbnail_size;
+	interface_default.thumbnail_width = current_cameras_set->layout.thumbnail_width = 320 * interface_default.thumbnail_size;
+	interface_default.thumbnail_height = current_cameras_set->layout.thumbnail_height = 180 * interface_default.thumbnail_size;
 
-	sprintf (current_cameras_set->layout.ptz_name_font + 13, "%d", (int)(100.0 * current_cameras_set->layout.thumbnail_size));
-	interface_default.ptz_name_font[13] = current_cameras_set->layout.ptz_name_font[13];
-	interface_default.ptz_name_font[14] = current_cameras_set->layout.ptz_name_font[14];
-	interface_default.ptz_name_font[15] = current_cameras_set->layout.ptz_name_font[15];
+	sprintf (interface_default.ptz_name_font + 13, "%d", (int)(100.0 * interface_default.thumbnail_size));
+	current_cameras_set->layout.ptz_name_font[13] = interface_default.ptz_name_font[13];
+	current_cameras_set->layout.ptz_name_font[14] = interface_default.ptz_name_font[14];
+	current_cameras_set->layout.ptz_name_font[15] = interface_default.ptz_name_font[15];
 
-	sprintf (current_cameras_set->layout.ghost_ptz_name_font + 13, "%d", (int)(80.0 * current_cameras_set->layout.thumbnail_size));
-	interface_default.ghost_ptz_name_font[13] = current_cameras_set->layout.ghost_ptz_name_font[13];
-	interface_default.ghost_ptz_name_font[14] = current_cameras_set->layout.ghost_ptz_name_font[14];
-	interface_default.ghost_ptz_name_font[15] = current_cameras_set->layout.ghost_ptz_name_font[15];
+	sprintf (interface_default.ghost_ptz_name_font + 13, "%d", (int)(80.0 * interface_default.thumbnail_size));
+	current_cameras_set->layout.ghost_ptz_name_font[13] = interface_default.ghost_ptz_name_font[13];
+	current_cameras_set->layout.ghost_ptz_name_font[14] = interface_default.ghost_ptz_name_font[14];
+	current_cameras_set->layout.ghost_ptz_name_font[15] = interface_default.ghost_ptz_name_font[15];
 
-	sprintf (current_cameras_set->layout.memory_name_font + 13, "%d", (int)(20.0 * current_cameras_set->layout.thumbnail_size));
-	interface_default.memory_name_font[13] = current_cameras_set->layout.memory_name_font[13];
-	interface_default.memory_name_font[14] = current_cameras_set->layout.memory_name_font[14];
-	interface_default.memory_name_font[15] = current_cameras_set->layout.memory_name_font[15];
+	sprintf (interface_default.memory_name_font + 13, "%d", (int)(20.0 * interface_default.thumbnail_size));
+	current_cameras_set->layout.memory_name_font[13] = interface_default.memory_name_font[13];
+	current_cameras_set->layout.memory_name_font[14] = interface_default.memory_name_font[14];
+	current_cameras_set->layout.memory_name_font[15] = interface_default.memory_name_font[15];
 
 	pango_font_description_free (interface_default.ptz_name_font_description);
 	interface_default.ptz_name_font_description = current_cameras_set->layout.ptz_name_font_description = pango_font_description_from_string (interface_default.ptz_name_font);
@@ -172,58 +172,58 @@ void thumbnail_size_value_changed (GtkRange *range)
 		ptz = current_cameras_set->cameras[i];
 
 		if (ptz->active) {
-			if (current_cameras_set->layout.orientation) {
-				gtk_widget_set_size_request (ptz->name_drawing_area, current_cameras_set->layout.thumbnail_height, current_cameras_set->layout.thumbnail_height + 10);
-				gtk_widget_set_size_request (ptz->error_drawing_area, 8, current_cameras_set->layout.thumbnail_height + 10);
+			if (interface_default.orientation) {
+				gtk_widget_set_size_request (ptz->name_drawing_area, interface_default.thumbnail_height, interface_default.thumbnail_height + 10);
+				gtk_widget_set_size_request (ptz->error_drawing_area, 8, interface_default.thumbnail_height + 10);
 			} else {
-				gtk_widget_set_size_request (ptz->name_drawing_area, current_cameras_set->layout.thumbnail_width + 10, current_cameras_set->layout.thumbnail_height);
-				gtk_widget_set_size_request (ptz->error_drawing_area, current_cameras_set->layout.thumbnail_width + 10, 8);
+				gtk_widget_set_size_request (ptz->name_drawing_area, interface_default.thumbnail_width + 10, interface_default.thumbnail_height);
+				gtk_widget_set_size_request (ptz->error_drawing_area, interface_default.thumbnail_width + 10, 8);
 			}
 
 			for (j = 0; j < MAX_MEMORIES; j++) {
 				if (!ptz->memories[j].empty) {
 					gtk_widget_destroy (ptz->memories[j].image);
 
-					gtk_widget_set_size_request (ptz->memories[j].button, current_cameras_set->layout.thumbnail_width + 10, current_cameras_set->layout.thumbnail_height + 10);
+					gtk_widget_set_size_request (ptz->memories[j].button, interface_default.thumbnail_width + 10, interface_default.thumbnail_height + 10);
 
 					if (old_thumbnail_width != 320) g_object_unref (G_OBJECT (ptz->memories[j].scaled_pixbuf));
 
-					if (current_cameras_set->layout.thumbnail_width == 320) {
+					if (interface_default.thumbnail_width == 320) {
 						ptz->memories[j].image = gtk_image_new_from_pixbuf (ptz->memories[j].full_pixbuf);
 					} else {
-						ptz->memories[j].scaled_pixbuf = gdk_pixbuf_scale_simple (ptz->memories[j].full_pixbuf, current_cameras_set->layout.thumbnail_width, current_cameras_set->layout.thumbnail_height, GDK_INTERP_BILINEAR);
+						ptz->memories[j].scaled_pixbuf = gdk_pixbuf_scale_simple (ptz->memories[j].full_pixbuf, interface_default.thumbnail_width, interface_default.thumbnail_height, GDK_INTERP_BILINEAR);
 						ptz->memories[j].image = gtk_image_new_from_pixbuf (ptz->memories[j].scaled_pixbuf);
 					}
 					gtk_button_set_image (GTK_BUTTON (ptz->memories[j].button), ptz->memories[j].image);
-				} else gtk_widget_set_size_request (ptz->memories[j].button, current_cameras_set->layout.thumbnail_width + 10, current_cameras_set->layout.thumbnail_height + 10);
+				} else gtk_widget_set_size_request (ptz->memories[j].button, interface_default.thumbnail_width + 10, interface_default.thumbnail_height + 10);
 			}
 		} else {
-			if (current_cameras_set->layout.orientation) {
-				gtk_widget_set_size_request (ptz->name_drawing_area, current_cameras_set->layout.thumbnail_height + 8, current_cameras_set->layout.thumbnail_height / 2);
-				gtk_widget_set_size_request (ptz->ghost_body, ((current_cameras_set->layout.thumbnail_width + 10) * MAX_MEMORIES) + (current_cameras_set->layout.memories_button_vertical_margins * 2 * (MAX_MEMORIES - 1)), current_cameras_set->layout.thumbnail_height / 2);
+			if (interface_default.orientation) {
+				gtk_widget_set_size_request (ptz->name_drawing_area, interface_default.thumbnail_height + 8, interface_default.thumbnail_height / 2);
+				gtk_widget_set_size_request (ptz->ghost_body, ((interface_default.thumbnail_width + 10) * MAX_MEMORIES) + (interface_default.memories_button_vertical_margins * 2 * (MAX_MEMORIES - 1)), interface_default.thumbnail_height / 2);
 			} else {
-				gtk_widget_set_size_request (ptz->name_drawing_area, current_cameras_set->layout.thumbnail_height / 2, current_cameras_set->layout.thumbnail_height + 8);
-				gtk_widget_set_size_request (ptz->ghost_body, current_cameras_set->layout.thumbnail_height / 2, ((current_cameras_set->layout.thumbnail_height + 10) * MAX_MEMORIES) + (current_cameras_set->layout.memories_button_horizontal_margins * 2 * (MAX_MEMORIES - 1)));
+				gtk_widget_set_size_request (ptz->name_drawing_area, interface_default.thumbnail_height / 2, interface_default.thumbnail_height + 8);
+				gtk_widget_set_size_request (ptz->ghost_body, interface_default.thumbnail_height / 2, ((interface_default.thumbnail_height + 10) * MAX_MEMORIES) + (interface_default.memories_button_horizontal_margins * 2 * (MAX_MEMORIES - 1)));
 			}
 		}
 
-		if (current_cameras_set->layout.orientation) {
-			gtk_widget_set_size_request (current_cameras_set->entry_widgets_padding, current_cameras_set->layout.thumbnail_height + 12, 34);
-			gtk_widget_set_size_request (current_cameras_set->memories_labels_padding, current_cameras_set->layout.thumbnail_height + 12, 20);
-			gtk_widget_set_size_request (current_cameras_set->memories_scrollbar_padding, current_cameras_set->layout.thumbnail_height + 12, 10);
+		if (interface_default.orientation) {
+			gtk_widget_set_size_request (current_cameras_set->entry_widgets_padding, interface_default.thumbnail_height + 12, 34);
+			gtk_widget_set_size_request (current_cameras_set->memories_labels_padding, interface_default.thumbnail_height + 12, 20);
+			gtk_widget_set_size_request (current_cameras_set->memories_scrollbar_padding, interface_default.thumbnail_height + 12, 10);
 		} else {
-			gtk_widget_set_size_request (current_cameras_set->entry_widgets_padding, 160, current_cameras_set->layout.thumbnail_height + 12);
-			gtk_widget_set_size_request (current_cameras_set->memories_labels_padding, 20, current_cameras_set->layout.thumbnail_height + 12);
-			gtk_widget_set_size_request (current_cameras_set->memories_scrollbar_padding, 10, current_cameras_set->layout.thumbnail_height + 12);
+			gtk_widget_set_size_request (current_cameras_set->entry_widgets_padding, 160, interface_default.thumbnail_height + 12);
+			gtk_widget_set_size_request (current_cameras_set->memories_labels_padding, 20, interface_default.thumbnail_height + 12);
+			gtk_widget_set_size_request (current_cameras_set->memories_scrollbar_padding, 10, interface_default.thumbnail_height + 12);
 		}
 
 		for (j = 0; j < MAX_MEMORIES; j++) {
-			if (current_cameras_set->layout.orientation) {
-				gtk_widget_set_size_request (current_cameras_set->entry_widgets[j], current_cameras_set->layout.thumbnail_width + 6, 34);
-				gtk_widget_set_size_request (current_cameras_set->memories_labels[j], current_cameras_set->layout.thumbnail_width + 6, 20);
+			if (interface_default.orientation) {
+				gtk_widget_set_size_request (current_cameras_set->entry_widgets[j], interface_default.thumbnail_width + 6, 34);
+				gtk_widget_set_size_request (current_cameras_set->memories_labels[j], interface_default.thumbnail_width + 6, 20);
 			} else {
-				gtk_widget_set_size_request (current_cameras_set->entry_widgets[j], 160, current_cameras_set->layout.thumbnail_height + 10);
-				gtk_widget_set_size_request (current_cameras_set->memories_labels[j], 20, current_cameras_set->layout.thumbnail_height + 10);
+				gtk_widget_set_size_request (current_cameras_set->entry_widgets[j], 160, interface_default.thumbnail_height + 10);
+				gtk_widget_set_size_request (current_cameras_set->memories_labels[j], 20, interface_default.thumbnail_height + 10);
 			}
 		}
 	}
@@ -235,8 +235,8 @@ void memories_button_vertical_margins_value_changed (GtkRange *range)
 {
 	int new_memories_button_vertical_margins = gtk_range_get_value (range);
 
-	if ((new_memories_button_vertical_margins <= 1) && (current_cameras_set->layout.memories_button_vertical_margins > 1))  gtk_label_set_text (GTK_LABEL (vertical_margins_label), pixel_txt);
-	else if ((new_memories_button_vertical_margins > 1) && (current_cameras_set->layout.memories_button_vertical_margins <= 1)) gtk_label_set_text (GTK_LABEL (vertical_margins_label), pixels_txt);
+	if ((new_memories_button_vertical_margins <= 1) && (interface_default.memories_button_vertical_margins > 1))  gtk_label_set_text (GTK_LABEL (vertical_margins_label), pixel_txt);
+	else if ((new_memories_button_vertical_margins > 1) && (interface_default.memories_button_vertical_margins <= 1)) gtk_label_set_text (GTK_LABEL (vertical_margins_label), pixels_txt);
 
 	interface_default.memories_button_vertical_margins = current_cameras_set->layout.memories_button_vertical_margins = new_memories_button_vertical_margins;
 
@@ -249,8 +249,8 @@ void memories_button_horizontal_margins_value_changed (GtkRange *range)
 {
 	int new_memories_button_horizontal_margins = gtk_range_get_value (range);
 
-	if ((new_memories_button_horizontal_margins <= 1) && (current_cameras_set->layout.memories_button_horizontal_margins > 1)) gtk_label_set_text (GTK_LABEL (horizontal_margins_label), pixel_txt);
-	else if ((new_memories_button_horizontal_margins > 1) && (current_cameras_set->layout.memories_button_horizontal_margins <= 1)) gtk_label_set_text (GTK_LABEL (horizontal_margins_label), pixels_txt);
+	if ((new_memories_button_horizontal_margins <= 1) && (interface_default.memories_button_horizontal_margins > 1)) gtk_label_set_text (GTK_LABEL (horizontal_margins_label), pixel_txt);
+	else if ((new_memories_button_horizontal_margins > 1) && (interface_default.memories_button_horizontal_margins <= 1)) gtk_label_set_text (GTK_LABEL (horizontal_margins_label), pixels_txt);
 
 	interface_default.memories_button_horizontal_margins = current_cameras_set->layout.memories_button_horizontal_margins = new_memories_button_horizontal_margins;
 
@@ -288,12 +288,12 @@ SCALE_VALUE_CHANGED(memories_name_backdrop_color_alpha)
 
 #define UPDATE_INTERFACE_CHECK_BUTTON(p) \
 g_signal_handler_block (p##_check_button, p##_check_button_handler_id); \
-gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (p##_check_button), current_cameras_set->layout.p); \
+gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (p##_check_button), interface_default.p); \
 g_signal_handler_unblock (p##_check_button, p##_check_button_handler_id);
 
 #define UPDATE_INTERFACE_SCALE(p) \
 g_signal_handler_block (p##_scale, p##_scale_handler_id); \
-gtk_range_set_value (GTK_RANGE (p##_scale), current_cameras_set->layout.p); \
+gtk_range_set_value (GTK_RANGE (p##_scale), interface_default.p); \
 g_signal_handler_unblock (p##_scale, p##_scale_handler_id);
 
 void show_interface_settings_window (void)
@@ -305,17 +305,17 @@ void show_interface_settings_window (void)
 	UPDATE_INTERFACE_CHECK_BUTTON(show_linked_memories_names_labels)
 
 	g_signal_handler_block (thumbnail_size_scale, thumbnail_size_scale_handler_id);
-	gtk_range_set_value (GTK_RANGE (thumbnail_size_scale), current_cameras_set->layout.thumbnail_size * 100.0);
+	gtk_range_set_value (GTK_RANGE (thumbnail_size_scale), interface_default.thumbnail_size * 100.0);
 	g_signal_handler_unblock (thumbnail_size_scale, thumbnail_size_scale_handler_id);
 
 	UPDATE_INTERFACE_SCALE(memories_button_vertical_margins)
 
-	if (current_cameras_set->layout.memories_button_vertical_margins <= 1) gtk_label_set_text (GTK_LABEL (vertical_margins_label), pixel_txt);
+	if (interface_default.memories_button_vertical_margins <= 1) gtk_label_set_text (GTK_LABEL (vertical_margins_label), pixel_txt);
 	else gtk_label_set_text (GTK_LABEL (vertical_margins_label), pixels_txt);
 
 	UPDATE_INTERFACE_SCALE(memories_button_horizontal_margins)
 
-	if (current_cameras_set->layout.memories_button_horizontal_margins <= 1) gtk_label_set_text (GTK_LABEL (horizontal_margins_label), pixel_txt);
+	if (interface_default.memories_button_horizontal_margins <= 1) gtk_label_set_text (GTK_LABEL (horizontal_margins_label), pixel_txt);
 	else gtk_label_set_text (GTK_LABEL (horizontal_margins_label), pixels_txt);
 
 	UPDATE_INTERFACE_SCALE(memories_name_color_red)
@@ -396,7 +396,7 @@ void create_interface_settings_window (void)
 				gtk_widget_set_margin_start (box3, MARGIN_VALUE);
 				gtk_widget_set_margin_end (box3, MARGIN_VALUE);
 				gtk_widget_set_margin_bottom (box3, MARGIN_VALUE);
-					widget =  gtk_label_new ("Orientation :");
+					widget =  gtk_label_new ("Orientation (Horizontale/Verticale) :");
 				gtk_box_pack_start (GTK_BOX (box3), widget, FALSE, FALSE, 0);
 
 					orientation_check_button = gtk_check_button_new ();
@@ -432,13 +432,7 @@ void create_interface_settings_window (void)
 					gtk_widget_set_margin_start (show_linked_memories_names_labels_check_button, MARGIN_VALUE);
 				gtk_box_pack_end (GTK_BOX (box3), show_linked_memories_names_labels_check_button, FALSE, FALSE, 0);
 			gtk_box_pack_start (GTK_BOX (box2), box3, FALSE, FALSE, 0);
-		gtk_container_add (GTK_CONTAINER (frame), box2);
-	gtk_box_pack_start (GTK_BOX (box1), frame, FALSE, FALSE, 0);
 
-		frame = gtk_frame_new ("Mémoires");
-		gtk_frame_set_label_align (GTK_FRAME (frame), 0.5, 0.5);
-		gtk_container_set_border_width (GTK_CONTAINER (frame), MARGIN_VALUE);
-			box2 = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
 				box3 = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
 				gtk_widget_set_margin_top (box3, MARGIN_VALUE);
 				gtk_widget_set_margin_start (box3, MARGIN_VALUE);
@@ -467,7 +461,7 @@ void create_interface_settings_window (void)
 				gtk_widget_set_margin_top (box3, MARGIN_VALUE);
 				gtk_widget_set_margin_start (box3, MARGIN_VALUE);
 				gtk_widget_set_margin_end (box3, MARGIN_VALUE);
-					widget =  gtk_label_new ("Taille des marges gauche/droite des boutons de mémoires :");
+					widget =  gtk_label_new ("Taille des marges gauche/droite :");
 				gtk_box_pack_start (GTK_BOX (box3), widget, FALSE, FALSE, 0);
 			gtk_box_pack_start (GTK_BOX (box2), box3, FALSE, FALSE, 0);
 
@@ -491,7 +485,7 @@ void create_interface_settings_window (void)
 				gtk_widget_set_margin_top (box3, MARGIN_VALUE);
 				gtk_widget_set_margin_start (box3, MARGIN_VALUE);
 				gtk_widget_set_margin_end (box3, MARGIN_VALUE);
-					widget =  gtk_label_new ("Taille des marges haut/bas des boutons de mémoires :");
+					widget =  gtk_label_new ("Taille des marges haut/bas :");
 				gtk_box_pack_start (GTK_BOX (box3), widget, FALSE, FALSE, 0);
 			gtk_box_pack_start (GTK_BOX (box2), box3, FALSE, FALSE, 0);
 
