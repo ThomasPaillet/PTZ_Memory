@@ -400,6 +400,8 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 
 	g_slist_free (ip_addresss_list);
 
+	if (current_cameras_set != NULL) interface_default = current_cameras_set->layout;
+
 	gtk_widget_destroy (cameras_set_configuration_window);
 
 	g_free (cameras_configuration_widgets);
