@@ -572,6 +572,10 @@ int main (int argc, char** argv)
 		gtk_widget_set_sensitive (link_toggle_button, FALSE);
 		gtk_widget_set_sensitive (switch_cameras_on_button, FALSE);
 		gtk_widget_set_sensitive (switch_cameras_off_button, FALSE);
+
+		interface_default.ptz_name_font_description = pango_font_description_from_string (interface_default.ptz_name_font);
+		interface_default.ghost_ptz_name_font_description = pango_font_description_from_string (interface_default.ghost_ptz_name_font);
+		interface_default.memory_name_font_description = pango_font_description_from_string (interface_default.memory_name_font);
 	}
 
 	gtk_widget_show_all (main_window);
@@ -625,6 +629,10 @@ int main (int argc, char** argv)
 	stop_error_log ();
 
 	gtk_widget_destroy (main_window);
+
+	pango_font_description_free (interface_default.ptz_name_font_description);
+	pango_font_description_free (interface_default.ghost_ptz_name_font_description);
+	pango_font_description_free (interface_default.memory_font_description);
 
 	g_list_free (pointing_devices);
 
