@@ -143,15 +143,15 @@ gboolean ptz_name_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 	pl = pango_cairo_create_layout (cr);
 
 	if (interface_default.orientation) {
-		if (ptz->name[1] == '\0') cairo_translate (cr, 50 * current_cameras_set->layout.thumbnail_size, 20 * current_cameras_set->layout.thumbnail_size);
-		else cairo_translate (cr, 10 * current_cameras_set->layout.thumbnail_size, 20 * current_cameras_set->layout.thumbnail_size);
+		if (ptz->name[1] == '\0') cairo_translate (cr, 50 * interface_default.thumbnail_size, 20 * interface_default.thumbnail_size);
+		else cairo_translate (cr, 10 * interface_default.thumbnail_size, 20 * interface_default.thumbnail_size);
 	} else {
-		if (ptz->name[1] == '\0') cairo_translate (cr, 50 * current_cameras_set->layout.thumbnail_size, 20 * current_cameras_set->layout.thumbnail_size);
-		else cairo_translate (cr, 10 * current_cameras_set->layout.thumbnail_size, 20 * current_cameras_set->layout.thumbnail_size);
+		if (ptz->name[1] == '\0') cairo_translate (cr, 50 * interface_default.thumbnail_size, 20 * interface_default.thumbnail_size);
+		else cairo_translate (cr, 10 * interface_default.thumbnail_size, 20 * interface_default.thumbnail_size);
 	}
 
 	pango_layout_set_text (pl, ptz->name, -1);
-	pango_layout_set_font_description (pl, current_cameras_set->layout.ptz_name_font_description);
+	pango_layout_set_font_description (pl, interface_default.ptz_name_font_description);
 
 	pango_cairo_show_layout (cr, pl);
 
@@ -183,15 +183,15 @@ gboolean ghost_ptz_name_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 	pl = pango_cairo_create_layout (cr);
 
 	if (interface_default.orientation) {
-		if (ptz->name[1] == '\0') cairo_translate (cr, 60 * current_cameras_set->layout.thumbnail_size, -10 * current_cameras_set->layout.thumbnail_size);
-		else cairo_translate (cr, 30 * current_cameras_set->layout.thumbnail_size, -10 * current_cameras_set->layout.thumbnail_size);
+		if (ptz->name[1] == '\0') cairo_translate (cr, 60 * interface_default.thumbnail_size, -10 * interface_default.thumbnail_size);
+		else cairo_translate (cr, 30 * interface_default.thumbnail_size, -10 * interface_default.thumbnail_size);
 	} else {
-		if (ptz->name[1] == '\0') cairo_translate (cr, 60 * current_cameras_set->layout.thumbnail_size, -10 * current_cameras_set->layout.thumbnail_size);
-		else cairo_translate (cr, 30 * current_cameras_set->layout.thumbnail_size, -10 * current_cameras_set->layout.thumbnail_size);
+		if (ptz->name[1] == '\0') cairo_translate (cr, 60 * interface_default.thumbnail_size, -10 * interface_default.thumbnail_size);
+		else cairo_translate (cr, 30 * interface_default.thumbnail_size, -10 * interface_default.thumbnail_size);
 	}
 
 	pango_layout_set_text (pl, ptz->name, -1);
-	pango_layout_set_font_description (pl, current_cameras_set->layout.ghost_ptz_name_font_description);
+	pango_layout_set_font_description (pl, interface_default.ghost_ptz_name_font_description);
 
 	pango_cairo_show_layout (cr, pl);
 
