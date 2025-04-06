@@ -828,8 +828,6 @@ void delete_cameras_set (void)
 		gtk_list_box_select_row (GTK_LIST_BOX (settings_list_box), NULL);
 		gtk_widget_destroy (GTK_WIDGET (list_box_row));
 
-		g_free (cameras_set_itr);
-
 		if (number_of_cameras_sets == MAX_CAMERAS_SET) gtk_widget_set_sensitive (settings_new_button, TRUE);
 		number_of_cameras_sets--;
 
@@ -844,7 +842,13 @@ void delete_cameras_set (void)
 			gtk_widget_set_sensitive (link_toggle_button, FALSE);
 			gtk_widget_set_sensitive (switch_cameras_on_button, FALSE);
 			gtk_widget_set_sensitive (switch_cameras_off_button, FALSE);
+		} else {
+			pango_font_description_free (cameras_set_itr->layout.ptz_name_font_description);
+			pango_font_description_free (cameras_set_itr->layout.ghost_ptz_name_font_description);
+			pango_font_description_free (cameras_set_itr->layout.memory_name_font_description);
 		}
+
+		g_free (cameras_set_itr);
 
 		for (cameras_set_itr = cameras_sets; cameras_set_itr != NULL; cameras_set_itr = cameras_set_itr->next)
 			cameras_set_itr->page_num = gtk_notebook_page_num (GTK_NOTEBOOK (main_window_notebook), cameras_set_itr->page);
