@@ -40,6 +40,7 @@ ptz_t *current_ptz = NULL;
 GtkWidget *control_window_gtk_window;
 GtkWidget *control_window_tally[4];
 GtkWidget *control_window_name_drawing_area;
+PangoFontDescription *control_window_font_description;
 
 GtkWidget *control_window_auto_focus_toggle_button;
 gulong control_window_auto_focus_handler_id;
@@ -1343,6 +1344,8 @@ void create_control_window (void)
 {
 	GtkWidget *main_grid, *grid, *box, *widget, *image, *event_box;
 
+	control_window_font_description = pango_font_description_from_string ("Courier Bold 30");
+
 	control_window_gtk_window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_decorated (GTK_WINDOW (control_window_gtk_window), FALSE);
 	gtk_window_set_skip_taskbar_hint (GTK_WINDOW (control_window_gtk_window), FALSE);
@@ -1430,7 +1433,7 @@ void create_control_window (void)
 	gtk_grid_attach (GTK_GRID (main_grid), grid, 1, 2, 1, 2);
 
 		control_window_name_drawing_area = gtk_drawing_area_new ();
-		gtk_widget_set_size_request (control_window_name_drawing_area, 60, 40);
+		gtk_widget_set_size_request (control_window_name_drawing_area, 65, 40);
 		gtk_widget_set_margin_top (control_window_name_drawing_area, MARGIN_VALUE);
 		gtk_widget_set_halign (control_window_name_drawing_area, GTK_ALIGN_CENTER);
 		g_signal_connect (G_OBJECT (control_window_name_drawing_area), "draw", G_CALLBACK (control_window_name_draw), NULL);
