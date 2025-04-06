@@ -126,11 +126,11 @@ gpointer load_memory (memory_thread_t *memory_thread)
 	}
 
 	memory->is_loaded = TRUE;
-	gtk_widget_queue_draw (memory->image);
+	gtk_widget_queue_draw (memory->button);
 
 	if (ptz->previous_loaded_memory != NULL) {
 		ptz->previous_loaded_memory->is_loaded = FALSE;
-		gtk_widget_queue_draw (ptz->previous_loaded_memory->image);
+		gtk_widget_queue_draw (ptz->previous_loaded_memory->button);
 	}
 
 	ptz->previous_loaded_memory = memory;
@@ -180,11 +180,11 @@ gpointer load_other_memory (memory_thread_t *memory_thread)
 	send_ptz_control_command (ptz, memory->pan_tilt_position_cmd, TRUE);
 
 	memory->is_loaded = TRUE;
-	gtk_widget_queue_draw (memory->image);
+	gtk_widget_queue_draw (memory->button);
 
 	if (ptz->previous_loaded_memory != NULL) {
 		ptz->previous_loaded_memory->is_loaded = FALSE;
-		gtk_widget_queue_draw (ptz->previous_loaded_memory->image);
+		gtk_widget_queue_draw (ptz->previous_loaded_memory->button);
 	}
 
 	ptz->previous_loaded_memory = memory;
@@ -298,7 +298,6 @@ gboolean memory_button_button_press_event (GtkButton *button, GdkEventButton *ev
 gboolean memory_name_draw (GtkWidget *widget, cairo_t *cr, char *name)
 {
 	PangoLayout *pl;
-	PangoFontDescription *desc;
 
 	if (name[0] != '\0') {
 		cairo_set_source_rgba (cr, current_cameras_set->layout.memories_name_backdrop_color_red, current_cameras_set->layout.memories_name_backdrop_color_green, current_cameras_set->layout.memories_name_backdrop_color_blue, current_cameras_set->layout.memories_name_backdrop_color_alpha);
@@ -306,14 +305,13 @@ gboolean memory_name_draw (GtkWidget *widget, cairo_t *cr, char *name)
 		cairo_fill (cr);
 
 		cairo_set_source_rgb (cr, current_cameras_set->layout.memories_name_color_red, current_cameras_set->layout.memories_name_color_green, current_cameras_set->layout.memories_name_color_blue);
+
 		pl = pango_cairo_create_layout (cr);
 
 		cairo_translate (cr, 5.0 + 16.0 * (10 - (strlen (name) / 2)) * current_cameras_set->layout.thumbnail_size, current_cameras_set->layout.thumbnail_height - (19.0 * current_cameras_set->layout.thumbnail_size) + (1.0 - current_cameras_set->layout.thumbnail_size) * 4.0);
 
 		pango_layout_set_text (pl, name, -1);
-		desc = pango_font_description_from_string (current_cameras_set->layout.memory_name_font);
-		pango_layout_set_font_description (pl, desc);
-		pango_font_description_free (desc);
+		pango_layout_set_font_description (pl, current_cameras_set->layout.memory_ptz_name_font_description);
 
 		pango_cairo_show_layout (cr, pl);
 
