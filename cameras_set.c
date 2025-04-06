@@ -1236,7 +1236,7 @@ void update_current_cameras_set_vertical_margins (void)
 		ptz = current_cameras_set->cameras[i];
 
 		if (ptz->active) {
-			if (!current_cameras_set->layout.orientation) {
+			if (!interface_default.orientation) {
 				gtk_widget_set_margin_start (ptz->tally[1], interface_default.memories_button_vertical_margins);
 				gtk_widget_set_margin_start (ptz->tally[3], interface_default.memories_button_vertical_margins);
 				gtk_widget_set_margin_end (ptz->tally[2], interface_default.memories_button_vertical_margins);
@@ -1274,7 +1274,7 @@ void update_current_cameras_set_horizontal_margins (void)
 		ptz = current_cameras_set->cameras[i];
 
 		if (ptz->active) {
-			if (current_cameras_set->layout.orientation) {
+			if (interface_default.orientation) {
 				gtk_widget_set_margin_top (ptz->tally[0], interface_default.memories_button_horizontal_margins);
 				gtk_widget_set_margin_top (ptz->tally[3], interface_default.memories_button_horizontal_margins);
 				gtk_widget_set_margin_bottom (ptz->tally[2], interface_default.memories_button_horizontal_margins);
