@@ -744,7 +744,7 @@ void load_config_file (void)
 
 		cameras_set_tmp->layout.ptz_name_font_description = pango_font_description_from_string (cameras_set_tmp->layout.ptz_name_font);
 		cameras_set_tmp->layout.ghost_ptz_name_font_description = pango_font_description_from_string (cameras_set_tmp->layout.ghost_ptz_name_font);
-		cameras_set_tmp->layout.memory_ptz_name_font_description = pango_font_description_from_string (cameras_set_tmp->layout.memory_ptz_name_font);
+		cameras_set_tmp->layout.memory_name_font_description = pango_font_description_from_string (cameras_set_tmp->layout.memory_name_font);
 
 		if (cameras_set_tmp->layout.memories_name_color_red < 0.0) cameras_set_tmp->layout.memories_name_color_red = 0.0;
 		else if (cameras_set_tmp->layout.memories_name_color_red > 1.0) cameras_set_tmp->layout.memories_name_color_red = 1.0;
