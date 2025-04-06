@@ -35,6 +35,10 @@ typedef struct interface_param_s {
 	char ghost_ptz_name_font[17];
 	char memory_name_font[17];
 
+	PangoFontDescription *ptz_name_font_description;
+	PangoFontDescription *ghost_ptz_name_font_description;
+	PangoFontDescription *memory_name_font_description;
+
 	double memories_name_color_red;
 	double memories_name_color_green;
 	double memories_name_color_blue;
