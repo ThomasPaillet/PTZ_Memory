@@ -1213,20 +1213,19 @@ cameras_set->page_box (horizontal)
 
 void add_cameras_set_to_main_window_notebook (cameras_set_t *cameras_set)
 {
-	GtkWidget *widget;
+	GtkWidget *widget = gtk_label_new (cameras_set->name);
 
 	cameras_set->page = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
 
 	fill_cameras_set_page (cameras_set);
 
+	cameras_set->page_num = gtk_notebook_append_page (GTK_NOTEBOOK (main_window_notebook), cameras_set->page, widget);
+	gtk_notebook_set_tab_reorderable (GTK_NOTEBOOK (main_window_notebook), cameras_set->page, TRUE);
+
 	gtk_widget_show_all (cameras_set->page);
 
 	if (!cameras_set->layout.show_linked_memories_names_entries) gtk_widget_hide (cameras_set->linked_memories_names_entries);
 	if (!cameras_set->layout.show_linked_memories_names_labels) gtk_widget_hide (cameras_set->linked_memories_names_labels);
-
-	widget = gtk_label_new (cameras_set->name);
-	cameras_set->page_num = gtk_notebook_append_page (GTK_NOTEBOOK (main_window_notebook), cameras_set->page, widget);
-	gtk_notebook_set_tab_reorderable (GTK_NOTEBOOK (main_window_notebook), cameras_set->page, TRUE);
 }
 
 void update_current_cameras_set_vertical_margins (void)
