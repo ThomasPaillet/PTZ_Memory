@@ -226,9 +226,13 @@ void main_window_notebook_page_reordered (GtkNotebook *notebook, GtkWidget *page
 {
 	cameras_set_t *cameras_set_itr;
 
+	g_mutex_lock (&cameras_sets_mutex);
+
 	for (cameras_set_itr = cameras_sets; cameras_set_itr != NULL; cameras_set_itr = cameras_set_itr->next) {
 		cameras_set_itr->page_num = gtk_notebook_page_num (GTK_NOTEBOOK (main_window_notebook), cameras_set_itr->page);
 	}
+
+	g_mutex_unlock (&cameras_sets_mutex);
 
 	backup_needed = TRUE;
 }
