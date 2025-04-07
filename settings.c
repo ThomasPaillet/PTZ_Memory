@@ -699,7 +699,7 @@ void load_config_file (void)
 {
 	FILE *config_file;
 	int i, j, k, index;
-	cameras_set_t *cameras_set_tmp;
+	cameras_set_t *cameras_set_tmp, *first_cameras_set;
 	ptz_t *ptz;
 	char memories_name[MAX_MEMORIES][MEMORIES_NAME_LENGTH + 1];
 	int pixbuf_rowstride;
@@ -771,10 +771,9 @@ void load_config_file (void)
 
 		if ((cameras_set_tmp->layout.memories_button_horizontal_margins < 0) || (cameras_set_tmp->layout.memories_button_horizontal_margins > 50)) cameras_set_tmp->layout.memories_button_horizontal_margins = 0;
 
-		if (i == 0) {
-			current_cameras_set = cameras_set_tmp;
-			interface_default = cameras_set_tmp->layout;
-		}
+		interface_default = cameras_set_tmp->layout;
+
+		if (i == 0) first_cameras_set = cameras_set_tmp;
 
 		for (j = 0; j < cameras_set_tmp->number_of_cameras; j++) {
 			ptz = g_malloc (sizeof (ptz_t));
@@ -854,6 +853,9 @@ void load_config_file (void)
 			gtk_label_set_text (GTK_LABEL (cameras_set_tmp->memories_labels[j]), memories_name[j]);
 		}
 	}
+
+	current_cameras_set = first_cameras_set;
+	interface_default = current_cameras_set->layout;
 
 	fread (&controller_is_used, sizeof (gboolean), 1, config_file);
 
