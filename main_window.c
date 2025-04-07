@@ -177,6 +177,24 @@ gpointer get_camera_screen_shot (ptz_thread_t *ptz_thread)
 
 void main_window_notebook_switch_page (GtkNotebook *notebook, GtkWidget *page, guint page_num)
 {
+	int i;
+	ptz_t *ptz;
+	gboolean tallies[MAX_CAMERAS];
+
+	if (send_ip_tally) {
+		for (i = 0; i < current_cameras_set->number_of_cameras; i++) {
+			ptz = current_cameras_set->cameras[i];
+
+			if (ptz->tally_1_is_on) {
+				tallies[i] = TRUE;
+
+				if (ptz->is_on) send_ptz_control_command (ptz, "#DA0", TRUE);
+
+				ptz->tally_1_is_on = FALSE;
+			} else tallies[i] = FALSE;
+		}
+	}
+
 	g_mutex_lock (&cameras_sets_mutex);
 
 	for (current_cameras_set = cameras_sets; current_cameras_set != NULL; current_cameras_set = current_cameras_set->next) {
@@ -188,6 +206,18 @@ void main_window_notebook_switch_page (GtkNotebook *notebook, GtkWidget *page, g
 	}
 
 	g_mutex_unlock (&cameras_sets_mutex);
+
+	if (send_ip_tally) {
+		for (i = 0; i < current_cameras_set->number_of_cameras; i++) {
+			if (tallies[i]) {
+				ptz = current_cameras_set->cameras[i];
+
+				if (ptz->is_on) send_ptz_control_command (ptz, "#DA1", TRUE);
+
+				ptz->tally_1_is_on = TRUE;
+			}
+		}
+	}
 
 	if (page_num != tally_cameras_set) tell_cameras_set_is_selected (page_num);
 }
@@ -632,7 +662,7 @@ int main (int argc, char** argv)
 
 	pango_font_description_free (interface_default.ptz_name_font_description);
 	pango_font_description_free (interface_default.ghost_ptz_name_font_description);
-	pango_font_description_free (interface_default.memory_font_description);
+	pango_font_description_free (interface_default.memory_name_font_description);
 
 	g_list_free (pointing_devices);
 
