@@ -22,6 +22,7 @@
 
 
 #include <glib-2.0/glib.h>
+#include <pango/pango.h>
 
 
 typedef struct interface_param_s {
