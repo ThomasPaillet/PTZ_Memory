@@ -262,10 +262,10 @@ gpointer receive_tsl_umd_v5_msg (gpointer data)
 				else ptz->tally_brightness = 0.4;
 
 				if (packet.control & 0x30) {
-					if (send_ip_tally && !ptz->tally_1_is_on && ptz->ip_address_is_valid && (ptz->error_code != 0x30)) send_ptz_control_command (ptz, "#DA1", TRUE);
+					if (send_ip_tally && !ptz->tally_1_is_on && ptz->ip_address_is_valid && (ptz->error_code != CAMERA_IS_UNREACHABLE_ERROR)) send_ptz_control_command (ptz, "#DA1", TRUE);
 					ptz->tally_1_is_on = TRUE;
 				} else {
-					if (send_ip_tally && ptz->tally_1_is_on && ptz->ip_address_is_valid && (ptz->error_code != 0x30)) send_ptz_control_command (ptz, "#DA0", TRUE);
+					if (send_ip_tally && ptz->tally_1_is_on && ptz->ip_address_is_valid && (ptz->error_code != CAMERA_IS_UNREACHABLE_ERROR)) send_ptz_control_command (ptz, "#DA0", TRUE);
 					ptz->tally_1_is_on = FALSE;
 				}
 
