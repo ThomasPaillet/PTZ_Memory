@@ -767,7 +767,7 @@ gboolean focus_level_bar_draw (GtkWidget *widget, cairo_t *cr)
 
 gboolean pad_button_press (GtkWidget *widget, GdkEventButton *event)
 {
-	if ((event->state & GDK_BUTTON1_MASK) && (gdk_event_get_source_device ((GdkEvent *)event) != trackball)) {
+	if ((event->button == 1) && (gdk_event_get_source_device ((GdkEvent *)event) != trackball)) {
 		control_window_x = event->x;
 		control_window_y = event->y;
 	}
@@ -830,7 +830,7 @@ gboolean pad_motion_notify (GtkWidget *widget, GdkEventMotion *event)
 
 gboolean pad_button_release (GtkWidget *widget, GdkEventButton *event)
 {
-	if ((event->state & GDK_BUTTON1_MASK) && (gdk_event_get_source_device ((GdkEvent *)event) != trackball)) {
+	if ((event->button == 1) && (gdk_event_get_source_device ((GdkEvent *)event) != trackball)) {
 		if (control_window_pan_tilt_timeout_id != 0) {
 			g_source_remove (control_window_pan_tilt_timeout_id);
 			control_window_pan_tilt_timeout_id = 0;
