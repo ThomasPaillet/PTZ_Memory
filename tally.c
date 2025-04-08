@@ -262,10 +262,10 @@ gpointer receive_tsl_umd_v5_msg (gpointer data)
 				else ptz->tally_brightness = 0.4;
 
 				if (packet.control & 0x30) {
-					if (send_ip_tally && !ptz->tally_1_is_on && ptz->ip_address_is_valid && (ptz->error_code != CAMERA_IS_UNREACHABLE_ERROR)) send_ptz_control_command (ptz, "#DA1", TRUE);
+					if (send_ip_tally && ptz->is_on && !ptz->tally_1_is_on) send_ptz_control_command (ptz, "#DA1", TRUE);
 					ptz->tally_1_is_on = TRUE;
 				} else {
-					if (send_ip_tally && ptz->tally_1_is_on && ptz->ip_address_is_valid && (ptz->error_code != CAMERA_IS_UNREACHABLE_ERROR)) send_ptz_control_command (ptz, "#DA0", TRUE);
+					if (send_ip_tally && ptz->is_on && ptz->tally_1_is_on) send_ptz_control_command (ptz, "#DA0", TRUE);
 					ptz->tally_1_is_on = FALSE;
 				}
 
@@ -287,12 +287,20 @@ void start_tally (void)
 
 void stop_tally (void)
 {
+	int i;
+
 	shutdown (tsl_umd_v5_socket, SHUT_RD);
 	closesocket (tsl_umd_v5_socket);
 
 	if (tsl_umd_v5_thread != NULL) {
 		g_thread_join (tsl_umd_v5_thread);
 		tsl_umd_v5_thread = NULL;
+	}
+
+	if (send_ip_tally && (current_cameras_set != NULL)) {
+		for (i = 0; i < current_cameras_set->number_of_cameras; i++) {
+			if (ptz->is_on && ptz->tally_1_is_on) send_ptz_control_command (ptz, "#DA0", TRUE);
+		}
 	}
 }
 
