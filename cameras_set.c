@@ -188,7 +188,7 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 		for (i = new_number_of_cameras; i < cameras_set->number_of_cameras; i++) {
 			ptz = cameras_set->cameras[i];
 
-			if ((ptz->ip_address_is_valid) && (ptz->error_code != 0x30)) {
+			if ((ptz->ip_address_is_valid) && (ptz->error_code != CAMERA_IS_UNREACHABLE_ERROR)) {
 				for (cameras_set_itr = cameras_sets; cameras_set_itr != NULL; cameras_set_itr = cameras_set_itr->next) {
 					if (cameras_set == cameras_set_itr) continue;
 
@@ -292,7 +292,7 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 				ptz->active = FALSE;
 				cameras_set->number_of_ghost_cameras++;
 
-				if ((ptz->ip_address_is_valid) && (ptz->error_code != 0x30)) {
+				if ((ptz->ip_address_is_valid) && (ptz->error_code != CAMERA_IS_UNREACHABLE_ERROR)) {
 					for (cameras_set_itr = cameras_sets; cameras_set_itr != NULL; cameras_set_itr = cameras_set_itr->next) {
 						if (cameras_set == cameras_set_itr) continue;
 
@@ -363,7 +363,7 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 				ptz_is_off (ptz);
 			} else if (strcmp (ptz->new_ip_address, ptz->ip_address) != 0) {
 				if (new_cameras_set == NULL) {
-					if ((ptz->ip_address_is_valid) && (ptz->error_code != 0x30)) {
+					if ((ptz->ip_address_is_valid) && (ptz->error_code != CAMERA_IS_UNREACHABLE_ERROR)) {
 						for (cameras_set_itr = cameras_sets; cameras_set_itr != NULL; cameras_set_itr = cameras_set_itr->next) {
 							if (cameras_set == cameras_set_itr) continue;
 
@@ -372,6 +372,7 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 							}
 							if (k < cameras_set_itr->number_of_cameras) break;
 						}
+
 						if (cameras_set_itr == NULL) {
 							send_ptz_control_command (ptz, "#LPC0", TRUE);
 							send_update_stop_cmd (ptz);
@@ -385,7 +386,7 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 				ptz->address.sin_addr.s_addr = inet_addr (ptz->new_ip_address);
 				strcpy (ptz->ip_address, ptz->new_ip_address);
 
-				g_idle_add ((GSourceFunc)ptz_is_off, ptz);
+				ptz_is_off (ptz);
 
 				ptz_thread = g_malloc (sizeof (ptz_thread_t));
 				ptz_thread->ptz_ptr = ptz;
@@ -799,7 +800,7 @@ void delete_cameras_set (void)
 		for (i = 0; i < cameras_set_itr->number_of_cameras; i++) {
 			ptz = cameras_set_itr->cameras[i];
 
-			if ((ptz->ip_address_is_valid) && (ptz->error_code != 0x30)) {
+			if ((ptz->ip_address_is_valid) && (ptz->error_code != CAMERA_IS_UNREACHABLE_ERROR)) {
 				for (other_cameras_set = cameras_sets; other_cameras_set != NULL; other_cameras_set = other_cameras_set->next) {
 					if (other_cameras_set == cameras_set_itr) continue;
 
