@@ -54,11 +54,9 @@ typedef struct {
 } memory_t;
 
 
-gboolean memory_button_button_press_event (GtkButton *button, GdkEventButton *event, memory_t *memory);
+void create_ptz_memory_buttons_horizontal (ptz_t *ptz);
 
-gboolean memory_name_draw (GtkWidget *widget, cairo_t *cr, char *name);
-
-gboolean memory_outline_draw (GtkWidget *widget, cairo_t *cr, memory_t *memory);
+void create_ptz_memory_buttons_vertical (ptz_t *ptz);
 
 
 #endif
