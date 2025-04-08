@@ -55,6 +55,7 @@ void init_ptz (ptz_t *ptz)
 		ptz->memories[i].pan_tilt_position_cmd[3] = 'C';
 		ptz->memories[i].pan_tilt_position_cmd[12] = '\0';
 		ptz->memories[i].name[0] = '\0';
+		ptz->memories[i].name_len = 0;
 	}
 
 	ptz->number_of_memories = 0;
@@ -110,7 +111,7 @@ gboolean ptz_is_off (ptz_t *ptz)
 
 	if (ptz == current_ptz) hide_control_window ();
 
-	if ((ptz->error_code != 0x30) && (ptz->error_code != 0x00)) {
+	if ((ptz->error_code != CAMERA_IS_UNREACHABLE_ERROR) && (ptz->error_code != 0x00)) {
 		ptz->error_code = 0x00;
 		gtk_widget_queue_draw (ptz->error_drawing_area);
 		gtk_widget_set_tooltip_text (ptz->error_drawing_area, NULL);
@@ -252,24 +253,6 @@ gboolean ghost_name_drawing_area_button_press_event (GtkButton *widget, GdkEvent
 	return GDK_EVENT_STOP;
 }
 
-gboolean memory_name_window_key_press (GtkWidget *memory_name_window, GdkEventKey *event)
-{
-	if (event->keyval == GDK_KEY_Escape) {
-		gtk_widget_hide (memory_name_window);
-
-		return GDK_EVENT_STOP;
-	} else return GDK_EVENT_PROPAGATE;
-}
-
-void memory_name_entry_activate (GtkEntry *entry, memory_t *memory)
-{
-	strcpy (memory->name, gtk_entry_get_text (entry));
-	gtk_widget_queue_draw (memory->button);
-	gtk_widget_hide (memory->name_window);
-
-	backup_needed = TRUE;
-}
-
 void create_ptz_widgets_horizontal (ptz_t *ptz)
 {
 /*
@@ -282,10 +265,6 @@ name_grid                                       memories_grid
 |                   tally[2]                  | |           tally[4]          |
 +--------+-----------------+------------------+ +----            ----+--------+
 */
-	int i;
-	GtkWidget *memory_name_window;
-	GtkWidget *memory_name_entry;
-
 	ptz->name_separator = gtk_separator_new (GTK_ORIENTATION_HORIZONTAL);
 
 	ptz->name_grid = gtk_grid_new ();
@@ -329,37 +308,7 @@ name_grid                                       memories_grid
 		g_signal_connect (G_OBJECT (ptz->tally[3]), "draw", G_CALLBACK (ptz_tally_draw), ptz);
 	gtk_grid_attach (GTK_GRID (ptz->memories_grid), ptz->tally[3], 0, 0, MAX_MEMORIES + 1, 1);
 
-		for (i = 0; i < MAX_MEMORIES; i++) {
-			ptz->memories[i].button = gtk_button_new ();
-			gtk_widget_set_size_request (ptz->memories[i].button, interface_default.thumbnail_width + 10, interface_default.thumbnail_height + 10);
-			if (i != 0) gtk_widget_set_margin_start (ptz->memories[i].button, interface_default.memories_button_vertical_margins);
-			if (i != MAX_MEMORIES -1) gtk_widget_set_margin_end (ptz->memories[i].button, interface_default.memories_button_vertical_margins);
-			ptz->memories[i].button_handler_id = g_signal_connect (G_OBJECT (ptz->memories[i].button), "button-press-event", G_CALLBACK (memory_button_button_press_event), ptz->memories + i);
-			g_signal_connect_after (G_OBJECT (ptz->memories[i].button), "draw", G_CALLBACK (memory_name_draw), ptz->memories[i].name);
-			g_signal_connect_after (G_OBJECT (ptz->memories[i].button), "draw", G_CALLBACK (memory_outline_draw), ptz->memories + i);
-			gtk_grid_attach (GTK_GRID (ptz->memories_grid), ptz->memories[i].button, i, 1, 1, 1);
-
-			memory_name_window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
-			gtk_window_set_type_hint (GTK_WINDOW (memory_name_window), GDK_WINDOW_TYPE_HINT_DIALOG);
-			gtk_window_set_transient_for (GTK_WINDOW (memory_name_window), GTK_WINDOW (main_window));
-			gtk_window_set_modal (GTK_WINDOW (memory_name_window), TRUE);
-			gtk_window_set_decorated (GTK_WINDOW (memory_name_window), FALSE);
-			gtk_window_set_skip_taskbar_hint (GTK_WINDOW (memory_name_window), FALSE);
-			gtk_window_set_skip_pager_hint (GTK_WINDOW (memory_name_window), FALSE);
-			gtk_window_set_position (GTK_WINDOW (memory_name_window), GTK_WIN_POS_MOUSE);
-			g_signal_connect (G_OBJECT (memory_name_window), "key-press-event", G_CALLBACK (memory_name_window_key_press), NULL);
-			g_signal_connect (G_OBJECT (memory_name_window), "focus-out-event", G_CALLBACK (gtk_widget_hide_on_delete), ptz);
-			g_signal_connect (G_OBJECT (memory_name_window), "delete-event", G_CALLBACK (gtk_widget_hide_on_delete), ptz);
-				memory_name_entry = gtk_entry_new ();
-				gtk_entry_set_max_length (GTK_ENTRY (memory_name_entry), MEMORIES_NAME_LENGTH);
-				gtk_entry_set_width_chars (GTK_ENTRY (memory_name_entry), MEMORIES_NAME_LENGTH);
-				gtk_entry_set_alignment (GTK_ENTRY (memory_name_entry), 0.5);
-				gtk_entry_set_text (GTK_ENTRY (memory_name_entry), ptz->memories[i].name);
-				g_signal_connect (G_OBJECT (memory_name_entry), "activate", G_CALLBACK (memory_name_entry_activate), ptz->memories + i);
-			gtk_container_add (GTK_CONTAINER (memory_name_window), memory_name_entry);
-			ptz->memories[i].name_entry = memory_name_entry;
-			ptz->memories[i].name_window = memory_name_window;
-		}
+		create_ptz_memory_buttons_horizontal (ptz);
 
 		ptz->tally[4] = gtk_drawing_area_new ();
 		gtk_widget_set_size_request (ptz->tally[4], 4, 4);
@@ -396,10 +345,6 @@ memories_grid
 |        |     tally[5]     |        |
 +--------+------------------+--------+
 */
-	int i;
-	GtkWidget *memory_name_window;
-	GtkWidget *memory_name_entry;
-
 	ptz->name_separator = gtk_separator_new (GTK_ORIENTATION_VERTICAL);
 
 	ptz->name_grid = gtk_grid_new ();
@@ -443,37 +388,7 @@ memories_grid
 		g_signal_connect (G_OBJECT (ptz->tally[3]), "draw", G_CALLBACK (ptz_tally_draw), ptz);
 	gtk_grid_attach (GTK_GRID (ptz->memories_grid), ptz->tally[3], 0, 0, 1, MAX_MEMORIES + 1);
 
-		for (i = 0; i < MAX_MEMORIES; i++) {
-			ptz->memories[i].button = gtk_button_new ();
-			gtk_widget_set_size_request (ptz->memories[i].button, interface_default.thumbnail_width + 10, interface_default.thumbnail_height + 10);
-			if (i != 0) gtk_widget_set_margin_top (ptz->memories[i].button, interface_default.memories_button_horizontal_margins);
-			if (i != MAX_MEMORIES -1) gtk_widget_set_margin_bottom (ptz->memories[i].button, interface_default.memories_button_horizontal_margins);
-			ptz->memories[i].button_handler_id = g_signal_connect (G_OBJECT (ptz->memories[i].button), "button-press-event", G_CALLBACK (memory_button_button_press_event), ptz->memories + i);
-			g_signal_connect_after (G_OBJECT (ptz->memories[i].button), "draw", G_CALLBACK (memory_name_draw), ptz->memories[i].name);
-			g_signal_connect_after (G_OBJECT (ptz->memories[i].button), "draw", G_CALLBACK (memory_outline_draw), ptz->memories + i);
-			gtk_grid_attach (GTK_GRID (ptz->memories_grid), ptz->memories[i].button, 1, i, 1, 1);
-
-			memory_name_window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
-			gtk_window_set_type_hint (GTK_WINDOW (memory_name_window), GDK_WINDOW_TYPE_HINT_DIALOG);
-			gtk_window_set_transient_for (GTK_WINDOW (memory_name_window), GTK_WINDOW (main_window));
-			gtk_window_set_modal (GTK_WINDOW (memory_name_window), TRUE);
-			gtk_window_set_decorated (GTK_WINDOW (memory_name_window), FALSE);
-			gtk_window_set_skip_taskbar_hint (GTK_WINDOW (memory_name_window), FALSE);
-			gtk_window_set_skip_pager_hint (GTK_WINDOW (memory_name_window), FALSE);
-			gtk_window_set_position (GTK_WINDOW (memory_name_window), GTK_WIN_POS_MOUSE);
-			g_signal_connect (G_OBJECT (memory_name_window), "key-press-event", G_CALLBACK (memory_name_window_key_press), NULL);
-			g_signal_connect (G_OBJECT (memory_name_window), "focus-out-event", G_CALLBACK (gtk_widget_hide_on_delete), ptz);
-			g_signal_connect (G_OBJECT (memory_name_window), "delete-event", G_CALLBACK (gtk_widget_hide_on_delete), ptz);
-				memory_name_entry = gtk_entry_new ();
-				gtk_entry_set_max_length (GTK_ENTRY (memory_name_entry), MEMORIES_NAME_LENGTH);
-				gtk_entry_set_width_chars (GTK_ENTRY (memory_name_entry), MEMORIES_NAME_LENGTH);
-				gtk_entry_set_alignment (GTK_ENTRY (memory_name_entry), 0.5);
-				gtk_entry_set_text (GTK_ENTRY (memory_name_entry), ptz->memories[i].name);
-				g_signal_connect (G_OBJECT (memory_name_entry), "activate", G_CALLBACK (memory_name_entry_activate), ptz->memories + i);
-			gtk_container_add (GTK_CONTAINER (memory_name_window), memory_name_entry);
-			ptz->memories[i].name_entry = memory_name_entry;
-			ptz->memories[i].name_window = memory_name_window;
-		}
+		create_ptz_memory_buttons_vertical (ptz);
 
 		ptz->tally[4] = gtk_drawing_area_new ();
 		gtk_widget_set_size_request (ptz->tally[4], 4, 4);
