@@ -74,6 +74,7 @@ int full_http_header_size;
 #define COMMAND_FUNCTION_END \
 	} else { \
 		ptz->error_code = CAMERA_IS_UNREACHABLE_ERROR; \
+		ptz->is_on = FALSE; \
 		g_idle_add ((GSourceFunc)camera_is_unreachable, ptz); \
 	} \
  \
@@ -270,6 +271,7 @@ WAIT_IF_NEEDED
 		*response = 0;
 
 		ptz->error_code = CAMERA_IS_UNREACHABLE_ERROR;
+		ptz->is_on = FALSE;
 		g_idle_add ((GSourceFunc)camera_is_unreachable, ptz);
 	}
 
