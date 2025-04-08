@@ -49,8 +49,8 @@ typedef struct {
 	char focus_position_hexa[3];
 
 	char name[MEMORIES_NAME_LENGTH + 1];
+	int name_len;
 	GtkWidget *name_window;
-	GtkWidget *name_entry;
 } memory_t;
 
 
