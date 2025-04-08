@@ -262,10 +262,10 @@ gpointer receive_tsl_umd_v5_msg (gpointer data)
 				else ptz->tally_brightness = 0.4;
 
 				if (packet.control & 0x30) {
-					if (send_ip_tally && ptz->is_on && !ptz->tally_1_is_on) send_ptz_control_command (ptz, "#DA1", TRUE);
+					if (send_ip_tally && ptz->ip_address_is_valid && ptz->is_on && !ptz->tally_1_is_on) send_ptz_control_command (ptz, "#DA1", TRUE);
 					ptz->tally_1_is_on = TRUE;
 				} else {
-					if (send_ip_tally && ptz->is_on && ptz->tally_1_is_on) send_ptz_control_command (ptz, "#DA0", TRUE);
+					if (send_ip_tally && ptz->ip_address_is_valid && ptz->is_on && ptz->tally_1_is_on) send_ptz_control_command (ptz, "#DA0", TRUE);
 					ptz->tally_1_is_on = FALSE;
 				}
 
@@ -299,7 +299,7 @@ void stop_tally (void)
 
 	if (send_ip_tally && (current_cameras_set != NULL)) {
 		for (i = 0; i < current_cameras_set->number_of_cameras; i++) {
-			if (ptz->is_on && ptz->tally_1_is_on) send_ptz_control_command (ptz, "#DA0", TRUE);
+			if (ptz->ip_address_is_valid && ptz->is_on && ptz->tally_1_is_on) send_ptz_control_command (ptz, "#DA0", TRUE);
 		}
 	}
 }
