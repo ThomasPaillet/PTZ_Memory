@@ -525,9 +525,6 @@ void create_main_window (void)
 	main_event_box = gtk_event_box_new ();
 	gtk_widget_set_events (main_event_box, gtk_widget_get_events (main_event_box) | GDK_POINTER_MOTION_MASK);
 	g_signal_connect (G_OBJECT (main_event_box), "button-press-event", G_CALLBACK (main_event_box_events), NULL);
-	g_signal_connect (G_OBJECT (main_event_box), "button-release-event", G_CALLBACK (main_event_box_events), NULL);
-	g_signal_connect (G_OBJECT (main_event_box), "key-press-event", G_CALLBACK (main_event_box_events), NULL);
-	g_signal_connect (G_OBJECT (main_event_box), "key-release-event", G_CALLBACK (main_event_box_events), NULL);
 	main_event_box_motion_notify_handler_id = g_signal_connect (G_OBJECT (main_event_box), "motion-notify-event", G_CALLBACK (control_window_motion_notify), NULL);
 	g_signal_handler_block (main_event_box, main_event_box_motion_notify_handler_id);
 
@@ -550,7 +547,9 @@ int main (int argc, char** argv)
 	ptz_thread_t *ptz_thread;
 
 	WSAInit ();	//_WIN32
-
+#ifdef _WIN32
+	AddFontResource (".\\resources\\fonts\\FreeMonoBold.ttf");
+#endif
 	g_mutex_init (&cameras_sets_mutex);
 
 	init_protocol ();
@@ -669,7 +668,9 @@ int main (int argc, char** argv)
 	pango_font_description_free (interface_default.memory_name_font_description);
 
 	g_list_free (pointing_devices);
-
+#ifdef _WIN32
+	RemoveFontResource (".\\resources\\fonts\\FreeMonoBold.ttf");
+#endif
 	WSACleanup ();	//_WIN32
 
 	return 0;
