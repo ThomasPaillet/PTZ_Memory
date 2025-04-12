@@ -24,7 +24,7 @@
 #include "settings.h"
 
 
-interface_param_t interface_default = { TRUE, 1.0, 320, 180, "Courier Bold 100", "Courier Bold 100", "Courier Bold 100", NULL, NULL, NULL, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.2, 0, 0, TRUE, TRUE };
+interface_param_t interface_default = { TRUE, 1.0, 320, 180, "FreeMono Bold 100px", "FreeMono Bold 100px", "FreeMono Bold 100px", NULL, NULL, NULL, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.2, 0, 0, TRUE, TRUE };
 
 const char interface_settings_txt[] = "_Interface";
 const char pixel_txt[] = "pixel";
@@ -142,31 +142,31 @@ void thumbnail_size_value_changed (GtkRange *range)
 
 	old_thumbnail_width = interface_default.thumbnail_width;
 
-	interface_default.thumbnail_size = current_cameras_set->layout.thumbnail_size = gtk_range_get_value (range) / 100.0;
-	interface_default.thumbnail_width = current_cameras_set->layout.thumbnail_width = 320 * interface_default.thumbnail_size;
-	interface_default.thumbnail_height = current_cameras_set->layout.thumbnail_height = 180 * interface_default.thumbnail_size;
+	current_cameras_set->layout.thumbnail_size = interface_default.thumbnail_size = gtk_range_get_value (range) / 100.0;
+	current_cameras_set->layout.thumbnail_width = interface_default.thumbnail_width = 320 * interface_default.thumbnail_size;
+	current_cameras_set->layout.thumbnail_height = interface_default.thumbnail_height = 180 * interface_default.thumbnail_size;
 
-	sprintf (interface_default.ptz_name_font + 13, "%d", (int)(100.0 * interface_default.thumbnail_size));
-	current_cameras_set->layout.ptz_name_font[13] = interface_default.ptz_name_font[13];
+	sprintf (interface_default.ptz_name_font + 14, "%dpx", (int)(100.0 * interface_default.thumbnail_size));
 	current_cameras_set->layout.ptz_name_font[14] = interface_default.ptz_name_font[14];
 	current_cameras_set->layout.ptz_name_font[15] = interface_default.ptz_name_font[15];
+	current_cameras_set->layout.ptz_name_font[16] = interface_default.ptz_name_font[16];
 
-	sprintf (interface_default.ghost_ptz_name_font + 13, "%d", (int)(80.0 * interface_default.thumbnail_size));
-	current_cameras_set->layout.ghost_ptz_name_font[13] = interface_default.ghost_ptz_name_font[13];
+	sprintf (interface_default.ghost_ptz_name_font + 14, "%dpx", (int)(80.0 * interface_default.thumbnail_size));
 	current_cameras_set->layout.ghost_ptz_name_font[14] = interface_default.ghost_ptz_name_font[14];
 	current_cameras_set->layout.ghost_ptz_name_font[15] = interface_default.ghost_ptz_name_font[15];
+	current_cameras_set->layout.ghost_ptz_name_font[16] = interface_default.ghost_ptz_name_font[16];
 
-	sprintf (interface_default.memory_name_font + 13, "%d", (int)(20.0 * interface_default.thumbnail_size));
-	current_cameras_set->layout.memory_name_font[13] = interface_default.memory_name_font[13];
-	current_cameras_set->layout.memory_name_font[14] = interface_default.memory_name_font[14];
-	current_cameras_set->layout.memory_name_font[15] = interface_default.memory_name_font[15];
+	sprintf (interface_default.memory_name_font + 14, "%dpx", (int)(20.0 * interface_default.thumbnail_size));
+	interface_default.memory_name_font[14] = current_cameras_set->layout.memory_name_font[14];
+	interface_default.memory_name_font[15] = current_cameras_set->layout.memory_name_font[15];
+	interface_default.memory_name_font[16] = current_cameras_set->layout.memory_name_font[16];
 
 	pango_font_description_free (interface_default.ptz_name_font_description);
-	interface_default.ptz_name_font_description = current_cameras_set->layout.ptz_name_font_description = pango_font_description_from_string (interface_default.ptz_name_font);
+	current_cameras_set->layout.ptz_name_font_description = interface_default.ptz_name_font_description = pango_font_description_from_string (interface_default.ptz_name_font);
 	pango_font_description_free (interface_default.ghost_ptz_name_font_description);
-	interface_default.ghost_ptz_name_font_description = current_cameras_set->layout.ghost_ptz_name_font_description = pango_font_description_from_string (interface_default.ghost_ptz_name_font);
+	current_cameras_set->layout.ghost_ptz_name_font_description = interface_default.ghost_ptz_name_font_description = pango_font_description_from_string (interface_default.ghost_ptz_name_font);
 	pango_font_description_free (interface_default.memory_name_font_description);
-	interface_default.memory_name_font_description = current_cameras_set->layout.memory_name_font_description = pango_font_description_from_string (interface_default.memory_name_font);
+	current_cameras_set->layout.memory_name_font_description = interface_default.memory_name_font_description = pango_font_description_from_string (interface_default.memory_name_font);
 
 	for (i = 0; i < current_cameras_set->number_of_cameras; i++) {
 		ptz = current_cameras_set->cameras[i];
