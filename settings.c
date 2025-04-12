@@ -730,48 +730,48 @@ void load_config_file (void)
 
 		cameras_set_tmp->number_of_ghost_cameras = 0;
 
-		fread (&cameras_set_tmp->layout, sizeof (interface_param_t), 1, config_file);
+		fread (&interface_default, sizeof (interface_param_t), 1, config_file);
 
-		if (cameras_set_tmp->layout.thumbnail_size < 0.5) cameras_set_tmp->layout.thumbnail_size = 0.5;
-		else if (cameras_set_tmp->layout.thumbnail_size > 1.0) cameras_set_tmp->layout.thumbnail_size = 1.0;
+		if (interface_default.thumbnail_size < 0.5) interface_default.thumbnail_size = 0.5;
+		else if (interface_default.thumbnail_size > 1.0) interface_default.thumbnail_size = 1.0;
 
-		cameras_set_tmp->layout.thumbnail_width = 320 * cameras_set_tmp->layout.thumbnail_size;
-		cameras_set_tmp->layout.thumbnail_height = 180 * cameras_set_tmp->layout.thumbnail_size;
+		interface_default.thumbnail_width = 320 * interface_default.thumbnail_size;
+		interface_default.thumbnail_height = 180 * interface_default.thumbnail_size;
 
-		sprintf (cameras_set_tmp->layout.ptz_name_font + 13, "%d", (int)(100.0 * cameras_set_tmp->layout.thumbnail_size));
-		sprintf (cameras_set_tmp->layout.ghost_ptz_name_font + 13, "%d", (int)(80.0 * cameras_set_tmp->layout.thumbnail_size));
-		sprintf (cameras_set_tmp->layout.memory_name_font + 13, "%d", (int)(20.0 * cameras_set_tmp->layout.thumbnail_size));
+		sprintf (interface_default.ptz_name_font + 14, "%dpx", (int)(100.0 * interface_default.thumbnail_size));
+		sprintf (interface_default.ghost_ptz_name_font + 14, "%dpx", (int)(80.0 * interface_default.thumbnail_size));
+		sprintf (interface_default.memory_name_font + 14, "%dpx", (int)(20.0 * interface_default.thumbnail_size));
 
-		cameras_set_tmp->layout.ptz_name_font_description = pango_font_description_from_string (cameras_set_tmp->layout.ptz_name_font);
-		cameras_set_tmp->layout.ghost_ptz_name_font_description = pango_font_description_from_string (cameras_set_tmp->layout.ghost_ptz_name_font);
-		cameras_set_tmp->layout.memory_name_font_description = pango_font_description_from_string (cameras_set_tmp->layout.memory_name_font);
+		interface_default.ptz_name_font_description = pango_font_description_from_string (interface_default.ptz_name_font);
+		interface_default.ghost_ptz_name_font_description = pango_font_description_from_string (interface_default.ghost_ptz_name_font);
+		interface_default.memory_name_font_description = pango_font_description_from_string (interface_default.memory_name_font);
 
-		if (cameras_set_tmp->layout.memories_name_color_red < 0.0) cameras_set_tmp->layout.memories_name_color_red = 0.0;
-		else if (cameras_set_tmp->layout.memories_name_color_red > 1.0) cameras_set_tmp->layout.memories_name_color_red = 1.0;
+		if (interface_default.memories_name_color_red < 0.0) interface_default.memories_name_color_red = 0.0;
+		else if (interface_default.memories_name_color_red > 1.0) interface_default.memories_name_color_red = 1.0;
 
-		if (cameras_set_tmp->layout.memories_name_color_green < 0.0) cameras_set_tmp->layout.memories_name_color_green = 0.0;
-		else if (cameras_set_tmp->layout.memories_name_color_green > 1.0) cameras_set_tmp->layout.memories_name_color_green = 1.0;
+		if (interface_default.memories_name_color_green < 0.0) interface_default.memories_name_color_green = 0.0;
+		else if (interface_default.memories_name_color_green > 1.0) interface_default.memories_name_color_green = 1.0;
 
-		if (cameras_set_tmp->layout.memories_name_color_blue < 0.0) cameras_set_tmp->layout.memories_name_color_blue = 0.0;
-		else if (cameras_set_tmp->layout.memories_name_color_blue > 1.0) cameras_set_tmp->layout.memories_name_color_blue = 1.0;
+		if (interface_default.memories_name_color_blue < 0.0) interface_default.memories_name_color_blue = 0.0;
+		else if (interface_default.memories_name_color_blue > 1.0) interface_default.memories_name_color_blue = 1.0;
 
-		if (cameras_set_tmp->layout.memories_name_backdrop_color_red < 0.0) cameras_set_tmp->layout.memories_name_backdrop_color_red = 0.0;
-		else if (cameras_set_tmp->layout.memories_name_backdrop_color_red > 1.0) cameras_set_tmp->layout.memories_name_backdrop_color_red = 1.0;
+		if (interface_default.memories_name_backdrop_color_red < 0.0) interface_default.memories_name_backdrop_color_red = 0.0;
+		else if (interface_default.memories_name_backdrop_color_red > 1.0) interface_default.memories_name_backdrop_color_red = 1.0;
 
-		if (cameras_set_tmp->layout.memories_name_backdrop_color_green < 0.0) cameras_set_tmp->layout.memories_name_backdrop_color_green = 0.0;
-		else if (cameras_set_tmp->layout.memories_name_backdrop_color_green > 1.0) cameras_set_tmp->layout.memories_name_backdrop_color_green = 1.0;
+		if (interface_default.memories_name_backdrop_color_green < 0.0) interface_default.memories_name_backdrop_color_green = 0.0;
+		else if (interface_default.memories_name_backdrop_color_green > 1.0) interface_default.memories_name_backdrop_color_green = 1.0;
 
-		if (cameras_set_tmp->layout.memories_name_backdrop_color_blue < 0.0) cameras_set_tmp->layout.memories_name_backdrop_color_blue = 0.0;
-		else if (cameras_set_tmp->layout.memories_name_backdrop_color_blue > 1.0) cameras_set_tmp->layout.memories_name_backdrop_color_blue = 1.0;
+		if (interface_default.memories_name_backdrop_color_blue < 0.0) interface_default.memories_name_backdrop_color_blue = 0.0;
+		else if (interface_default.memories_name_backdrop_color_blue > 1.0) interface_default.memories_name_backdrop_color_blue = 1.0;
 
-		if (cameras_set_tmp->layout.memories_name_backdrop_color_alpha < 0.0) cameras_set_tmp->layout.memories_name_backdrop_color_alpha = 0.0;
-		else if (cameras_set_tmp->layout.memories_name_backdrop_color_alpha > 1.0) cameras_set_tmp->layout.memories_name_backdrop_color_alpha = 1.0;
+		if (interface_default.memories_name_backdrop_color_alpha < 0.0) interface_default.memories_name_backdrop_color_alpha = 0.0;
+		else if (interface_default.memories_name_backdrop_color_alpha > 1.0) interface_default.memories_name_backdrop_color_alpha = 1.0;
 
-		if ((cameras_set_tmp->layout.memories_button_vertical_margins < 0) || (cameras_set_tmp->layout.memories_button_vertical_margins > 50)) cameras_set_tmp->layout.memories_button_vertical_margins = 0;
+		if ((interface_default.memories_button_vertical_margins < 0) || (interface_default.memories_button_vertical_margins > 50)) interface_default.memories_button_vertical_margins = 0;
 
-		if ((cameras_set_tmp->layout.memories_button_horizontal_margins < 0) || (cameras_set_tmp->layout.memories_button_horizontal_margins > 50)) cameras_set_tmp->layout.memories_button_horizontal_margins = 0;
+		if ((interface_default.memories_button_horizontal_margins < 0) || (interface_default.memories_button_horizontal_margins > 50)) interface_default.memories_button_horizontal_margins = 0;
 
-		interface_default = cameras_set_tmp->layout;
+		cameras_set_tmp->layout = interface_default;
 
 		if (i == 0) first_cameras_set = cameras_set_tmp;
 
@@ -788,7 +788,7 @@ void load_config_file (void)
 			fread (&ptz->active, sizeof (gboolean), 1, config_file);
 
 			if (ptz->active) {
-				if (cameras_set_tmp->layout.orientation) create_ptz_widgets_horizontal (ptz);
+				if (interface_default.orientation) create_ptz_widgets_horizontal (ptz);
 				else create_ptz_widgets_vertical (ptz);
 
 				fread (ptz->ip_address, sizeof (char), 16, config_file);
@@ -822,10 +822,10 @@ void load_config_file (void)
 					fread (pixbuf_data, sizeof (guint8), pixbuf_byte_length, config_file);
 
 					ptz->memories[index].full_pixbuf = gdk_pixbuf_new_from_data (pixbuf_data, GDK_COLORSPACE_RGB, FALSE, 8, 320, 180, pixbuf_rowstride, (GdkPixbufDestroyNotify)g_free, NULL);
-					if (cameras_set_tmp->layout.thumbnail_width == 320) {
+					if (interface_default.thumbnail_width == 320) {
 						ptz->memories[index].image = gtk_image_new_from_pixbuf (ptz->memories[index].full_pixbuf);
 					} else {
-						ptz->memories[index].scaled_pixbuf = gdk_pixbuf_scale_simple (ptz->memories[index].full_pixbuf, cameras_set_tmp->layout.thumbnail_width, cameras_set_tmp->layout.thumbnail_height, GDK_INTERP_BILINEAR);
+						ptz->memories[index].scaled_pixbuf = gdk_pixbuf_scale_simple (ptz->memories[index].full_pixbuf, interface_default.thumbnail_width, interface_default.thumbnail_height, GDK_INTERP_BILINEAR);
 						ptz->memories[index].image = gtk_image_new_from_pixbuf (ptz->memories[index].scaled_pixbuf);
 					}
 					gtk_button_set_image (GTK_BUTTON (ptz->memories[index].button), ptz->memories[index].image);
@@ -836,7 +836,7 @@ void load_config_file (void)
 			} else {
 				cameras_set_tmp->number_of_ghost_cameras++;
 
-				if (cameras_set_tmp->layout.orientation) create_ghost_ptz_widgets_horizontal (ptz);
+				if (interface_default.orientation) create_ghost_ptz_widgets_horizontal (ptz);
 				else create_ghost_ptz_widgets_vertical (ptz);
 			}
 		}
