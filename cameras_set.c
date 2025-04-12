@@ -19,6 +19,7 @@
 
 #include "cameras_set.h"
 
+#include "error.h"
 #include "main_window.h"
 #include "protocol.h"
 #include "settings.h"
