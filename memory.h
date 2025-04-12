@@ -54,10 +54,5 @@ typedef struct {
 } memory_t;
 
 
-void create_ptz_memory_buttons_horizontal (ptz_t *ptz);
-
-void create_ptz_memory_buttons_vertical (ptz_t *ptz);
-
-
 #endif
 
