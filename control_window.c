@@ -1344,7 +1344,7 @@ void create_control_window (void)
 {
 	GtkWidget *main_grid, *grid, *box, *widget, *image, *event_box;
 
-	control_window_font_description = pango_font_description_from_string ("Courier Bold 30");
+	control_window_font_description = pango_font_description_from_string ("FreeMono Bold 36px");
 
 	control_window_gtk_window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_decorated (GTK_WINDOW (control_window_gtk_window), FALSE);
