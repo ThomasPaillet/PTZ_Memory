@@ -32,9 +32,9 @@ typedef struct interface_param_s {
 	int thumbnail_width;
 	int thumbnail_height;
 
-	char ptz_name_font[17];
-	char ghost_ptz_name_font[17];
-	char memory_name_font[17];
+	char ptz_name_font[20];
+	char ghost_ptz_name_font[20];
+	char memory_name_font[20];
 
 	PangoFontDescription *ptz_name_font_description;
 	PangoFontDescription *ghost_ptz_name_font_description;
