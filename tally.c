@@ -288,6 +288,7 @@ void start_tally (void)
 void stop_tally (void)
 {
 	int i;
+	ptz_t *ptz;
 
 	shutdown (tsl_umd_v5_socket, SHUT_RD);
 	closesocket (tsl_umd_v5_socket);
@@ -299,6 +300,8 @@ void stop_tally (void)
 
 	if (send_ip_tally && (current_cameras_set != NULL)) {
 		for (i = 0; i < current_cameras_set->number_of_cameras; i++) {
+			ptz = current_cameras_set->cameras[i];
+
 			if (ptz->ip_address_is_valid && ptz->is_on && ptz->tally_1_is_on) send_ptz_control_command (ptz, "#DA0", TRUE);
 		}
 	}
