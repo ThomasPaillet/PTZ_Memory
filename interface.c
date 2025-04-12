@@ -146,7 +146,7 @@ void thumbnail_size_value_changed (GtkRange *range)
 	current_cameras_set->layout.thumbnail_width = interface_default.thumbnail_width = 320 * interface_default.thumbnail_size;
 	current_cameras_set->layout.thumbnail_height = interface_default.thumbnail_height = 180 * interface_default.thumbnail_size;
 
-	sprintf (interface_default.ptz_name_font + 14, "%dpx", (int)(100.0 * interface_default.thumbnail_size));
+	sprintf (interface_default.ptz_name_font + 14, "%dpx", (int)(110.0 * interface_default.thumbnail_size));
 	current_cameras_set->layout.ptz_name_font[14] = interface_default.ptz_name_font[14];
 	current_cameras_set->layout.ptz_name_font[15] = interface_default.ptz_name_font[15];
 	current_cameras_set->layout.ptz_name_font[16] = interface_default.ptz_name_font[16];
@@ -202,8 +202,8 @@ void thumbnail_size_value_changed (GtkRange *range)
 				gtk_widget_set_size_request (ptz->name_drawing_area, interface_default.thumbnail_height + 8, interface_default.thumbnail_height / 2);
 				gtk_widget_set_size_request (ptz->ghost_body, ((interface_default.thumbnail_width + 10) * MAX_MEMORIES) + (interface_default.memories_button_vertical_margins * 2 * (MAX_MEMORIES - 1)), interface_default.thumbnail_height / 2);
 			} else {
-				gtk_widget_set_size_request (ptz->name_drawing_area, interface_default.thumbnail_height / 2, interface_default.thumbnail_height + 8);
-				gtk_widget_set_size_request (ptz->ghost_body, interface_default.thumbnail_height / 2, ((interface_default.thumbnail_height + 10) * MAX_MEMORIES) + (interface_default.memories_button_horizontal_margins * 2 * (MAX_MEMORIES - 1)));
+				gtk_widget_set_size_request (ptz->name_drawing_area, interface_default.thumbnail_height / 1.5, interface_default.thumbnail_height + 8);
+				gtk_widget_set_size_request (ptz->ghost_body, interface_default.thumbnail_height / 1.5, ((interface_default.thumbnail_height + 10) * MAX_MEMORIES) + (interface_default.memories_button_horizontal_margins * 2 * (MAX_MEMORIES - 1)));
 			}
 		}
 
