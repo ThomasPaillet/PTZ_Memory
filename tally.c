@@ -222,8 +222,8 @@ gboolean control_window_name_draw (GtkWidget *widget, cairo_t *cr)
 
 	pl = pango_cairo_create_layout (cr);
 
-	if (current_ptz->name[1] == '\0') cairo_translate (cr, 18, 0);
-	else cairo_translate (cr, 5, 0);
+	if (current_ptz->name[1] == '\0') cairo_translate (cr, 23, 2);
+	else cairo_translate (cr, 11, 2);
 
 	pango_layout_set_text (pl, current_ptz->name, -1);
 	pango_layout_set_font_description (pl, control_window_font_description);
