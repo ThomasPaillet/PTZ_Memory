@@ -738,7 +738,7 @@ void load_config_file (void)
 		interface_default.thumbnail_width = 320 * interface_default.thumbnail_size;
 		interface_default.thumbnail_height = 180 * interface_default.thumbnail_size;
 
-		sprintf (interface_default.ptz_name_font + 14, "%dpx", (int)(100.0 * interface_default.thumbnail_size));
+		sprintf (interface_default.ptz_name_font + 14, "%dpx", (int)(110.0 * interface_default.thumbnail_size));
 		sprintf (interface_default.ghost_ptz_name_font + 14, "%dpx", (int)(80.0 * interface_default.thumbnail_size));
 		sprintf (interface_default.memory_name_font + 14, "%dpx", (int)(20.0 * interface_default.thumbnail_size));
 
