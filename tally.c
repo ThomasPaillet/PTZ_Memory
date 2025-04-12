@@ -143,11 +143,11 @@ gboolean ptz_name_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 	pl = pango_cairo_create_layout (cr);
 
 	if (interface_default.orientation) {
-		if (ptz->name[1] == '\0') cairo_translate (cr, 50 * interface_default.thumbnail_size, 20 * interface_default.thumbnail_size);
-		else cairo_translate (cr, 10 * interface_default.thumbnail_size, 20 * interface_default.thumbnail_size);
+		if (ptz->name[1] == '\0') cairo_translate (cr, 50 * interface_default.thumbnail_size, 42 * interface_default.thumbnail_size);
+		else cairo_translate (cr, 21 * interface_default.thumbnail_size, 42 * interface_default.thumbnail_size);
 	} else {
-		if (ptz->name[1] == '\0') cairo_translate (cr, 50 * interface_default.thumbnail_size, 20 * interface_default.thumbnail_size);
-		else cairo_translate (cr, 10 * interface_default.thumbnail_size, 20 * interface_default.thumbnail_size);
+		if (ptz->name[1] == '\0') cairo_translate (cr, 129 * interface_default.thumbnail_size, 38 * interface_default.thumbnail_size);
+		else cairo_translate (cr, 96 * interface_default.thumbnail_size, 38 * interface_default.thumbnail_size);
 	}
 
 	pango_layout_set_text (pl, ptz->name, -1);
@@ -183,11 +183,11 @@ gboolean ghost_ptz_name_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 	pl = pango_cairo_create_layout (cr);
 
 	if (interface_default.orientation) {
-		if (ptz->name[1] == '\0') cairo_translate (cr, 60 * interface_default.thumbnail_size, -10 * interface_default.thumbnail_size);
-		else cairo_translate (cr, 30 * interface_default.thumbnail_size, -10 * interface_default.thumbnail_size);
+		if (ptz->name[1] == '\0') cairo_translate (cr, 64 * interface_default.thumbnail_size, 6 * interface_default.thumbnail_size);
+		else cairo_translate (cr, 40 * interface_default.thumbnail_size, 6 * interface_default.thumbnail_size);
 	} else {
-		if (ptz->name[1] == '\0') cairo_translate (cr, 60 * interface_default.thumbnail_size, -10 * interface_default.thumbnail_size);
-		else cairo_translate (cr, 30 * interface_default.thumbnail_size, -10 * interface_default.thumbnail_size);
+		if (ptz->name[1] == '\0') cairo_translate (cr, 34 * interface_default.thumbnail_size, 52 * interface_default.thumbnail_size);
+		else cairo_translate (cr, 10 * interface_default.thumbnail_size, 52 * interface_default.thumbnail_size);
 	}
 
 	pango_layout_set_text (pl, ptz->name, -1);
