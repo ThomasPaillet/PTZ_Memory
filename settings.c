@@ -833,6 +833,8 @@ void load_config_file (void)
 					fread (ptz->memories[index].name, sizeof (char), MEMORIES_NAME_LENGTH, config_file);
 					ptz->memories[index].name[MEMORIES_NAME_LENGTH] = '\0';
 					ptz->memories[index].name_len = strlen (ptz->memories[index].name);
+
+					gtk_entry_set_text (GTK_ENTRY (ptz->memories[index].name_entry), ptz->memories[index].name);
 				}
 			} else {
 				cameras_set_tmp->number_of_ghost_cameras++;
