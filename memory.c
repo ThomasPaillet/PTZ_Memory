@@ -91,7 +91,15 @@ gpointer save_memory (memory_thread_t *memory_thread)
 	}
 
 	memory->is_loaded = FALSE;
-	ptz->previous_loaded_memory = NULL;
+
+	if (ptz->previous_loaded_memory != NULL) {
+		if (ptz->previous_loaded_memory != memory) {
+			ptz->previous_loaded_memory->is_loaded = FALSE;
+			gtk_widget_queue_draw (ptz->previous_loaded_memory->button);
+		}
+
+		ptz->previous_loaded_memory = NULL;
+	}
 
 	send_ptz_request_command_string (ptz, "#APC", response);
 	memory->pan_tilt_position_cmd[4] = response[3];
@@ -223,10 +231,12 @@ gboolean memory_button_button_press_event (GtkButton *button, GdkEventButton *ev
 	int i;
 	ptz_t *ptz;
 
-	if ((event->button != GDK_BUTTON_PRIMARY) && (!memory->empty)) {
-		gtk_widget_show_all (memory->name_window);
+	if (event->button != GDK_BUTTON_PRIMARY) {
+		if (!memory->empty) {
+			gtk_widget_show_all (memory->name_window);
 
-		return GDK_EVENT_PROPAGATE;
+			return GDK_EVENT_PROPAGATE;
+		} else return GDK_EVENT_STOP;
 	}
 
 	if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (delete_toggle_button))) {
@@ -301,25 +311,6 @@ gboolean memory_name_and_outline_draw (GtkWidget *widget, cairo_t *cr, memory_t 
 {
 	PangoLayout *pl;
 
-	if (memory->name_len != 0) {
-		cairo_set_source_rgba (cr, interface_default.memories_name_backdrop_color_red, interface_default.memories_name_backdrop_color_green, interface_default.memories_name_backdrop_color_blue, interface_default.memories_name_backdrop_color_alpha);
-		cairo_rectangle (cr, 5.0, interface_default.thumbnail_height + 5.0 - (20.0 * interface_default.thumbnail_size), interface_default.thumbnail_width, 20.0 * interface_default.thumbnail_size);
-		cairo_fill (cr);
-
-		cairo_set_source_rgb (cr, interface_default.memories_name_color_red, interface_default.memories_name_color_green, interface_default.memories_name_color_blue);
-
-		pl = pango_cairo_create_layout (cr);
-
-		cairo_translate (cr, 5.0 + 16.0 * (10 - (memory->name_len / 2)) * interface_default.thumbnail_size, interface_default.thumbnail_height - (19.0 * interface_default.thumbnail_size) + (1.0 - interface_default.thumbnail_size) * 4.0);
-
-		pango_layout_set_text (pl, memory->name, -1);
-		pango_layout_set_font_description (pl, interface_default.memory_name_font_description);
-
-		pango_cairo_show_layout (cr, pl);
-
-		g_object_unref(pl);
-	}
-
 	if (memory->is_loaded) {
 		cairo_set_source_rgba (cr, 0.8, 0.545, 0.0, 1.0);
 //Top
@@ -340,6 +331,25 @@ gboolean memory_name_and_outline_draw (GtkWidget *widget, cairo_t *cr, memory_t 
 		cairo_fill (cr);
 	}
 
+	if (memory->name_len != 0) {
+		cairo_set_source_rgba (cr, interface_default.memories_name_backdrop_color_red, interface_default.memories_name_backdrop_color_green, interface_default.memories_name_backdrop_color_blue, interface_default.memories_name_backdrop_color_alpha);
+		cairo_rectangle (cr, 5.0, 5 + interface_default.thumbnail_height - (int)(8.0 * (((interface_default.thumbnail_size - 0.5) * 4.0) + 1.0)), interface_default.thumbnail_width, ((int)(8.0 * (((interface_default.thumbnail_size - 0.5) * 4.0) + 1.0))));
+		cairo_fill (cr);
+
+		cairo_set_source_rgb (cr, interface_default.memories_name_color_red, interface_default.memories_name_color_green, interface_default.memories_name_color_blue);
+
+		pl = pango_cairo_create_layout (cr);
+
+		cairo_translate (cr, 5.0 + (interface_default.thumbnail_width / 2.0) - ((memory->name_len / 2.0) * 10.0 * (interface_default.thumbnail_size + 0.5)), interface_default.thumbnail_height - (24.0 * interface_default.thumbnail_size));
+
+		pango_layout_set_text (pl, memory->name, -1);
+		pango_layout_set_font_description (pl, interface_default.memory_name_font_description);
+
+		pango_cairo_show_layout (cr, pl);
+
+		g_object_unref(pl);
+	}
+
 	return GDK_EVENT_PROPAGATE;
 }
 
@@ -349,7 +359,11 @@ gboolean memory_name_window_key_press (GtkWidget *memory_name_window, GdkEventKe
 		gtk_widget_hide (memory_name_window);
 
 		return GDK_EVENT_STOP;
-	} else return GDK_EVENT_PROPAGATE;
+	} else if (event->keyval == GDK_KEY_Delete) {
+		gtk_entry_set_text (GTK_ENTRY (gtk_bin_get_child (GTK_BIN (memory_name_window))), NULL);
+	}
+
+	return GDK_EVENT_PROPAGATE;
 }
 
 void memory_name_entry_activate (GtkEntry *entry, memory_t *memory)
