@@ -324,7 +324,7 @@ void update_notification_tcp_port_entry_activate (GtkEntry *entry, GtkEntryBuffe
 
 	for (cameras_set_itr = cameras_sets; cameras_set_itr != NULL; cameras_set_itr = cameras_set_itr->next) {
 		for (i = 0; i < cameras_set_itr->number_of_cameras; i++) {
-			if ((cameras_set_itr->cameras[i]->ip_address_is_valid) && (cameras_set_itr->cameras[i]->error_code != 0x30))
+			if ((cameras_set_itr->cameras[i]->ip_address_is_valid) && (cameras_set_itr->cameras[i]->error_code != CAMERA_IS_UNREACHABLE_ERROR))
 				send_update_start_cmd (cameras_set_itr->cameras[i]);
 		}
 	}
