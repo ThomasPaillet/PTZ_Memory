@@ -36,7 +36,7 @@ protocol.o: error.h update_notification.h
 
 ptz.o: control_window.h controller.h error.h interface.h main_window.h memory.h protocol.h settings.h sw_p_08.h tally.h
 
-settings.o: cameras_set.h control_window.h controller.h interface.h main_window.h memory.h protocol.h ptz.h sw_p_08.h tally.h trackball.h update_notification.h
+settings.o: cameras_set.h control_window.h controller.h error.h interface.h main_window.h memory.h protocol.h ptz.h sw_p_08.h tally.h trackball.h update_notification.h
 
 sw_p_08.o: cameras_set.h control_window.h main_window.h memory.h protocol.h ptz.h settings.h
 
