@@ -184,7 +184,7 @@ void thumbnail_size_value_changed (GtkRange *range)
 
 			for (j = 0; j < MAX_MEMORIES; j++) {
 				if (!ptz->memories[j].empty) {
-					gtk_widget_destroy (ptz->memories[j].image);
+					gtk_button_set_image (GTK_BUTTON (ptz->memories[j].button), NULL);
 
 					gtk_widget_set_size_request (ptz->memories[j].button, interface_default.thumbnail_width + 10, interface_default.thumbnail_height + 10);
 
