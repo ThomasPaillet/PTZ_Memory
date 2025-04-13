@@ -24,7 +24,7 @@
 #include <gtk/gtk.h>
 
 
-#define MEMORIES_NAME_LENGTH 18
+#define MEMORIES_NAME_LENGTH 14
 
 
 typedef struct {
