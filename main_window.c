@@ -548,6 +548,7 @@ int main (int argc, char** argv)
 
 	WSAInit ();	//_WIN32
 #ifdef _WIN32
+	AddFontResource (".\\resources\\fonts\\FreeMono.ttf");
 	AddFontResource (".\\resources\\fonts\\FreeMonoBold.ttf");
 #endif
 	g_mutex_init (&cameras_sets_mutex);
@@ -670,6 +671,7 @@ int main (int argc, char** argv)
 	g_list_free (pointing_devices);
 #ifdef _WIN32
 	RemoveFontResource (".\\resources\\fonts\\FreeMonoBold.ttf");
+	RemoveFontResource (".\\resources\\fonts\\FreeMono.ttf");
 #endif
 	WSACleanup ();	//_WIN32
 
