@@ -50,6 +50,7 @@ typedef struct {
 
 	char name[MEMORIES_NAME_LENGTH + 1];
 	int name_len;
+	GtkWidget *name_entry;
 	GtkWidget *name_window;
 } memory_t;
 
