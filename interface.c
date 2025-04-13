@@ -157,11 +157,9 @@ void thumbnail_size_value_changed (GtkRange *range)
 	current_cameras_set->layout.ghost_ptz_name_font[14] = interface_default.ghost_ptz_name_font[14];
 	current_cameras_set->layout.ghost_ptz_name_font[15] = interface_default.ghost_ptz_name_font[15];
 
-	sprintf (interface_default.memory_name_font + 9, "%dpx", (int)(8.0 * (((interface_default.thumbnail_size - 0.5) * 4.0) + 1.0)));
+	sprintf (interface_default.memory_name_font + 9, "%dpx", (int)(24.0 * interface_default.thumbnail_size));
 	current_cameras_set->layout.memory_name_font[9] = interface_default.memory_name_font[9];
 	current_cameras_set->layout.memory_name_font[10] = interface_default.memory_name_font[10];
-	current_cameras_set->layout.memory_name_font[11] = interface_default.memory_name_font[11];
-	current_cameras_set->layout.memory_name_font[12] = interface_default.memory_name_font[12];
 
 	pango_font_description_free (interface_default.ptz_name_font_description);
 	current_cameras_set->layout.ptz_name_font_description = interface_default.ptz_name_font_description = pango_font_description_from_string (interface_default.ptz_name_font);
