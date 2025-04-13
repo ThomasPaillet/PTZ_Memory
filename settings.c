@@ -740,7 +740,7 @@ void load_config_file (void)
 
 		sprintf (interface_default.ptz_name_font + 14, "%dpx", (int)(110.0 * interface_default.thumbnail_size));
 		sprintf (interface_default.ghost_ptz_name_font + 14, "%dpx", (int)(80.0 * interface_default.thumbnail_size));
-		sprintf (interface_default.memory_name_font + 14, "%dpx", (int)(20.0 * interface_default.thumbnail_size));
+		sprintf (interface_default.memory_name_font + 9, "%dpx", (int)(8.0 * (((interface_default.thumbnail_size - 0.5) * 4.0) + 1.0)));
 
 		interface_default.ptz_name_font_description = pango_font_description_from_string (interface_default.ptz_name_font);
 		interface_default.ghost_ptz_name_font_description = pango_font_description_from_string (interface_default.ghost_ptz_name_font);
@@ -832,6 +832,7 @@ void load_config_file (void)
 
 					fread (ptz->memories[index].name, sizeof (char), MEMORIES_NAME_LENGTH, config_file);
 					ptz->memories[index].name[MEMORIES_NAME_LENGTH] = '\0';
+					ptz->memories[index].name_len = strlen (ptz->memories[index].name);
 				}
 			} else {
 				cameras_set_tmp->number_of_ghost_cameras++;
