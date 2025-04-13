@@ -333,14 +333,14 @@ gboolean memory_name_and_outline_draw (GtkWidget *widget, cairo_t *cr, memory_t 
 
 	if (memory->name_len != 0) {
 		cairo_set_source_rgba (cr, interface_default.memories_name_backdrop_color_red, interface_default.memories_name_backdrop_color_green, interface_default.memories_name_backdrop_color_blue, interface_default.memories_name_backdrop_color_alpha);
-		cairo_rectangle (cr, 5.0, 5 + interface_default.thumbnail_height - (int)(8.0 * (((interface_default.thumbnail_size - 0.5) * 4.0) + 1.0)), interface_default.thumbnail_width, ((int)(8.0 * (((interface_default.thumbnail_size - 0.5) * 4.0) + 1.0))));
+		cairo_rectangle (cr, 5.0, 5 + interface_default.thumbnail_height - (int)(24.0 * interface_default.thumbnail_size), interface_default.thumbnail_width, ((int)(24.0 * interface_default.thumbnail_size)));
 		cairo_fill (cr);
 
 		cairo_set_source_rgb (cr, interface_default.memories_name_color_red, interface_default.memories_name_color_green, interface_default.memories_name_color_blue);
 
 		pl = pango_cairo_create_layout (cr);
 
-		cairo_translate (cr, 5.0 + (interface_default.thumbnail_width / 2.0) - ((memory->name_len / 2.0) * 10.0 * (interface_default.thumbnail_size + 0.5)), interface_default.thumbnail_height - (24.0 * interface_default.thumbnail_size));
+		cairo_translate (cr, 5.0 + (interface_default.thumbnail_width / 2.0) - ((memory->name_len / 2.0) * 7.0 * (interface_default.thumbnail_size * 2.0)), interface_default.thumbnail_height - (7.0 + (interface_default.thumbnail_size - 0.5) * 28.0));
 
 		pango_layout_set_text (pl, memory->name, -1);
 		pango_layout_set_font_description (pl, interface_default.memory_name_font_description);
@@ -360,7 +360,7 @@ gboolean memory_name_window_key_press (GtkWidget *memory_name_window, GdkEventKe
 
 		return GDK_EVENT_STOP;
 	} else if (event->keyval == GDK_KEY_Delete) {
-		gtk_entry_set_text (GTK_ENTRY (gtk_bin_get_child (GTK_BIN (memory_name_window))), NULL);
+		gtk_entry_buffer_delete_text (gtk_entry_get_buffer (GTK_ENTRY (gtk_bin_get_child (GTK_BIN (memory_name_window)))), 0, -1);
 	}
 
 	return GDK_EVENT_PROPAGATE;
