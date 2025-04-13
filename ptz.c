@@ -338,6 +338,7 @@ name_grid                                       memories_grid
 				gtk_entry_set_alignment (GTK_ENTRY (memory_name_entry), 0.5);
 				g_signal_connect (G_OBJECT (memory_name_entry), "activate", G_CALLBACK (memory_name_entry_activate), ptz->memories + i);
 			gtk_container_add (GTK_CONTAINER (memory_name_window), memory_name_entry);
+			ptz->memories[i].name_entry = memory_name_entry;
 			ptz->memories[i].name_window = memory_name_window;
 		}
 
@@ -449,6 +450,7 @@ memories_grid
 				gtk_entry_set_alignment (GTK_ENTRY (memory_name_entry), 0.5);
 				g_signal_connect (G_OBJECT (memory_name_entry), "activate", G_CALLBACK (memory_name_entry_activate), ptz->memories + i);
 			gtk_container_add (GTK_CONTAINER (memory_name_window), memory_name_entry);
+			ptz->memories[i].name_entry = memory_name_entry;
 			ptz->memories[i].name_window = memory_name_window;
 		}
 
