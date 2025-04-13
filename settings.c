@@ -22,6 +22,7 @@
 #include "cameras_set.h"
 #include "control_window.h"
 #include "controller.h"
+#include "error.h"
 #include "interface.h"
 #include "main_window.h"
 #include "protocol.h"
