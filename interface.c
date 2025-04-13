@@ -24,7 +24,7 @@
 #include "settings.h"
 
 
-interface_param_t interface_default = { TRUE, 1.0, 320, 180, "FreeMono Bold 110px", "FreeMono Bold 80px", "FreeMono Bold 24px", NULL, NULL, NULL, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.2, 0, 0, TRUE, TRUE };
+interface_param_t interface_default = { TRUE, 1.0, 320, 180, "FreeMono Bold 110px", "FreeMono Bold 80px", "FreeMono 24px", NULL, NULL, NULL, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.2, 0, 0, TRUE, TRUE };
 
 const char interface_settings_txt[] = "_Interface";
 const char pixel_txt[] = "pixel";
