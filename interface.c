@@ -24,7 +24,7 @@
 #include "settings.h"
 
 
-interface_param_t interface_default = { TRUE, 1.0, 320, 180, "FreeMono Bold 110px", "FreeMono Bold 80px", "FreeMono Bold 20px", NULL, NULL, NULL, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.2, 0, 0, TRUE, TRUE };
+interface_param_t interface_default = { TRUE, 1.0, 320, 180, "FreeMono Bold 110px", "FreeMono Bold 80px", "FreeMono Bold 24px", NULL, NULL, NULL, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.2, 0, 0, TRUE, TRUE };
 
 const char interface_settings_txt[] = "_Interface";
 const char pixel_txt[] = "pixel";
@@ -150,16 +150,18 @@ void thumbnail_size_value_changed (GtkRange *range)
 	current_cameras_set->layout.ptz_name_font[14] = interface_default.ptz_name_font[14];
 	current_cameras_set->layout.ptz_name_font[15] = interface_default.ptz_name_font[15];
 	current_cameras_set->layout.ptz_name_font[16] = interface_default.ptz_name_font[16];
+	current_cameras_set->layout.ptz_name_font[17] = interface_default.ptz_name_font[17];
+	current_cameras_set->layout.ptz_name_font[18] = interface_default.ptz_name_font[18];
 
 	sprintf (interface_default.ghost_ptz_name_font + 14, "%dpx", (int)(80.0 * interface_default.thumbnail_size));
 	current_cameras_set->layout.ghost_ptz_name_font[14] = interface_default.ghost_ptz_name_font[14];
 	current_cameras_set->layout.ghost_ptz_name_font[15] = interface_default.ghost_ptz_name_font[15];
-	current_cameras_set->layout.ghost_ptz_name_font[16] = interface_default.ghost_ptz_name_font[16];
 
-	sprintf (interface_default.memory_name_font + 14, "%dpx", (int)(20.0 * interface_default.thumbnail_size));
-	interface_default.memory_name_font[14] = current_cameras_set->layout.memory_name_font[14];
-	interface_default.memory_name_font[15] = current_cameras_set->layout.memory_name_font[15];
-	interface_default.memory_name_font[16] = current_cameras_set->layout.memory_name_font[16];
+	sprintf (interface_default.memory_name_font + 9, "%dpx", (int)(8.0 * (((interface_default.thumbnail_size - 0.5) * 4.0) + 1.0)));
+	current_cameras_set->layout.memory_name_font[9] = interface_default.memory_name_font[9];
+	current_cameras_set->layout.memory_name_font[10] = interface_default.memory_name_font[10];
+	current_cameras_set->layout.memory_name_font[11] = interface_default.memory_name_font[11];
+	current_cameras_set->layout.memory_name_font[12] = interface_default.memory_name_font[12];
 
 	pango_font_description_free (interface_default.ptz_name_font_description);
 	current_cameras_set->layout.ptz_name_font_description = interface_default.ptz_name_font_description = pango_font_description_from_string (interface_default.ptz_name_font);
