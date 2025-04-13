@@ -21,8 +21,8 @@
 
 #include "cameras_set.h"
 #include "control_window.h"
-#include "protocol.h"
 #include "error.h"
+#include "protocol.h"
 
 #include <unistd.h>
 
@@ -347,7 +347,7 @@ void stop_update_notification (void)
 
 	for (cameras_set_itr = cameras_sets; cameras_set_itr != NULL; cameras_set_itr = cameras_set_itr->next) {
 		for (i = 0; i < cameras_set_itr->number_of_cameras; i++) {
-			if (cameras_set_itr->cameras[i]->ip_address_is_valid && (cameras_set_itr->cameras[i]->error_code != 0x30)) {
+			if (cameras_set_itr->cameras[i]->ip_address_is_valid && (cameras_set_itr->cameras[i]->error_code != CAMERA_IS_UNREACHABLE_ERROR)) {
 //				send_ptz_control_command (cameras_set_itr->cameras[i], "#LPC0", TRUE);
 				send_update_stop_cmd (cameras_set_itr->cameras[i]);
 			}
