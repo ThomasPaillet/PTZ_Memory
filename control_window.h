@@ -50,6 +50,8 @@ gboolean hide_control_window (void);
 
 void create_control_window (void);
 
+void destroy_control_window (void);
+
 
 #endif
 
