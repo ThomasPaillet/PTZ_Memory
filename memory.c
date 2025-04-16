@@ -369,7 +369,7 @@ gboolean memory_name_window_key_press (GtkWidget *memory_name_window, GdkEventKe
 void memory_name_entry_activate (GtkEntry *entry, memory_t *memory)
 {
 	strcpy (memory->name, gtk_entry_get_text (entry));
-	memory->name_len = strlen (memory->name);
+	memory->name_len = gtk_entry_get_text_length (entry));
 
 	gtk_widget_queue_draw (memory->button);
 	gtk_widget_hide (memory->name_window);
