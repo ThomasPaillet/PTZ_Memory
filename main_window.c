@@ -207,8 +207,6 @@ void main_window_notebook_switch_page (GtkNotebook *notebook, GtkWidget *page, g
 
 	g_mutex_unlock (&cameras_sets_mutex);
 
-	gtk_window_set_focus (GTK_WINDOW (main_window), NULL);
-
 	if (send_ip_tally) {
 		for (i = 0; i < current_cameras_set->number_of_cameras; i++) {
 			if (tallies[i]) {
@@ -608,10 +606,6 @@ int main (int argc, char** argv)
 		gtk_widget_set_sensitive (link_toggle_button, FALSE);
 		gtk_widget_set_sensitive (switch_cameras_on_button, FALSE);
 		gtk_widget_set_sensitive (switch_cameras_off_button, FALSE);
-
-		interface_default.ptz_name_font_description = pango_font_description_from_string (interface_default.ptz_name_font);
-		interface_default.ghost_ptz_name_font_description = pango_font_description_from_string (interface_default.ghost_ptz_name_font);
-		interface_default.memory_name_font_description = pango_font_description_from_string (interface_default.memory_name_font);
 	}
 
 	gtk_widget_show_all (main_window);
@@ -664,11 +658,15 @@ int main (int argc, char** argv)
 
 	stop_error_log ();
 
+	destroy_control_window ();
+
 	gtk_widget_destroy (main_window);
 
-	pango_font_description_free (interface_default.ptz_name_font_description);
-	pango_font_description_free (interface_default.ghost_ptz_name_font_description);
-	pango_font_description_free (interface_default.memory_name_font_description);
+	for (cameras_set_itr = cameras_sets; cameras_set_itr != NULL; cameras_set_itr = cameras_set_itr->next) {
+		pango_font_description_free (cameras_set_itr->layout.ptz_name_font_description);
+		pango_font_description_free (cameras_set_itr->layout.ghost_ptz_name_font_description);
+		pango_font_description_free (cameras_set_itr->layout.memory_name_font_description);
+	}
 
 	g_list_free (pointing_devices);
 #ifdef _WIN32
