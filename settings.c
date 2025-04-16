@@ -702,7 +702,7 @@ void load_config_file (void)
 	int i, j, k, index;
 	cameras_set_t *cameras_set_tmp, *first_cameras_set;
 	ptz_t *ptz;
-	char memories_name[MAX_MEMORIES][MEMORIES_NAME_LENGTH + 1];
+	char memories_name[MAX_MEMORIES][MEMORIES_NAME_LENGTH * 4 + 1];
 	int pixbuf_rowstride;
 	gsize pixbuf_byte_length;
 	guint8 *pixbuf_data;
@@ -723,8 +723,8 @@ void load_config_file (void)
 		cameras_set_tmp->next = cameras_sets;
 		cameras_sets = cameras_set_tmp;
 
-		fread (cameras_set_tmp->name, sizeof (char), CAMERAS_SET_NAME_LENGTH, config_file);
-		cameras_set_tmp->name[CAMERAS_SET_NAME_LENGTH] = '\0';
+		fread (cameras_set_tmp->name, sizeof (char), CAMERAS_SET_NAME_LENGTH * 4, config_file);
+		cameras_set_tmp->name[CAMERAS_SET_NAME_LENGTH * 4] = '\0';
 
 		fread (&cameras_set_tmp->number_of_cameras, sizeof (int), 1, config_file);
 		if ((cameras_set_tmp->number_of_cameras < 1) || (cameras_set_tmp->number_of_cameras > MAX_CAMERAS)) cameras_set_tmp->number_of_cameras = 5;
@@ -780,8 +780,8 @@ void load_config_file (void)
 			ptz = g_malloc (sizeof (ptz_t));
 			cameras_set_tmp->cameras[j] = ptz;
 
-			fread (ptz->name, sizeof (char), 2, config_file);
-			ptz->name[2] = '\0';
+			fread (ptz->name, sizeof (char), 8, config_file);
+			ptz->name[8] = '\0';
 			ptz->index = j;
 
 			init_ptz (ptz);
@@ -831,8 +831,8 @@ void load_config_file (void)
 					}
 					gtk_button_set_image (GTK_BUTTON (ptz->memories[index].button), ptz->memories[index].image);
 
-					fread (ptz->memories[index].name, sizeof (char), MEMORIES_NAME_LENGTH, config_file);
-					ptz->memories[index].name[MEMORIES_NAME_LENGTH] = '\0';
+					fread (ptz->memories[index].name, sizeof (char), MEMORIES_NAME_LENGTH * 4, config_file);
+					ptz->memories[index].name[MEMORIES_NAME_LENGTH * 4] = '\0';
 					ptz->memories[index].name_len = strlen (ptz->memories[index].name);
 
 					gtk_entry_set_text (GTK_ENTRY (ptz->memories[index].name_entry), ptz->memories[index].name);
@@ -846,8 +846,8 @@ void load_config_file (void)
 		}
 
 		for (j = 0; j < MAX_MEMORIES; j++) {
-			fread (memories_name[j], sizeof (char), MEMORIES_NAME_LENGTH, config_file);
-			memories_name[j][MEMORIES_NAME_LENGTH] = '\0';
+			fread (memories_name[j], sizeof (char), MEMORIES_NAME_LENGTH * 4, config_file);
+			memories_name[j][MEMORIES_NAME_LENGTH * 4] = '\0';
 		}
 
 		add_cameras_set_to_main_window_notebook (cameras_set_tmp);
@@ -947,7 +947,7 @@ void save_config_file (void)
 		cameras_set_itr = cameras_sets;
 		while (cameras_set_itr->page_num != i) cameras_set_itr = cameras_set_itr->next;
 
-		fwrite (cameras_set_itr->name, sizeof (char), CAMERAS_SET_NAME_LENGTH, config_file);
+		fwrite (cameras_set_itr->name, sizeof (char), CAMERAS_SET_NAME_LENGTH * 4, config_file);
 		fwrite (&cameras_set_itr->number_of_cameras, sizeof (int), 1, config_file);
 
 		fwrite (&cameras_set_itr->layout, sizeof (interface_param_t), 1, config_file);
@@ -955,7 +955,7 @@ void save_config_file (void)
 		for (j = 0; j < cameras_set_itr->number_of_cameras; j++) {
 			ptz = cameras_set_itr->cameras[j];
 
-			fwrite (ptz->name, sizeof (char), 2, config_file);
+			fwrite (ptz->name, sizeof (char), 8, config_file);
 			fwrite (&ptz->active, sizeof (gboolean), 1, config_file);
 
 			if (ptz->active) {
@@ -975,14 +975,14 @@ void save_config_file (void)
 						pixbuf_byte_length = gdk_pixbuf_get_byte_length (ptz->memories[k].full_pixbuf);
 						fwrite (&pixbuf_byte_length, sizeof (gsize), 1, config_file);
 						fwrite (gdk_pixbuf_read_pixels (ptz->memories[k].full_pixbuf), sizeof (guint8), pixbuf_byte_length, config_file);
-						fwrite (ptz->memories[k].name, sizeof (char), MEMORIES_NAME_LENGTH, config_file);
+						fwrite (ptz->memories[k].name, sizeof (char), MEMORIES_NAME_LENGTH * 4, config_file);
 					}
 				}
 			}
 		}
 
 		for (j = 0; j < MAX_MEMORIES; j++) {
-			fwrite (gtk_label_get_text (GTK_LABEL (cameras_set_itr->memories_labels[j])), sizeof (char), MEMORIES_NAME_LENGTH, config_file);
+			fwrite (gtk_label_get_text (GTK_LABEL (cameras_set_itr->memories_labels[j])), sizeof (char), MEMORIES_NAME_LENGTH * 4, config_file);
 		}
 	}
 
