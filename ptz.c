@@ -334,7 +334,7 @@ name_grid                                       memories_grid
 			g_signal_connect (G_OBJECT (memory_name_window), "delete-event", G_CALLBACK (gtk_widget_hide_on_delete), ptz);
 				memory_name_entry = gtk_entry_new ();
 				gtk_entry_set_max_length (GTK_ENTRY (memory_name_entry), MEMORIES_NAME_LENGTH);
-				gtk_entry_set_width_chars (GTK_ENTRY (memory_name_entry), MEMORIES_NAME_LENGTH);
+				gtk_entry_set_width_chars (GTK_ENTRY (memory_name_entry), MEMORIES_NAME_LENGTH + 4);
 				gtk_entry_set_alignment (GTK_ENTRY (memory_name_entry), 0.5);
 				g_signal_connect (G_OBJECT (memory_name_entry), "activate", G_CALLBACK (memory_name_entry_activate), ptz->memories + i);
 			gtk_container_add (GTK_CONTAINER (memory_name_window), memory_name_entry);
@@ -446,7 +446,7 @@ memories_grid
 			g_signal_connect (G_OBJECT (memory_name_window), "delete-event", G_CALLBACK (gtk_widget_hide_on_delete), ptz);
 				memory_name_entry = gtk_entry_new ();
 				gtk_entry_set_max_length (GTK_ENTRY (memory_name_entry), MEMORIES_NAME_LENGTH);
-				gtk_entry_set_width_chars (GTK_ENTRY (memory_name_entry), MEMORIES_NAME_LENGTH);
+				gtk_entry_set_width_chars (GTK_ENTRY (memory_name_entry), MEMORIES_NAME_LENGTH + 4);
 				gtk_entry_set_alignment (GTK_ENTRY (memory_name_entry), 0.5);
 				g_signal_connect (G_OBJECT (memory_name_entry), "activate", G_CALLBACK (memory_name_entry_activate), ptz->memories + i);
 			gtk_container_add (GTK_CONTAINER (memory_name_window), memory_name_entry);
