@@ -1500,3 +1500,10 @@ void create_control_window (void)
 	gtk_widget_realize (control_window_gtk_window);
 }
 
+void destroy_control_window (void)
+{
+	gtk_widget_destroy (control_window_gtk_window);
+
+	pango_font_description_free (control_window_font_description);
+}
+
