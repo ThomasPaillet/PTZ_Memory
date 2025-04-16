@@ -29,7 +29,7 @@
 
 
 typedef struct cameras_set_s {
-	char name[CAMERAS_SET_NAME_LENGTH + 1];
+	char name[CAMERAS_SET_NAME_LENGTH * 4 + 1];
 
 	int number_of_cameras;
 	ptz_t *cameras[MAX_CAMERAS];
