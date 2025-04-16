@@ -59,7 +59,7 @@
 
 
 typedef struct {
-	char name[3];
+	char name[9];
 	int index;
 	gboolean active;
 	gboolean is_on;
