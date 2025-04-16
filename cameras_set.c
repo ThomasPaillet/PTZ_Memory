@@ -150,12 +150,12 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 			strcpy (ptz->name, entry_buffer_text);
 
 			if (ptz->active) {
-				if (cameras_set->layout.orientation) create_ptz_widgets_horizontal (ptz);
+				if (interface_default.orientation) create_ptz_widgets_horizontal (ptz);
 				else create_ptz_widgets_vertical (ptz);
 			} else {
 				cameras_set->number_of_ghost_cameras++;
 
-				if (cameras_set->layout.orientation) create_ghost_ptz_widgets_horizontal (ptz);
+				if (interface_default.orientation) create_ghost_ptz_widgets_horizontal (ptz);
 				else create_ghost_ptz_widgets_vertical (ptz);
 			}
 		}
@@ -240,12 +240,12 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 			ptz->active = gtk_switch_get_active (GTK_SWITCH (cameras_configuration_widgets[i].camera_switch));
 
 			if (ptz->active) {
-				if (cameras_set->layout.orientation) create_ptz_widgets_horizontal (ptz);
+				if (interface_default.orientation) create_ptz_widgets_horizontal (ptz);
 				else create_ptz_widgets_vertical (ptz);
 			} else {
 				cameras_set->number_of_ghost_cameras++;
 
-				if (cameras_set->layout.orientation) create_ghost_ptz_widgets_horizontal (ptz);
+				if (interface_default.orientation) create_ghost_ptz_widgets_horizontal (ptz);
 				else create_ghost_ptz_widgets_vertical (ptz);
 			}
 
@@ -286,7 +286,7 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 					gtk_widget_destroy (ptz->memories_grid);
 				}
 
-				if (cameras_set->layout.orientation) create_ptz_widgets_horizontal (ptz);
+				if (interface_default.orientation) create_ptz_widgets_horizontal (ptz);
 				else create_ptz_widgets_vertical (ptz);
 			} else {
 				ptz->active = FALSE;
@@ -321,10 +321,13 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 							g_object_unref (G_OBJECT (ptz->memories[j].full_pixbuf));
 							if (cameras_set->layout.thumbnail_width != 320) g_object_unref (G_OBJECT (ptz->memories[j].scaled_pixbuf));
 						}
+
+						gtk_widget_destroy (ptz->memories[j].name_window);
+						ptz->memories[j].name_window = NULL;
 					}
 				}
 
-				if (cameras_set->layout.orientation) create_ghost_ptz_widgets_horizontal (ptz);
+				if (interface_default.orientation) create_ghost_ptz_widgets_horizontal (ptz);
 				else create_ghost_ptz_widgets_vertical (ptz);
 			}
 
