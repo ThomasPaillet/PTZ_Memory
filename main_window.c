@@ -207,6 +207,8 @@ void main_window_notebook_switch_page (GtkNotebook *notebook, GtkWidget *page, g
 
 	g_mutex_unlock (&cameras_sets_mutex);
 
+	gtk_window_set_focus (GTK_WINDOW (main_window), NULL);
+
 	if (send_ip_tally) {
 		for (i = 0; i < current_cameras_set->number_of_cameras; i++) {
 			if (tallies[i]) {
