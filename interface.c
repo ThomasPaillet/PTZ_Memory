@@ -59,7 +59,7 @@ void orientation_check_button_toggled (GtkToggleButton *togglebutton)
 	ptz_t *ptz;
 	char memories_name[MAX_MEMORIES][MEMORIES_NAME_LENGTH + 1];
 
-	interface_default.orientation = current_cameras_set->layout.orientation = gtk_toggle_button_get_active (togglebutton);
+	current_cameras_set->layout.orientation = interface_default.orientation = gtk_toggle_button_get_active (togglebutton);
 
 	for (i = 0; i < MAX_MEMORIES; i++) {
 		memcpy (memories_name[i], gtk_label_get_text (GTK_LABEL (current_cameras_set->memories_labels[i])), MEMORIES_NAME_LENGTH);
@@ -116,7 +116,7 @@ void orientation_check_button_toggled (GtkToggleButton *togglebutton)
 
 void show_linked_memories_names_entries_check_button_toggled (GtkToggleButton *togglebutton)
 {
-	interface_default.show_linked_memories_names_entries = current_cameras_set->layout.show_linked_memories_names_entries = gtk_toggle_button_get_active (togglebutton);
+	current_cameras_set->layout.show_linked_memories_names_entries = interface_default.show_linked_memories_names_entries = gtk_toggle_button_get_active (togglebutton);
 
 	if (interface_default.show_linked_memories_names_entries) gtk_widget_show (current_cameras_set->linked_memories_names_entries);
 	else gtk_widget_hide (current_cameras_set->linked_memories_names_entries);
@@ -126,7 +126,7 @@ void show_linked_memories_names_entries_check_button_toggled (GtkToggleButton *t
 
 void show_linked_memories_names_labels_check_button_toggled (GtkToggleButton *togglebutton)
 {
-	interface_default.show_linked_memories_names_labels = current_cameras_set->layout.show_linked_memories_names_labels = gtk_toggle_button_get_active (togglebutton);
+	current_cameras_set->layout.show_linked_memories_names_labels = interface_default.show_linked_memories_names_labels = gtk_toggle_button_get_active (togglebutton);
 
 	if (interface_default.show_linked_memories_names_labels) gtk_widget_show (current_cameras_set->linked_memories_names_labels);
 	else gtk_widget_hide (current_cameras_set->linked_memories_names_labels);
@@ -238,7 +238,7 @@ void memories_button_vertical_margins_value_changed (GtkRange *range)
 	if ((new_memories_button_vertical_margins <= 1) && (interface_default.memories_button_vertical_margins > 1))  gtk_label_set_text (GTK_LABEL (vertical_margins_label), pixel_txt);
 	else if ((new_memories_button_vertical_margins > 1) && (interface_default.memories_button_vertical_margins <= 1)) gtk_label_set_text (GTK_LABEL (vertical_margins_label), pixels_txt);
 
-	interface_default.memories_button_vertical_margins = current_cameras_set->layout.memories_button_vertical_margins = new_memories_button_vertical_margins;
+	current_cameras_set->layout.memories_button_vertical_margins = interface_default.memories_button_vertical_margins = new_memories_button_vertical_margins;
 
 	update_current_cameras_set_vertical_margins ();
 
@@ -252,39 +252,12 @@ void memories_button_horizontal_margins_value_changed (GtkRange *range)
 	if ((new_memories_button_horizontal_margins <= 1) && (interface_default.memories_button_horizontal_margins > 1)) gtk_label_set_text (GTK_LABEL (horizontal_margins_label), pixel_txt);
 	else if ((new_memories_button_horizontal_margins > 1) && (interface_default.memories_button_horizontal_margins <= 1)) gtk_label_set_text (GTK_LABEL (horizontal_margins_label), pixels_txt);
 
-	interface_default.memories_button_horizontal_margins = current_cameras_set->layout.memories_button_horizontal_margins = new_memories_button_horizontal_margins;
+	current_cameras_set->layout.memories_button_horizontal_margins = interface_default.memories_button_horizontal_margins = new_memories_button_horizontal_margins;
 
 	update_current_cameras_set_horizontal_margins ();
 
 	backup_needed = TRUE;
 }
-
-#define SCALE_VALUE_CHANGED(p) \
-void p##_value_changed (GtkRange *range) \
-{ \
-	int i, j; \
- \
-	interface_default.p = current_cameras_set->layout.p = gtk_range_get_value (range); \
- \
-	for (i = 0; i < current_cameras_set->number_of_cameras; i++) { \
-		if (current_cameras_set->cameras[i]->active) { \
-			for (j = 0; j < MAX_MEMORIES; j++) { \
-				if (!current_cameras_set->cameras[i]->memories[j].empty) gtk_widget_queue_draw (current_cameras_set->cameras[i]->memories[j].button); \
-			} \
-		} \
-	} \
- \
-	backup_needed = TRUE; \
-}
-
-SCALE_VALUE_CHANGED(memories_name_color_red)
-SCALE_VALUE_CHANGED(memories_name_color_green)
-SCALE_VALUE_CHANGED(memories_name_color_blue)
-
-SCALE_VALUE_CHANGED(memories_name_backdrop_color_red)
-SCALE_VALUE_CHANGED(memories_name_backdrop_color_green)
-SCALE_VALUE_CHANGED(memories_name_backdrop_color_blue)
-SCALE_VALUE_CHANGED(memories_name_backdrop_color_alpha)
 
 #define UPDATE_INTERFACE_CHECK_BUTTON(p) \
 g_signal_handler_block (p##_check_button, p##_check_button_handler_id); \
@@ -357,6 +330,33 @@ gboolean interface_settings_window_key_press (GtkWidget *window, GdkEventKey *ev
 
 	return GDK_EVENT_PROPAGATE;
 }
+
+#define SCALE_VALUE_CHANGED(p) \
+void p##_value_changed (GtkRange *range) \
+{ \
+	int i, j; \
+ \
+	current_cameras_set->layout.p = interface_default.p = gtk_range_get_value (range); \
+ \
+	for (i = 0; i < current_cameras_set->number_of_cameras; i++) { \
+		if (current_cameras_set->cameras[i]->active) { \
+			for (j = 0; j < MAX_MEMORIES; j++) { \
+				if (!current_cameras_set->cameras[i]->memories[j].empty) gtk_widget_queue_draw (current_cameras_set->cameras[i]->memories[j].button); \
+			} \
+		} \
+	} \
+ \
+	backup_needed = TRUE; \
+}
+
+SCALE_VALUE_CHANGED(memories_name_color_red)
+SCALE_VALUE_CHANGED(memories_name_color_green)
+SCALE_VALUE_CHANGED(memories_name_color_blue)
+
+SCALE_VALUE_CHANGED(memories_name_backdrop_color_red)
+SCALE_VALUE_CHANGED(memories_name_backdrop_color_green)
+SCALE_VALUE_CHANGED(memories_name_backdrop_color_blue)
+SCALE_VALUE_CHANGED(memories_name_backdrop_color_alpha)
 
 #define CREATE_INTERFACE_SCALE(p,c,y) \
 	widget = gtk_label_new (c); \
