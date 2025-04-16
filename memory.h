@@ -24,7 +24,7 @@
 #include <gtk/gtk.h>
 
 
-#define MEMORIES_NAME_LENGTH 14
+#define MEMORIES_NAME_LENGTH 18
 
 
 typedef struct {
@@ -48,7 +48,7 @@ typedef struct {
 	int focus_position;
 	char focus_position_hexa[3];
 
-	char name[MEMORIES_NAME_LENGTH + 1];
+	char name[MEMORIES_NAME_LENGTH * 4 + 1];
 	int name_len;
 	GtkWidget *name_entry;
 	GtkWidget *name_window;
