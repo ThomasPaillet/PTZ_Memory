@@ -56,6 +56,7 @@ void init_ptz (ptz_t *ptz)
 		ptz->memories[i].pan_tilt_position_cmd[12] = '\0';
 		ptz->memories[i].name[0] = '\0';
 		ptz->memories[i].name_len = 0;
+		ptz->memories[i].name_window = NULL;
 	}
 
 	ptz->number_of_memories = 0;
@@ -320,26 +321,28 @@ name_grid                                       memories_grid
 			ptz->memories[i].button_handler_id = g_signal_connect (G_OBJECT (ptz->memories[i].button), "button-press-event", G_CALLBACK (memory_button_button_press_event), ptz->memories + i);
 			g_signal_connect_after (G_OBJECT (ptz->memories[i].button), "draw", G_CALLBACK (memory_name_and_outline_draw), ptz->memories + i);
 			gtk_grid_attach (GTK_GRID (ptz->memories_grid), ptz->memories[i].button, i, 1, 1, 1);
-	
-			memory_name_window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
-			gtk_window_set_type_hint (GTK_WINDOW (memory_name_window), GDK_WINDOW_TYPE_HINT_DIALOG);
-			gtk_window_set_transient_for (GTK_WINDOW (memory_name_window), GTK_WINDOW (main_window));
-			gtk_window_set_modal (GTK_WINDOW (memory_name_window), TRUE);
-			gtk_window_set_decorated (GTK_WINDOW (memory_name_window), FALSE);
-			gtk_window_set_skip_taskbar_hint (GTK_WINDOW (memory_name_window), FALSE);
-			gtk_window_set_skip_pager_hint (GTK_WINDOW (memory_name_window), FALSE);
-			gtk_window_set_position (GTK_WINDOW (memory_name_window), GTK_WIN_POS_MOUSE);
-			g_signal_connect (G_OBJECT (memory_name_window), "key-press-event", G_CALLBACK (memory_name_window_key_press), NULL);
-			g_signal_connect (G_OBJECT (memory_name_window), "focus-out-event", G_CALLBACK (gtk_widget_hide_on_delete), ptz);
-			g_signal_connect (G_OBJECT (memory_name_window), "delete-event", G_CALLBACK (gtk_widget_hide_on_delete), ptz);
-				memory_name_entry = gtk_entry_new ();
-				gtk_entry_set_max_length (GTK_ENTRY (memory_name_entry), MEMORIES_NAME_LENGTH);
-				gtk_entry_set_width_chars (GTK_ENTRY (memory_name_entry), MEMORIES_NAME_LENGTH + 4);
-				gtk_entry_set_alignment (GTK_ENTRY (memory_name_entry), 0.5);
-				g_signal_connect (G_OBJECT (memory_name_entry), "activate", G_CALLBACK (memory_name_entry_activate), ptz->memories + i);
-			gtk_container_add (GTK_CONTAINER (memory_name_window), memory_name_entry);
-			ptz->memories[i].name_entry = memory_name_entry;
-			ptz->memories[i].name_window = memory_name_window;
+
+			if (ptz->memories[i].name_window == NULL) {
+				memory_name_window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+				gtk_window_set_type_hint (GTK_WINDOW (memory_name_window), GDK_WINDOW_TYPE_HINT_DIALOG);
+				gtk_window_set_transient_for (GTK_WINDOW (memory_name_window), GTK_WINDOW (main_window));
+				gtk_window_set_modal (GTK_WINDOW (memory_name_window), TRUE);
+				gtk_window_set_decorated (GTK_WINDOW (memory_name_window), FALSE);
+				gtk_window_set_skip_taskbar_hint (GTK_WINDOW (memory_name_window), FALSE);
+				gtk_window_set_skip_pager_hint (GTK_WINDOW (memory_name_window), FALSE);
+				gtk_window_set_position (GTK_WINDOW (memory_name_window), GTK_WIN_POS_MOUSE);
+				g_signal_connect (G_OBJECT (memory_name_window), "key-press-event", G_CALLBACK (memory_name_window_key_press), NULL);
+				g_signal_connect (G_OBJECT (memory_name_window), "focus-out-event", G_CALLBACK (gtk_widget_hide_on_delete), ptz);
+				g_signal_connect (G_OBJECT (memory_name_window), "delete-event", G_CALLBACK (gtk_widget_hide_on_delete), ptz);
+					memory_name_entry = gtk_entry_new ();
+					gtk_entry_set_max_length (GTK_ENTRY (memory_name_entry), MEMORIES_NAME_LENGTH);
+					gtk_entry_set_width_chars (GTK_ENTRY (memory_name_entry), MEMORIES_NAME_LENGTH + 4);
+					gtk_entry_set_alignment (GTK_ENTRY (memory_name_entry), 0.5);
+					g_signal_connect (G_OBJECT (memory_name_entry), "activate", G_CALLBACK (memory_name_entry_activate), ptz->memories + i);
+				gtk_container_add (GTK_CONTAINER (memory_name_window), memory_name_entry);
+				ptz->memories[i].name_entry = memory_name_entry;
+				ptz->memories[i].name_window = memory_name_window;
+			}
 		}
 
 		ptz->tally[4] = gtk_drawing_area_new ();
@@ -433,25 +436,27 @@ memories_grid
 			g_signal_connect_after (G_OBJECT (ptz->memories[i].button), "draw", G_CALLBACK (memory_name_and_outline_draw), ptz->memories + i);
 			gtk_grid_attach (GTK_GRID (ptz->memories_grid), ptz->memories[i].button, 1, i, 1, 1);
 	
-			memory_name_window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
-			gtk_window_set_type_hint (GTK_WINDOW (memory_name_window), GDK_WINDOW_TYPE_HINT_DIALOG);
-			gtk_window_set_transient_for (GTK_WINDOW (memory_name_window), GTK_WINDOW (main_window));
-			gtk_window_set_modal (GTK_WINDOW (memory_name_window), TRUE);
-			gtk_window_set_decorated (GTK_WINDOW (memory_name_window), FALSE);
-			gtk_window_set_skip_taskbar_hint (GTK_WINDOW (memory_name_window), FALSE);
-			gtk_window_set_skip_pager_hint (GTK_WINDOW (memory_name_window), FALSE);
-			gtk_window_set_position (GTK_WINDOW (memory_name_window), GTK_WIN_POS_MOUSE);
-			g_signal_connect (G_OBJECT (memory_name_window), "key-press-event", G_CALLBACK (memory_name_window_key_press), NULL);
-			g_signal_connect (G_OBJECT (memory_name_window), "focus-out-event", G_CALLBACK (gtk_widget_hide_on_delete), ptz);
-			g_signal_connect (G_OBJECT (memory_name_window), "delete-event", G_CALLBACK (gtk_widget_hide_on_delete), ptz);
-				memory_name_entry = gtk_entry_new ();
-				gtk_entry_set_max_length (GTK_ENTRY (memory_name_entry), MEMORIES_NAME_LENGTH);
-				gtk_entry_set_width_chars (GTK_ENTRY (memory_name_entry), MEMORIES_NAME_LENGTH + 4);
-				gtk_entry_set_alignment (GTK_ENTRY (memory_name_entry), 0.5);
-				g_signal_connect (G_OBJECT (memory_name_entry), "activate", G_CALLBACK (memory_name_entry_activate), ptz->memories + i);
-			gtk_container_add (GTK_CONTAINER (memory_name_window), memory_name_entry);
-			ptz->memories[i].name_entry = memory_name_entry;
-			ptz->memories[i].name_window = memory_name_window;
+			if (ptz->memories[i].name_window == NULL) {
+				memory_name_window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+				gtk_window_set_type_hint (GTK_WINDOW (memory_name_window), GDK_WINDOW_TYPE_HINT_DIALOG);
+				gtk_window_set_transient_for (GTK_WINDOW (memory_name_window), GTK_WINDOW (main_window));
+				gtk_window_set_modal (GTK_WINDOW (memory_name_window), TRUE);
+				gtk_window_set_decorated (GTK_WINDOW (memory_name_window), FALSE);
+				gtk_window_set_skip_taskbar_hint (GTK_WINDOW (memory_name_window), FALSE);
+				gtk_window_set_skip_pager_hint (GTK_WINDOW (memory_name_window), FALSE);
+				gtk_window_set_position (GTK_WINDOW (memory_name_window), GTK_WIN_POS_MOUSE);
+				g_signal_connect (G_OBJECT (memory_name_window), "key-press-event", G_CALLBACK (memory_name_window_key_press), NULL);
+				g_signal_connect (G_OBJECT (memory_name_window), "focus-out-event", G_CALLBACK (gtk_widget_hide_on_delete), ptz);
+				g_signal_connect (G_OBJECT (memory_name_window), "delete-event", G_CALLBACK (gtk_widget_hide_on_delete), ptz);
+					memory_name_entry = gtk_entry_new ();
+					gtk_entry_set_max_length (GTK_ENTRY (memory_name_entry), MEMORIES_NAME_LENGTH);
+					gtk_entry_set_width_chars (GTK_ENTRY (memory_name_entry), MEMORIES_NAME_LENGTH + 4);
+					gtk_entry_set_alignment (GTK_ENTRY (memory_name_entry), 0.5);
+					g_signal_connect (G_OBJECT (memory_name_entry), "activate", G_CALLBACK (memory_name_entry_activate), ptz->memories + i);
+				gtk_container_add (GTK_CONTAINER (memory_name_window), memory_name_entry);
+				ptz->memories[i].name_entry = memory_name_entry;
+				ptz->memories[i].name_window = memory_name_window;
+			}
 		}
 
 		ptz->tally[4] = gtk_drawing_area_new ();
