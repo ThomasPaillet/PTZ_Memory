@@ -41,7 +41,6 @@ cameras_set_t *cameras_set_with_error = NULL;
 
 cameras_set_t *new_cameras_set = NULL;
 
-//cameras_set_configuration_window
 GtkWidget *cameras_set_configuration_window;
 GtkEntryBuffer *cameras_set_configuration_name_entry_buffer;
 int new_number_of_cameras;
@@ -424,6 +423,10 @@ gboolean cameras_set_configuration_window_cancel (void)
 	if (new_cameras_set != NULL) {
 		for (i = 0; i < 5; i++) g_free (new_cameras_set->cameras[i]);
 
+		pango_font_description_free (new_cameras_set->layout.ptz_name_font_description);
+		pango_font_description_free (new_cameras_set->layout.ghost_ptz_name_font_description);
+		pango_font_description_free (new_cameras_set->layout.memory_name_font_description);
+
 		g_free (new_cameras_set);
 		new_cameras_set = NULL;
 	}
@@ -683,6 +686,8 @@ void show_cameras_set_configuration_window (void)
 
 		cameras_configuration_widgets[i].ip_entry_buffer[0] = gtk_entry_buffer_new (network_address[0], network_address_len[0]);
 		cameras_configuration_widgets[i].ip_entry[0] = gtk_entry_new_with_buffer (cameras_configuration_widgets[i].ip_entry_buffer[0]);
+		gtk_entry_set_input_purpose (GTK_ENTRY (cameras_configuration_widgets[i].ip_entry[0]), GTK_INPUT_PURPOSE_DIGITS);
+		g_signal_connect (G_OBJECT (cameras_configuration_widgets[i].ip_entry[0]), "key-press-event", G_CALLBACK (digit_key_press), NULL);
 		gtk_entry_set_max_length (GTK_ENTRY (cameras_configuration_widgets[i].ip_entry[0]), 3);
 		gtk_entry_set_width_chars (GTK_ENTRY (cameras_configuration_widgets[i].ip_entry[0]), 3);
 		gtk_entry_set_alignment (GTK_ENTRY (cameras_configuration_widgets[i].ip_entry[0]), 0.5);
@@ -697,6 +702,8 @@ void show_cameras_set_configuration_window (void)
 
 		cameras_configuration_widgets[i].ip_entry_buffer[1] = gtk_entry_buffer_new (network_address[1], network_address_len[1]);
 		cameras_configuration_widgets[i].ip_entry[1] = gtk_entry_new_with_buffer (cameras_configuration_widgets[i].ip_entry_buffer[1]);
+		gtk_entry_set_input_purpose (GTK_ENTRY (cameras_configuration_widgets[i].ip_entry[1]), GTK_INPUT_PURPOSE_DIGITS);
+		g_signal_connect (G_OBJECT (cameras_configuration_widgets[i].ip_entry[1]), "key-press-event", G_CALLBACK (digit_key_press), NULL);
 		gtk_entry_set_max_length (GTK_ENTRY (cameras_configuration_widgets[i].ip_entry[1]), 3);
 		gtk_entry_set_width_chars (GTK_ENTRY (cameras_configuration_widgets[i].ip_entry[1]), 3);
 		gtk_entry_set_alignment (GTK_ENTRY (cameras_configuration_widgets[i].ip_entry[1]), 0.5);
@@ -711,6 +718,8 @@ void show_cameras_set_configuration_window (void)
 
 		cameras_configuration_widgets[i].ip_entry_buffer[2] = gtk_entry_buffer_new (network_address[2], network_address_len[2]);
 		cameras_configuration_widgets[i].ip_entry[2] = gtk_entry_new_with_buffer (cameras_configuration_widgets[i].ip_entry_buffer[2]);
+		gtk_entry_set_input_purpose (GTK_ENTRY (cameras_configuration_widgets[i].ip_entry[2]), GTK_INPUT_PURPOSE_DIGITS);
+		g_signal_connect (G_OBJECT (cameras_configuration_widgets[i].ip_entry[2]), "key-press-event", G_CALLBACK (digit_key_press), NULL);
 		gtk_entry_set_max_length (GTK_ENTRY (cameras_configuration_widgets[i].ip_entry[2]), 3);
 		gtk_entry_set_width_chars (GTK_ENTRY (cameras_configuration_widgets[i].ip_entry[2]), 3);
 		gtk_entry_set_alignment (GTK_ENTRY (cameras_configuration_widgets[i].ip_entry[2]), 0.5);
@@ -725,6 +734,8 @@ void show_cameras_set_configuration_window (void)
 
 		cameras_configuration_widgets[i].ip_entry_buffer[3] = gtk_entry_buffer_new (NULL, -1);
 		cameras_configuration_widgets[i].ip_entry[3] = gtk_entry_new_with_buffer (cameras_configuration_widgets[i].ip_entry_buffer[3]);
+		gtk_entry_set_input_purpose (GTK_ENTRY (cameras_configuration_widgets[i].ip_entry[3]), GTK_INPUT_PURPOSE_DIGITS);
+		g_signal_connect (G_OBJECT (cameras_configuration_widgets[i].ip_entry[3]), "key-press-event", G_CALLBACK (digit_key_press), NULL);
 		gtk_entry_set_max_length (GTK_ENTRY (cameras_configuration_widgets[i].ip_entry[3]), 3);
 		gtk_entry_set_width_chars (GTK_ENTRY (cameras_configuration_widgets[i].ip_entry[3]), 3);
 		gtk_entry_set_alignment (GTK_ENTRY (cameras_configuration_widgets[i].ip_entry[3]), 0.5);
@@ -760,6 +771,10 @@ void add_cameras_set (void)
 	new_cameras_set->number_of_ghost_cameras = 0;
 
 	new_cameras_set->layout = interface_default;
+
+	new_cameras_set->layout.ptz_name_font_description = pango_font_description_from_string (interface_default.ptz_name_font);
+	new_cameras_set->layout.ghost_ptz_name_font_description = pango_font_description_from_string (interface_default.ghost_ptz_name_font);
+	new_cameras_set->layout.memory_name_font_description = pango_font_description_from_string (interface_default.memory_name_font);
 
 	show_cameras_set_configuration_window ();
 }
@@ -846,16 +861,17 @@ void delete_cameras_set (void)
 			gtk_widget_set_sensitive (link_toggle_button, FALSE);
 			gtk_widget_set_sensitive (switch_cameras_on_button, FALSE);
 			gtk_widget_set_sensitive (switch_cameras_off_button, FALSE);
-		} else {
-			pango_font_description_free (cameras_set_itr->layout.ptz_name_font_description);
-			pango_font_description_free (cameras_set_itr->layout.ghost_ptz_name_font_description);
-			pango_font_description_free (cameras_set_itr->layout.memory_name_font_description);
 		}
+
+		pango_font_description_free (cameras_set_itr->layout.ptz_name_font_description);
+		pango_font_description_free (cameras_set_itr->layout.ghost_ptz_name_font_description);
+		pango_font_description_free (cameras_set_itr->layout.memory_name_font_description);
 
 		g_free (cameras_set_itr);
 
-		for (cameras_set_itr = cameras_sets; cameras_set_itr != NULL; cameras_set_itr = cameras_set_itr->next)
+		for (cameras_set_itr = cameras_sets; cameras_set_itr != NULL; cameras_set_itr = cameras_set_itr->next) {
 			cameras_set_itr->page_num = gtk_notebook_page_num (GTK_NOTEBOOK (main_window_notebook), cameras_set_itr->page);
+		}
 	}
 
 	backup_needed = TRUE;
