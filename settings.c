@@ -834,8 +834,7 @@ void load_config_file (void)
 					fread (ptz->memories[index].name, sizeof (char), MEMORIES_NAME_LENGTH * 4, config_file);
 					ptz->memories[index].name[MEMORIES_NAME_LENGTH * 4] = '\0';
 
-					gtk_entry_set_text (GTK_ENTRY (ptz->memories[index].name_entry), ptz->memories[index].name);
-					ptz->memories[index].name_len = gtk_entry_get_text_length (GTK_ENTRY (ptz->memories[index].name_entry));
+					fread (ptz->memories[index].name_len, sizeof (int), 1, config_file);
 				}
 			} else {
 				cameras_set_tmp->number_of_ghost_cameras++;
@@ -976,6 +975,7 @@ void save_config_file (void)
 						fwrite (&pixbuf_byte_length, sizeof (gsize), 1, config_file);
 						fwrite (gdk_pixbuf_read_pixels (ptz->memories[k].full_pixbuf), sizeof (guint8), pixbuf_byte_length, config_file);
 						fwrite (ptz->memories[k].name, sizeof (char), MEMORIES_NAME_LENGTH * 4, config_file);
+						fwrite (ptz->memories[k].name_len, sizeof (int), 1, config_file);
 					}
 				}
 			}
