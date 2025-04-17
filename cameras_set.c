@@ -819,26 +819,30 @@ void delete_cameras_set (void)
 		for (i = 0; i < cameras_set_itr->number_of_cameras; i++) {
 			ptz = cameras_set_itr->cameras[i];
 
-			if ((ptz->ip_address_is_valid) && (ptz->error_code != CAMERA_IS_UNREACHABLE_ERROR)) {
-				for (other_cameras_set = cameras_sets; other_cameras_set != NULL; other_cameras_set = other_cameras_set->next) {
-					if (other_cameras_set == cameras_set_itr) continue;
-
-					for (j = 0; j < other_cameras_set->number_of_cameras; j++) {
-						if (strcmp (other_cameras_set->cameras[j]->ip_address, ptz->ip_address) == 0) break;
+			if (ptz->active) {
+				if ((ptz->ip_address_is_valid) && (ptz->error_code != CAMERA_IS_UNREACHABLE_ERROR)) {
+					for (other_cameras_set = cameras_sets; other_cameras_set != NULL; other_cameras_set = other_cameras_set->next) {
+						if (other_cameras_set == cameras_set_itr) continue;
+	
+						for (j = 0; j < other_cameras_set->number_of_cameras; j++) {
+							if (strcmp (other_cameras_set->cameras[j]->ip_address, ptz->ip_address) == 0) break;
+						}
+						if (j < other_cameras_set->number_of_cameras) break;
 					}
-					if (j < other_cameras_set->number_of_cameras) break;
+	
+					if (other_cameras_set == NULL) {
+						send_ptz_control_command (ptz, "#LPC0", TRUE);
+						send_update_stop_cmd (ptz);
+					}
 				}
-
-				if (other_cameras_set == NULL) {
-					send_ptz_control_command (ptz, "#LPC0", TRUE);
-					send_update_stop_cmd (ptz);
-				}
-			}
-
-			for (j = 0; j < MAX_MEMORIES; j++) {
-				if (!ptz->memories[j].empty) {
-					g_object_unref (G_OBJECT (ptz->memories[j].full_pixbuf));
-					if (cameras_set_itr->layout.thumbnail_width != 320) g_object_unref (G_OBJECT (ptz->memories[j].scaled_pixbuf));
+	
+				for (j = 0; j < MAX_MEMORIES; j++) {
+					if (!ptz->memories[j].empty) {
+						g_object_unref (G_OBJECT (ptz->memories[j].full_pixbuf));
+						if (cameras_set_itr->layout.thumbnail_width != 320) g_object_unref (G_OBJECT (ptz->memories[j].scaled_pixbuf));
+					}
+	
+					gtk_widget_destroy (ptz->memories[j].name_window);
 				}
 			}
 
