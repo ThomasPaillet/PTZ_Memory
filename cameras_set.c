@@ -216,8 +216,10 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 					for (j = 0; j < MAX_MEMORIES; j++) {
 						if (!ptz->memories[j].empty) {
 							g_object_unref (G_OBJECT (ptz->memories[j].full_pixbuf));
-							if (cameras_set->layout.thumbnail_width != 320) g_object_unref (G_OBJECT (ptz->memories[j].scaled_pixbuf));
+							if (interface_default.thumbnail_width != 320) g_object_unref (G_OBJECT (ptz->memories[j].scaled_pixbuf));
 						}
+
+						gtk_widget_destroy (ptz->memories[j].name_window);
 					}
 				}
 			}
@@ -319,7 +321,7 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 					for (j = 0; j < MAX_MEMORIES; j++) {
 						if (!ptz->memories[j].empty) {
 							g_object_unref (G_OBJECT (ptz->memories[j].full_pixbuf));
-							if (cameras_set->layout.thumbnail_width != 320) g_object_unref (G_OBJECT (ptz->memories[j].scaled_pixbuf));
+							if (interface_default.thumbnail_width != 320) g_object_unref (G_OBJECT (ptz->memories[j].scaled_pixbuf));
 						}
 
 						gtk_widget_destroy (ptz->memories[j].name_window);
