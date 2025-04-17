@@ -50,21 +50,14 @@ typedef struct {
 
 	char name[MEMORIES_NAME_LENGTH * 4 + 1];
 	int name_len;
-	GtkWidget *name_entry;
-	GtkWidget *name_window;
 } memory_t;
 
 
 gboolean memory_button_button_press_event (GtkButton *button, GdkEventButton *event, memory_t *memory);
 
-
 gboolean memory_name_and_outline_draw (GtkWidget *widget, cairo_t *cr, memory_t *memory);
 
-
-gboolean memory_name_window_key_press (GtkWidget *memory_name_window, GdkEventKey *event);
-
-
-void memory_name_entry_activate (GtkEntry *entry, memory_t *memory);
+void create_memory_name_window (void);
 
 
 #endif
