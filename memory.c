@@ -33,6 +33,12 @@ typedef struct memory_thread_s {
 } memory_thread_t;
 
 
+memory_t *current_memory;
+
+GtkWidget *memory_name_window;
+GtkEntryBuffer *memory_name_entry_buffer;
+
+
 gboolean free_memory_thread (memory_thread_t *memory_thread)
 {
 	g_thread_join (memory_thread->thread);
@@ -133,15 +139,17 @@ gpointer load_memory (memory_thread_t *memory_thread)
 		controller_thread->thread = g_thread_new (NULL, (GThreadFunc)controller_switch_ptz, controller_thread);
 	}
 
-	memory->is_loaded = TRUE;
-	gtk_widget_queue_draw (memory->button);
-
-	if (ptz->previous_loaded_memory != NULL) {
-		ptz->previous_loaded_memory->is_loaded = FALSE;
-		gtk_widget_queue_draw (ptz->previous_loaded_memory->button);
+	if (memory != ptz->previous_loaded_memory) {
+		memory->is_loaded = TRUE;
+		gtk_widget_queue_draw (memory->button);
+	
+		if (ptz->previous_loaded_memory != NULL) {
+			ptz->previous_loaded_memory->is_loaded = FALSE;
+			gtk_widget_queue_draw (ptz->previous_loaded_memory->button);
+		}
+	
+		ptz->previous_loaded_memory = memory;
 	}
-
-	ptz->previous_loaded_memory = memory;
 
 	g_mutex_lock (&ptz->lens_information_mutex);
 
@@ -187,15 +195,17 @@ gpointer load_other_memory (memory_thread_t *memory_thread)
 
 	send_ptz_control_command (ptz, memory->pan_tilt_position_cmd, TRUE);
 
-	memory->is_loaded = TRUE;
-	gtk_widget_queue_draw (memory->button);
-
-	if (ptz->previous_loaded_memory != NULL) {
-		ptz->previous_loaded_memory->is_loaded = FALSE;
-		gtk_widget_queue_draw (ptz->previous_loaded_memory->button);
+	if (memory != ptz->previous_loaded_memory) {
+		memory->is_loaded = TRUE;
+		gtk_widget_queue_draw (memory->button);
+	
+		if (ptz->previous_loaded_memory != NULL) {
+			ptz->previous_loaded_memory->is_loaded = FALSE;
+			gtk_widget_queue_draw (ptz->previous_loaded_memory->button);
+		}
+	
+		ptz->previous_loaded_memory = memory;
 	}
-
-	ptz->previous_loaded_memory = memory;
 
 	g_mutex_lock (&ptz->lens_information_mutex);
 
@@ -233,7 +243,12 @@ gboolean memory_button_button_press_event (GtkButton *button, GdkEventButton *ev
 
 	if (event->button != GDK_BUTTON_PRIMARY) {
 		if (!memory->empty) {
-			gtk_widget_show_all (memory->name_window);
+			current_memory = memory;
+
+			if (memory->name_len == 0) gtk_entry_buffer_delete_text (memory_name_entry_buffer, 0, -1);
+			else gtk_entry_buffer_set_text (memory_name_entry_buffer, memory->name, memory->name_len);
+
+			gtk_widget_show_all (memory_name_window);
 
 			return GDK_EVENT_PROPAGATE;
 		} else return GDK_EVENT_STOP;
@@ -353,27 +368,52 @@ gboolean memory_name_and_outline_draw (GtkWidget *widget, cairo_t *cr, memory_t 
 	return GDK_EVENT_PROPAGATE;
 }
 
-gboolean memory_name_window_key_press (GtkWidget *memory_name_window, GdkEventKey *event)
+gboolean memory_name_window_key_press (GtkWidget *window, GdkEventKey *event)
 {
 	if (event->keyval == GDK_KEY_Escape) {
 		gtk_widget_hide (memory_name_window);
 
 		return GDK_EVENT_STOP;
 	} else if (event->keyval == GDK_KEY_Delete) {
-		gtk_entry_buffer_delete_text (gtk_entry_get_buffer (GTK_ENTRY (gtk_bin_get_child (GTK_BIN (memory_name_window)))), 0, -1);
+		gtk_entry_buffer_delete_text (memory_name_entry_buffer, 0, -1);
 	}
 
 	return GDK_EVENT_PROPAGATE;
 }
 
-void memory_name_entry_activate (GtkEntry *entry, memory_t *memory)
+void memory_name_entry_activate (void)
 {
-	strcpy (memory->name, gtk_entry_get_text (entry));
-	memory->name_len = gtk_entry_get_text_length (entry);
+	strcpy (current_memory->name, gtk_entry_buffer_get_text (memory_name_entry_buffer));
+	current_memory->name_len = gtk_entry_buffer_get_length (memory_name_entry_buffer);
 
-	gtk_widget_queue_draw (memory->button);
-	gtk_widget_hide (memory->name_window);
+	gtk_widget_queue_draw (current_memory->button);
+
+	gtk_widget_hide (memory_name_window);
 
 	backup_needed = TRUE;
+}
+
+void create_memory_name_window (void)
+{
+	GtkWidget *memory_name_entry;
+
+	memory_name_window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+	gtk_window_set_type_hint (GTK_WINDOW (memory_name_window), GDK_WINDOW_TYPE_HINT_DIALOG);
+	gtk_window_set_transient_for (GTK_WINDOW (memory_name_window), GTK_WINDOW (main_window));
+	gtk_window_set_modal (GTK_WINDOW (memory_name_window), TRUE);
+	gtk_window_set_decorated (GTK_WINDOW (memory_name_window), FALSE);
+	gtk_window_set_skip_taskbar_hint (GTK_WINDOW (memory_name_window), FALSE);
+	gtk_window_set_skip_pager_hint (GTK_WINDOW (memory_name_window), FALSE);
+	gtk_window_set_position (GTK_WINDOW (memory_name_window), GTK_WIN_POS_MOUSE);
+	g_signal_connect (G_OBJECT (memory_name_window), "key-press-event", G_CALLBACK (memory_name_window_key_press), NULL);
+	g_signal_connect (G_OBJECT (memory_name_window), "focus-out-event", G_CALLBACK (gtk_widget_hide_on_delete), NULL);
+	g_signal_connect (G_OBJECT (memory_name_window), "delete-event", G_CALLBACK (gtk_widget_hide_on_delete), NULL);
+		memory_name_entry = gtk_entry_new ();
+		gtk_entry_set_max_length (GTK_ENTRY (memory_name_entry), MEMORIES_NAME_LENGTH);
+		gtk_entry_set_width_chars (GTK_ENTRY (memory_name_entry), MEMORIES_NAME_LENGTH + 4);
+		gtk_entry_set_alignment (GTK_ENTRY (memory_name_entry), 0.5);
+		g_signal_connect (G_OBJECT (memory_name_entry), "activate", G_CALLBACK (memory_name_entry_activate), NULL);
+		memory_name_entry_buffer = gtk_entry_get_buffer (GTK_ENTRY (memory_name_entry));
+	gtk_container_add (GTK_CONTAINER (memory_name_window), memory_name_entry);
 }
 
