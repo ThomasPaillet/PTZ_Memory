@@ -24,7 +24,6 @@
 #include "controller.h"
 #include "error.h"
 #include "interface.h"
-#include "memory.h"
 #include "protocol.h"
 #include "settings.h"
 #include "sw_p_08.h"
