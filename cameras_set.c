@@ -146,8 +146,7 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 
 			ptz->active = gtk_switch_get_active (GTK_SWITCH (cameras_configuration_widgets[i].camera_switch));
 
-			entry_buffer_text = gtk_entry_buffer_get_text (cameras_configuration_widgets[i].name_entry_buffer);
-			strcpy (ptz->name, entry_buffer_text);
+			strcpy (ptz->name, gtk_entry_buffer_get_text (cameras_configuration_widgets[i].name_entry_buffer));
 
 			if (ptz->active) {
 				if (interface_default.orientation) create_ptz_widgets_horizontal (ptz);
@@ -218,8 +217,6 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 							g_object_unref (G_OBJECT (ptz->memories[j].full_pixbuf));
 							if (interface_default.thumbnail_width != 320) g_object_unref (G_OBJECT (ptz->memories[j].scaled_pixbuf));
 						}
-
-						gtk_widget_destroy (ptz->memories[j].name_window);
 					}
 				}
 			}
@@ -233,8 +230,7 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 			ptz = g_malloc (sizeof (ptz_t));
 			cameras_set->cameras[i] = ptz;
 
-			entry_buffer_text = gtk_entry_buffer_get_text (cameras_configuration_widgets[i].name_entry_buffer);
-			strcpy (ptz->name, entry_buffer_text);
+			strcpy (ptz->name, gtk_entry_buffer_get_text (cameras_configuration_widgets[i].name_entry_buffer));
 			ptz->index = i;
 
 			init_ptz (ptz);
@@ -323,9 +319,6 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 							g_object_unref (G_OBJECT (ptz->memories[j].full_pixbuf));
 							if (interface_default.thumbnail_width != 320) g_object_unref (G_OBJECT (ptz->memories[j].scaled_pixbuf));
 						}
-
-						gtk_widget_destroy (ptz->memories[j].name_window);
-						ptz->memories[j].name_window = NULL;
 					}
 				}
 
@@ -843,8 +836,6 @@ void delete_cameras_set (void)
 						g_object_unref (G_OBJECT (ptz->memories[j].full_pixbuf));
 						if (cameras_set_itr->layout.thumbnail_width != 320) g_object_unref (G_OBJECT (ptz->memories[j].scaled_pixbuf));
 					}
-	
-					gtk_widget_destroy (ptz->memories[j].name_window);
 				}
 			}
 
