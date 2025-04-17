@@ -24,6 +24,7 @@
 #include "controller.h"
 #include "error.h"
 #include "interface.h"
+#include "memory.h"
 #include "protocol.h"
 #include "settings.h"
 #include "sw_p_08.h"
@@ -594,6 +595,8 @@ int main (int argc, char** argv)
 	create_control_window ();
 
 	create_interface_settings_window ();
+
+	create_memory_name_window ();
 
 	load_config_file ();
 
