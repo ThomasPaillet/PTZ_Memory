@@ -1,5 +1,6 @@
 # PTZ Memory (pan/tilt/zoom/focus memories) for Panasonic PTZ cameras (AW-HE130, AW-UE150, ...)
 ![PTZ-Memory](Screenshots/PTZ-Memory.png "PTZ-Memory")
+![PTZ-Memory](Screenshots/PTZ-Memory-2.png "PTZ-Memory-2")
 
 ## Settings :
 ![Settings](Screenshots/Paramètres.png "Settings")
