@@ -19,6 +19,7 @@
 
 #include "ptz.h"
 
+#include "cameras_set.h"
 #include "control_window.h"
 #include "controller.h"
 #include "error.h"
@@ -88,19 +89,33 @@ void init_ptz (ptz_t *ptz)
 	ptz->name_grid = NULL;
 
 	ptz->enter_notify_name_drawing_area = FALSE;
+	ptz->enter_notify_ultimatte_picto = FALSE;
 
 	ptz->tally_data = 0x00;
 	ptz->tally_1_is_on = FALSE;
 
 	ptz->error_code = 0x00;
+
+	ptz->ultimatte = NULL;
 }
 
 gboolean ptz_is_on (ptz_t *ptz)
 {
+	int i;
+
 	ptz->is_on = TRUE;
 
 	gtk_widget_set_sensitive (ptz->name_grid, TRUE);
 	gtk_widget_set_sensitive (ptz->memories_grid, TRUE);
+
+	for (i = 0; i < current_cameras_set->number_of_cameras; i++) {
+		if (ptz == current_cameras_set->cameras[i]) {
+			if ((ptz->ultimatte != NULL) && (!ptz->ultimatte->connected) && (ptz->ultimatte->connection_thread == NULL))
+				ptz->ultimatte->connection_thread = g_thread_new (NULL, (GThreadFunc)connect_ultimatte, ptz->ultimatte);
+
+			break;
+		}
+	}
 
 	return G_SOURCE_REMOVE;
 }
@@ -120,6 +135,8 @@ gboolean ptz_is_off (ptz_t *ptz)
 	gtk_widget_set_sensitive (ptz->name_grid, FALSE);
 	gtk_widget_set_sensitive (ptz->memories_grid, FALSE);
 
+	if ((ptz->ultimatte != NULL) && (ptz->ultimatte->connected)) disconnect_ultimatte (ptz->ultimatte);
+
 	return G_SOURCE_REMOVE;
 }
 
@@ -133,7 +150,7 @@ gboolean free_ptz_thread (ptz_thread_t *ptz_thread)
 
 gpointer start_ptz (ptz_thread_t *ptz_thread)
 {
-	ptz_t *ptz = ptz_thread->ptz_ptr;
+	ptz_t *ptz = ptz_thread->ptz;
 	int response = 0;
 	char buffer[16];
 
@@ -185,7 +202,7 @@ gpointer start_ptz (ptz_thread_t *ptz_thread)
 
 gpointer switch_ptz_on (ptz_thread_t *ptz_thread)
 {
-	ptz_t *ptz = ptz_thread->ptz_ptr;
+	ptz_t *ptz = ptz_thread->ptz;
 
 	if (ptz->error_code == CAMERA_IS_UNREACHABLE_ERROR) send_update_start_cmd (ptz);
 
@@ -198,7 +215,7 @@ gpointer switch_ptz_on (ptz_thread_t *ptz_thread)
 
 gpointer switch_ptz_off (ptz_thread_t *ptz_thread)
 {
-	ptz_t *ptz = ptz_thread->ptz_ptr;
+	ptz_t *ptz = ptz_thread->ptz;
 
 	if (ptz->error_code == CAMERA_IS_UNREACHABLE_ERROR) send_update_start_cmd (ptz);
 
@@ -211,17 +228,25 @@ gpointer switch_ptz_off (ptz_thread_t *ptz_thread)
 
 gboolean name_drawing_area_button_press_event (GtkButton *widget, GdkEventButton *event, ptz_t *ptz)
 {
+	ultimatte_t *ultimatte;
 	ptz_thread_t *controller_thread;
 
 	if (event->button == GDK_BUTTON_PRIMARY) {
-		show_control_window (ptz, GTK_WIN_POS_MOUSE);
+		ultimatte = ptz->ultimatte;
 
-		ask_to_connect_ptz_to_ctrl_opv (ptz);
+		if ((ultimatte != NULL) && (event->x > ultimatte_picto_x) && (event->y < ultimatte_picto_y)) {
+			if ((!ultimatte->connected) && (ultimatte->connection_thread == NULL))
+				ultimatte->connection_thread = g_thread_new (NULL, (GThreadFunc)connect_ultimatte, ultimatte);
+		} else {
+			show_control_window (ptz, GTK_WIN_POS_MOUSE);
 
-		if (controller_is_used && controller_ip_address_is_valid) {
-			controller_thread = g_malloc (sizeof (ptz_thread_t));
-			controller_thread->ptz_ptr = ptz;
-			controller_thread->thread = g_thread_new (NULL, (GThreadFunc)controller_switch_ptz, controller_thread);
+			ask_to_connect_ptz_to_ctrl_opv (ptz);
+
+			if (controller_is_used && controller_ip_address_is_valid) {
+				controller_thread = g_malloc (sizeof (ptz_thread_t));
+				controller_thread->ptz = ptz;
+				controller_thread->thread = g_thread_new (NULL, (GThreadFunc)controller_switch_ptz, controller_thread);
+			}
 		}
 	}
 
@@ -231,8 +256,28 @@ gboolean name_drawing_area_button_press_event (GtkButton *widget, GdkEventButton
 gboolean name_drawing_area_enter_notify_event (GtkWidget *widget, GdkEvent *event, ptz_t *ptz)
 {
 	ptz->enter_notify_name_drawing_area = TRUE;
+
 	gtk_widget_queue_draw (widget);
 	gtk_widget_queue_draw (ptz->error_drawing_area);
+
+	return GDK_EVENT_PROPAGATE;
+}
+
+gboolean ultimatte_picto_enter_or_leave_notify_event (GtkWidget *widget, GdkEventMotion *event, ptz_t *ptz)
+{
+	if (ptz->ultimatte != NULL) {
+		if ((event->x > ultimatte_picto_x) && (event->y < ultimatte_picto_y)) {
+			if (!ptz->enter_notify_ultimatte_picto) {
+				ptz->enter_notify_ultimatte_picto = TRUE;
+
+				gtk_widget_queue_draw (widget);
+			}
+		} else if (ptz->enter_notify_ultimatte_picto) {
+			ptz->enter_notify_ultimatte_picto = FALSE;
+
+			gtk_widget_queue_draw (widget);
+		}
+	}
 
 	return GDK_EVENT_PROPAGATE;
 }
@@ -240,17 +285,12 @@ gboolean name_drawing_area_enter_notify_event (GtkWidget *widget, GdkEvent *even
 gboolean name_drawing_area_leave_notify_event (GtkWidget *widget, GdkEvent *event, ptz_t *ptz)
 {
 	ptz->enter_notify_name_drawing_area = FALSE;
+	ptz->enter_notify_ultimatte_picto = FALSE;
+
 	gtk_widget_queue_draw (widget);
 	gtk_widget_queue_draw (ptz->error_drawing_area);
 
 	return GDK_EVENT_PROPAGATE;
-}
-
-gboolean ghost_name_drawing_area_button_press_event (GtkButton *widget, GdkEventButton *event, ptz_t *ptz)
-{
-	if (event->button == GDK_BUTTON_PRIMARY) ask_to_connect_ptz_to_ctrl_opv (ptz);
-
-	return GDK_EVENT_STOP;
 }
 
 void create_ptz_widgets_horizontal (ptz_t *ptz)
@@ -283,10 +323,11 @@ name_grid                                       memories_grid
 
 		ptz->name_drawing_area = gtk_drawing_area_new ();
 		gtk_widget_set_size_request (ptz->name_drawing_area, interface_default.thumbnail_height, interface_default.thumbnail_height + 10);
-		gtk_widget_set_events (ptz->name_drawing_area, gtk_widget_get_events (ptz->name_drawing_area) | GDK_BUTTON_PRESS_MASK | GDK_ENTER_NOTIFY_MASK | GDK_LEAVE_NOTIFY_MASK);
+		gtk_widget_set_events (ptz->name_drawing_area, gtk_widget_get_events (ptz->name_drawing_area) | GDK_BUTTON_PRESS_MASK | GDK_ENTER_NOTIFY_MASK | GDK_POINTER_MOTION_MASK | GDK_LEAVE_NOTIFY_MASK);
 		g_signal_connect (G_OBJECT (ptz->name_drawing_area), "draw", G_CALLBACK (ptz_name_draw), ptz);
 		g_signal_connect (G_OBJECT (ptz->name_drawing_area), "button-press-event", G_CALLBACK (name_drawing_area_button_press_event), ptz);
 		g_signal_connect (G_OBJECT (ptz->name_drawing_area), "enter-notify-event", G_CALLBACK (name_drawing_area_enter_notify_event), ptz);
+		g_signal_connect (G_OBJECT (ptz->name_drawing_area), "motion-notify-event", G_CALLBACK (ultimatte_picto_enter_or_leave_notify_event), ptz);
 		g_signal_connect (G_OBJECT (ptz->name_drawing_area), "leave-notify-event", G_CALLBACK (name_drawing_area_leave_notify_event), ptz);
 	gtk_grid_attach (GTK_GRID (ptz->name_grid), ptz->name_drawing_area, 1, 1, 1, 1);
 
@@ -373,10 +414,11 @@ memories_grid
 
 		ptz->name_drawing_area = gtk_drawing_area_new ();
 		gtk_widget_set_size_request (ptz->name_drawing_area, interface_default.thumbnail_width + 10, interface_default.thumbnail_height);
-		gtk_widget_set_events (ptz->name_drawing_area, gtk_widget_get_events (ptz->name_drawing_area) | GDK_BUTTON_PRESS_MASK | GDK_ENTER_NOTIFY_MASK | GDK_LEAVE_NOTIFY_MASK);
+		gtk_widget_set_events (ptz->name_drawing_area, gtk_widget_get_events (ptz->name_drawing_area) | GDK_BUTTON_PRESS_MASK | GDK_ENTER_NOTIFY_MASK | GDK_POINTER_MOTION_MASK | GDK_LEAVE_NOTIFY_MASK);
 		g_signal_connect (G_OBJECT (ptz->name_drawing_area), "draw", G_CALLBACK (ptz_name_draw), ptz);
 		g_signal_connect (G_OBJECT (ptz->name_drawing_area), "button-press-event", G_CALLBACK (name_drawing_area_button_press_event), ptz);
 		g_signal_connect (G_OBJECT (ptz->name_drawing_area), "enter-notify-event", G_CALLBACK (name_drawing_area_enter_notify_event), ptz);
+		g_signal_connect (G_OBJECT (ptz->name_drawing_area), "motion-notify-event", G_CALLBACK (ultimatte_picto_enter_or_leave_notify_event), ptz);
 		g_signal_connect (G_OBJECT (ptz->name_drawing_area), "leave-notify-event", G_CALLBACK (name_drawing_area_leave_notify_event), ptz);
 	gtk_grid_attach (GTK_GRID (ptz->name_grid), ptz->name_drawing_area, 1, 1, 1, 1);
 
@@ -420,6 +462,13 @@ memories_grid
 		gtk_widget_set_size_request (ptz->tally[5], 4, 4);
 		g_signal_connect (G_OBJECT (ptz->tally[5]), "draw", G_CALLBACK (ptz_tally_draw), ptz);
 	gtk_grid_attach (GTK_GRID (ptz->memories_grid), ptz->tally[5], 1, MAX_MEMORIES, 1, 1);
+}
+
+gboolean ghost_name_drawing_area_button_press_event (GtkButton *widget, GdkEventButton *event, ptz_t *ptz)
+{
+	if (event->button == GDK_BUTTON_PRIMARY) ask_to_connect_ptz_to_ctrl_opv (ptz);
+
+	return GDK_EVENT_STOP;
 }
 
 gboolean ghost_body_draw (GtkWidget *widget, cairo_t *cr)
