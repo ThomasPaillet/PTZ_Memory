@@ -42,6 +42,8 @@ void ask_to_connect_pgm_to_ctrl_opv (void);
 
 void ask_to_connect_ptz_to_ctrl_opv (ptz_t *ptz);
 
+void tell_memory_is_selected (int index);
+
 void init_sw_p_08 (void);
 
 void start_sw_p_08 (void);
