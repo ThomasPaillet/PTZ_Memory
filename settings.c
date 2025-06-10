@@ -97,7 +97,7 @@ void show_about_window (void)
 		gtk_label_set_markup (GTK_LABEL (widget), "<b>Mémoires Pan Tilt Zoom pour caméras PTZ Panasonic</b>");
 		gtk_box_pack_start (GTK_BOX (box), widget, FALSE, FALSE, 0);
 
-		widget = gtk_label_new ("Version 1.3");
+		widget = gtk_label_new ("Version 2.0");
 		gtk_box_pack_start (GTK_BOX (box), widget, FALSE, FALSE, 0);
 #ifdef _WIN32
 		widget = gtk_image_new_from_pixbuf (pixbuf_logo);
@@ -707,6 +707,7 @@ void load_config_file (void)
 	gsize pixbuf_byte_length;
 	guint8 *pixbuf_data;
 	GList *glist;
+	ultimatte_t *ultimatte;
 
 	config_file = fopen (config_file_name, "rb");
 	if (config_file == NULL) return;
@@ -742,10 +743,16 @@ void load_config_file (void)
 		sprintf (interface_default.ptz_name_font + 14, "%dpx", (int)(110.0 * interface_default.thumbnail_size));
 		sprintf (interface_default.ghost_ptz_name_font + 14, "%dpx", (int)(80.0 * interface_default.thumbnail_size));
 		sprintf (interface_default.memory_name_font + 9, "%dpx", (int)(24.0 * interface_default.thumbnail_size));
+		sprintf (interface_default.ultimatte_picto_font + 14, "%dpx", (int)(32.0 * interface_default.thumbnail_size));
 
 		interface_default.ptz_name_font_description = pango_font_description_from_string (interface_default.ptz_name_font);
 		interface_default.ghost_ptz_name_font_description = pango_font_description_from_string (interface_default.ghost_ptz_name_font);
 		interface_default.memory_name_font_description = pango_font_description_from_string (interface_default.memory_name_font);
+		interface_default.ultimatte_picto_font_description = pango_font_description_from_string (interface_default.ultimatte_picto_font);
+
+		if ((interface_default.memories_button_vertical_margins < 0) || (interface_default.memories_button_vertical_margins > 50)) interface_default.memories_button_vertical_margins = 0;
+
+		if ((interface_default.memories_button_horizontal_margins < 0) || (interface_default.memories_button_horizontal_margins > 50)) interface_default.memories_button_horizontal_margins = 0;
 
 		if (interface_default.memories_name_color_red < 0.0) interface_default.memories_name_color_red = 0.0;
 		else if (interface_default.memories_name_color_red > 1.0) interface_default.memories_name_color_red = 1.0;
@@ -767,10 +774,6 @@ void load_config_file (void)
 
 		if (interface_default.memories_name_backdrop_color_alpha < 0.0) interface_default.memories_name_backdrop_color_alpha = 0.0;
 		else if (interface_default.memories_name_backdrop_color_alpha > 1.0) interface_default.memories_name_backdrop_color_alpha = 1.0;
-
-		if ((interface_default.memories_button_vertical_margins < 0) || (interface_default.memories_button_vertical_margins > 50)) interface_default.memories_button_vertical_margins = 0;
-
-		if ((interface_default.memories_button_horizontal_margins < 0) || (interface_default.memories_button_horizontal_margins > 50)) interface_default.memories_button_horizontal_margins = 0;
 
 		cameras_set_tmp->layout = interface_default;
 
@@ -837,6 +840,24 @@ void load_config_file (void)
 					fread (&ptz->memories[index].name_len, sizeof (int), 1, config_file);
 					if ((ptz->memories[index].name_len < 0) || (ptz->memories[index].name_len > MEMORIES_NAME_LENGTH)) ptz->memories[index].name_len = 0;
 				}
+
+				k = fgetc (config_file);
+
+				if (k == 1) {
+					ultimatte = g_malloc (sizeof (ultimatte_t));
+					init_ultimatte (ultimatte);
+
+					fread (ultimatte->ip_address, sizeof (char), 16, config_file);
+					ultimatte->ip_address[15] = '\0';
+
+					ultimatte->address.sin_addr.s_addr = inet_addr (ultimatte->ip_address);
+
+					if (ultimatte->address.sin_addr.s_addr == INADDR_NONE) ultimatte->ip_address[0] = '\0';
+					else ultimatte->ip_address_is_valid = TRUE;
+
+					ptz->ultimatte = ultimatte;
+					ultimatte->ptz_name_drawing_area = ptz->name_drawing_area;
+				}
 			} else {
 				cameras_set_tmp->number_of_ghost_cameras++;
 
@@ -860,6 +881,10 @@ void load_config_file (void)
 
 	current_cameras_set = first_cameras_set;
 	interface_default = current_cameras_set->layout;
+
+	if (interface_default.orientation) ultimatte_picto_x = interface_default.thumbnail_height - (22 * interface_default.thumbnail_size);
+	else ultimatte_picto_x = interface_default.thumbnail_width + 10 - (22 * interface_default.thumbnail_size);
+	ultimatte_picto_y =  30 * interface_default.thumbnail_size;
 
 	fread (&controller_is_used, sizeof (gboolean), 1, config_file);
 
@@ -979,6 +1004,11 @@ void save_config_file (void)
 						fwrite (&ptz->memories[k].name_len, sizeof (int), 1, config_file);
 					}
 				}
+
+				if (ptz->ultimatte != NULL) {
+					fputc (1, config_file);
+					fwrite (ptz->ultimatte->ip_address, sizeof (char), 16, config_file);
+				} else fputc (0, config_file);
 			}
 		}
 
