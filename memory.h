@@ -52,6 +52,13 @@ typedef struct {
 	int name_len;
 } memory_t;
 
+typedef struct memory_thread_s {
+	memory_t *memory;
+	GThread *thread;
+} memory_thread_t;
+
+
+gpointer load_memory (memory_thread_t *memory_thread);
 
 gboolean memory_button_button_press_event (GtkButton *button, GdkEventButton *event, memory_t *memory);
 
