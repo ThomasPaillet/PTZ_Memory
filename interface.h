@@ -28,6 +28,10 @@
 typedef struct interface_param_s {
 	gboolean orientation;
 
+	gboolean show_linked_memories_names_entries;
+	gboolean show_linked_memories_names_labels;
+	gboolean dont_show_not_active_cameras;
+
 	gdouble thumbnail_size;
 	int thumbnail_width;
 	int thumbnail_height;
@@ -35,10 +39,15 @@ typedef struct interface_param_s {
 	char ptz_name_font[20];
 	char ghost_ptz_name_font[20];
 	char memory_name_font[20];
+	char ultimatte_picto_font[20];
 
 	PangoFontDescription *ptz_name_font_description;
 	PangoFontDescription *ghost_ptz_name_font_description;
 	PangoFontDescription *memory_name_font_description;
+	PangoFontDescription *ultimatte_picto_font_description;
+
+	int memories_button_vertical_margins;
+	int memories_button_horizontal_margins;
 
 	double memories_name_color_red;
 	double memories_name_color_green;
@@ -48,16 +57,13 @@ typedef struct interface_param_s {
 	double memories_name_backdrop_color_green;
 	double memories_name_backdrop_color_blue;
 	double memories_name_backdrop_color_alpha;
-
-	int memories_button_vertical_margins;
-	int memories_button_horizontal_margins;
-
-	gboolean show_linked_memories_names_entries;
-	gboolean show_linked_memories_names_labels;
 } interface_param_t;
 
 
 extern interface_param_t interface_default;
+
+extern gdouble ultimatte_picto_x;
+extern gdouble ultimatte_picto_y;
 
 extern const char interface_settings_txt[];
 
