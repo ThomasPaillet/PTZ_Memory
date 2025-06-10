@@ -18,33 +18,35 @@ $(PROG): Linux/gresources.o $(OBJS)
 Linux/gresources.o: Linux/gresources.xml
 	@(cd Linux && $(MAKE) gresources.o)
 
-cameras_set.o: main_window.h memory.h protocol.h settings.h
+cameras_set.o: main_window.h memory.h protocol.h settings.h ultimatte.h
 
 control_window.o: cameras_set.h controller.h main_window.h memory.h protocol.h ptz.h sw_p_08.h tally.h trackball.h
 
-controller.o: protocol.h
+controller.o: network_header.h protocol.h
 
-error.o: cameras_set.h memory.h ptz.h
+error.o: cameras_set.h memory.h network_header.h ptz.h
 
 interface.o: cameras_set.h main_window.h memory.h ptz.h settings.h
 
-main_window.o: cameras_set.h control_window.h controller.h error.h interface.h memory.h protocol.h ptz.h settings.h sw_p_08.h tally.h trackball.h update_notification.h
+main_window.o: cameras_set.h control_window.h controller.h error.h interface.h memory.h protocol.h ptz.h settings.h sw_p_08.h tally.h trackball.h ultimatte.h update_notification.h
 
-memory.o: cameras_set.h controller.h interface.h main_window.h memory.h protocol.h ptz.h settings.h
+memory.o: cameras_set.h controller.h interface.h main_window.h memory.h protocol.h ptz.h settings.h sw_p_08.h ultimatte.h
 
-protocol.o: error.h update_notification.h
+protocol.o: error.h network_header.h update_notification.h
 
-ptz.o: control_window.h controller.h error.h interface.h main_window.h memory.h protocol.h settings.h sw_p_08.h tally.h
+ptz.o: cameras_set.h control_window.h controller.h error.h interface.h main_window.h memory.h protocol.h settings.h sw_p_08.h tally.h ultimatte.h
 
-settings.o: cameras_set.h control_window.h controller.h error.h interface.h main_window.h memory.h protocol.h ptz.h sw_p_08.h tally.h trackball.h update_notification.h
+settings.o: cameras_set.h control_window.h controller.h error.h interface.h main_window.h memory.h protocol.h ptz.h sw_p_08.h tally.h trackball.h ultimatte.h update_notification.h
 
-sw_p_08.o: cameras_set.h control_window.h main_window.h memory.h protocol.h ptz.h settings.h
+sw_p_08.o: cameras_set.h control_window.h main_window.h memory.h network_header.h protocol.h ptz.h settings.h
 
-tally.o: cameras_set.h control_window.h interface.h memory.h protocol.h ptz.h
+tally.o: cameras_set.h control_window.h interface.h memory.h network_header.h protocol.h ptz.h ultimatte.h
 
 trackball.o: main_window.h settings.h
 
-update_notification.o: cameras_set.h control_window.h error.h memory.h protocol.h ptz.h
+ultimatte.o: network_header.h
+
+update_notification.o: cameras_set.h control_window.h error.h memory.h network_header.h protocol.h ptz.h
 
 %.o: %.c ptz.h %.h
 	$(CC) $(CFLAGS) $<
