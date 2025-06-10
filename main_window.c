@@ -146,7 +146,7 @@ void switch_cameras_on (void)
 	for (i = 0; i < current_cameras_set->number_of_cameras; i++) {
 		if (current_cameras_set->cameras[i]->ip_address_is_valid) {
 			ptz_thread = g_malloc (sizeof (ptz_thread_t));
-			ptz_thread->ptz_ptr = current_cameras_set->cameras[i];
+			ptz_thread->ptz = current_cameras_set->cameras[i];
 			ptz_thread->thread = g_thread_new (NULL, (GThreadFunc)switch_ptz_on, ptz_thread);
 		}
 	}
@@ -160,7 +160,7 @@ void switch_cameras_off (void)
 	for (i = 0; i < current_cameras_set->number_of_cameras; i++) {
 		if (current_cameras_set->cameras[i]->ip_address_is_valid) {
 			ptz_thread = g_malloc (sizeof (ptz_thread_t));
-			ptz_thread->ptz_ptr = current_cameras_set->cameras[i];
+			ptz_thread->ptz = current_cameras_set->cameras[i];
 			ptz_thread->thread = g_thread_new (NULL, (GThreadFunc)switch_ptz_off, ptz_thread);
 		}
 	}
@@ -168,7 +168,7 @@ void switch_cameras_off (void)
 
 gpointer get_camera_screen_shot (ptz_thread_t *ptz_thread)
 {
-	send_jpeg_image_request_cmd (ptz_thread->ptz_ptr);
+	send_jpeg_image_request_cmd (ptz_thread->ptz);
 
 	g_idle_add ((GSourceFunc)free_ptz_thread, ptz_thread);
 
@@ -179,6 +179,7 @@ void main_window_notebook_switch_page (GtkNotebook *notebook, GtkWidget *page, g
 {
 	int i;
 	ptz_t *ptz;
+	ultimatte_t *ultimatte;
 	gboolean tallies[MAX_CAMERAS];
 
 	if (send_ip_tally) {
@@ -197,11 +198,35 @@ void main_window_notebook_switch_page (GtkNotebook *notebook, GtkWidget *page, g
 
 	g_mutex_lock (&cameras_sets_mutex);
 
+	if (current_cameras_set != NULL) {
+		for (i = 0; i < current_cameras_set->number_of_cameras; i++) {
+			ultimatte = current_cameras_set->cameras[i]->ultimatte;
+
+			if ((ultimatte != NULL) && (ultimatte->connected)) disconnect_ultimatte (ultimatte);
+		}
+	}
+
 	for (current_cameras_set = cameras_sets; current_cameras_set != NULL; current_cameras_set = current_cameras_set->next) {
 		if (current_cameras_set->page == page) {
 			interface_default = current_cameras_set->layout;
 
 			break;
+		}
+	}
+
+	if (interface_default.orientation) ultimatte_picto_x = interface_default.thumbnail_height - (22 * interface_default.thumbnail_size);
+	else ultimatte_picto_x = interface_default.thumbnail_width + 10 - (22 * interface_default.thumbnail_size);
+	ultimatte_picto_y =  30 * interface_default.thumbnail_size;
+
+	if (current_cameras_set != NULL) {
+		for (i = 0; i < current_cameras_set->number_of_cameras; i++) {
+			ptz = current_cameras_set->cameras[i];
+
+			if (ptz->is_on) {
+				ultimatte = ptz->ultimatte;
+
+				if ((ultimatte != NULL) && (!ultimatte->connected) && (ultimatte->connection_thread == NULL)) ultimatte->connection_thread = g_thread_new (NULL, (GThreadFunc)connect_ultimatte, ultimatte);
+			}
 		}
 	}
 
@@ -261,7 +286,7 @@ gboolean main_window_key_press (GtkWidget *widget, GdkEventKey *event)
 
 					if (controller_is_used && controller_ip_address_is_valid) {
 						controller_thread = g_malloc (sizeof (ptz_thread_t));
-						controller_thread->ptz_ptr = ptz;
+						controller_thread->ptz = ptz;
 						controller_thread->thread = g_thread_new (NULL, (GThreadFunc)controller_switch_ptz, controller_thread);
 					}
 				}
@@ -289,7 +314,7 @@ gboolean main_window_key_press (GtkWidget *widget, GdkEventKey *event)
 
 					if (ptz->active && gtk_widget_get_sensitive (ptz->name_grid)) {
 						ptz_thread[i] = g_malloc (sizeof (ptz_thread_t));
-						ptz_thread[i]->ptz_ptr = ptz;
+						ptz_thread[i]->ptz = ptz;
 					} else ptz_thread[i] = NULL;
 				}
 
@@ -544,7 +569,10 @@ int main (int argc, char** argv)
 	GdkSeat *seat;
 	cameras_set_t *cameras_set_itr;
 	int i;
+	ptz_t *ptz;
+	gboolean inactive_cameras_at_begining;
 	ptz_thread_t *ptz_thread;
+	ultimatte_t *ultimatte;
 
 	WSAInit ();	//_WIN32
 #ifdef _WIN32
@@ -615,6 +643,37 @@ int main (int argc, char** argv)
 
 	for (cameras_set_itr = cameras_sets; cameras_set_itr != NULL; cameras_set_itr = cameras_set_itr->next) {
 		if (!cameras_set_itr->layout.show_linked_memories_names_entries) gtk_widget_hide (cameras_set_itr->linked_memories_names_entries);
+
+		if (cameras_set_itr->layout.dont_show_not_active_cameras) {
+			inactive_cameras_at_begining = FALSE;
+			ptz = cameras_set_itr->cameras[0];
+
+			if (!ptz->active) {
+				gtk_widget_hide (ptz->name_grid);
+				gtk_widget_hide (ptz->memories_grid);
+
+				inactive_cameras_at_begining = TRUE;
+			}
+
+			for (i = 1; i < cameras_set_itr->number_of_cameras; i++) {
+				ptz = cameras_set_itr->cameras[i];
+
+				if (!ptz->active) {
+					gtk_widget_hide (ptz->name_separator);
+					gtk_widget_hide (ptz->name_grid);
+					gtk_widget_hide (ptz->memories_separator);
+					gtk_widget_hide (ptz->memories_grid);
+				} else {
+					if (inactive_cameras_at_begining) {
+						gtk_widget_hide (ptz->name_separator);
+						gtk_widget_hide (ptz->memories_separator);
+
+						inactive_cameras_at_begining = FALSE;
+					}
+				}
+			}
+		}
+
 		if (!cameras_set_itr->layout.show_linked_memories_names_labels) gtk_widget_hide (cameras_set_itr->linked_memories_names_labels);
 	}
 
@@ -632,14 +691,16 @@ int main (int argc, char** argv)
 
 	for (cameras_set_itr = cameras_sets; cameras_set_itr != NULL; cameras_set_itr = cameras_set_itr->next) {
 		for (i = 0; i < cameras_set_itr->number_of_cameras; i++) {
-			if (cameras_set_itr->cameras[i]->active) {
-				ptz_is_off (cameras_set_itr->cameras[i]);
+			ptz = cameras_set_itr->cameras[i];
 
-				if (cameras_set_itr->cameras[i]->ip_address_is_valid) {
+			if (ptz->active) {
+/*				ptz_is_off (ptz);
+
+				if (ptz->ip_address_is_valid) {
 					ptz_thread = g_malloc (sizeof (ptz_thread_t));
-					ptz_thread->ptz_ptr = cameras_set_itr->cameras[i];
+					ptz_thread->ptz = ptz;
 					ptz_thread->thread = g_thread_new (NULL, (GThreadFunc)start_ptz, ptz_thread);
-				}
+				}*/
 			}
 		}
 	}
@@ -665,9 +726,16 @@ int main (int argc, char** argv)
 	gtk_widget_destroy (main_window);
 
 	for (cameras_set_itr = cameras_sets; cameras_set_itr != NULL; cameras_set_itr = cameras_set_itr->next) {
+		for (i = 0; i < cameras_set_itr->number_of_cameras; i++) {
+			ultimatte = cameras_set_itr->cameras[i]->ultimatte;
+
+			if ((ultimatte != NULL) && (ultimatte->connected)) disconnect_ultimatte (ultimatte);
+		}
+
 		pango_font_description_free (cameras_set_itr->layout.ptz_name_font_description);
 		pango_font_description_free (cameras_set_itr->layout.ghost_ptz_name_font_description);
 		pango_font_description_free (cameras_set_itr->layout.memory_name_font_description);
+		pango_font_description_free (cameras_set_itr->layout.ultimatte_picto_font_description);
 	}
 
 	g_list_free (pointing_devices);
