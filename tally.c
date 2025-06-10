@@ -146,14 +146,51 @@ gboolean ptz_name_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 		if (ptz->name[1] == '\0') cairo_translate (cr, 50 * interface_default.thumbnail_size, 42 * interface_default.thumbnail_size);
 		else cairo_translate (cr, 21 * interface_default.thumbnail_size, 42 * interface_default.thumbnail_size);
 	} else {
-		if (ptz->name[1] == '\0') cairo_translate (cr, 129 * interface_default.thumbnail_size, 38 * interface_default.thumbnail_size);
-		else cairo_translate (cr, 96 * interface_default.thumbnail_size, 38 * interface_default.thumbnail_size);
+		if (ptz->name[1] == '\0') cairo_translate (cr, 129 * interface_default.thumbnail_size + 5, 38 * interface_default.thumbnail_size);
+		else cairo_translate (cr, 96 * interface_default.thumbnail_size + 5, 38 * interface_default.thumbnail_size);
 	}
 
 	pango_layout_set_text (pl, ptz->name, -1);
 	pango_layout_set_font_description (pl, interface_default.ptz_name_font_description);
 
 	pango_cairo_show_layout (cr, pl);
+
+	if (ptz->ultimatte != NULL) {
+		if (interface_default.orientation) {
+			if (ptz->name[1] == '\0') cairo_translate (cr, interface_default.thumbnail_height - (72 * interface_default.thumbnail_size), - (42 * interface_default.thumbnail_size));
+			else cairo_translate (cr, interface_default.thumbnail_height - (43 * interface_default.thumbnail_size), - (42 * interface_default.thumbnail_size));
+		} else {
+			if (ptz->name[1] == '\0') cairo_translate (cr, interface_default.thumbnail_width - (151 * interface_default.thumbnail_size) + 5, - (38 * interface_default.thumbnail_size));
+			else cairo_translate (cr, interface_default.thumbnail_width - (118 * interface_default.thumbnail_size) + 5, - (38 * interface_default.thumbnail_size));
+		}
+
+		if (ptz->is_on) {
+			if (ptz->ultimatte->connected) {
+				if (ptz->enter_notify_ultimatte_picto) cairo_set_source_rgb (cr, 0.0, 0.9, 0.0);
+				else cairo_set_source_rgb (cr, 0.0, 0.7, 0.0);
+			} else {
+				if (ptz->enter_notify_ultimatte_picto) cairo_set_source_rgb (cr, 0.9, 0.0, 0.0);
+				else cairo_set_source_rgb (cr, 0.7, 0.0, 0.0);
+
+				pango_layout_set_text (pl, "/", 1);
+				pango_layout_set_font_description (pl, interface_default.ultimatte_picto_font_description);
+
+				pango_cairo_show_layout (cr, pl);
+			}
+		} else {
+			cairo_set_source_rgb (cr, 0.1, 0.1, 0.1);
+
+			pango_layout_set_text (pl, "/", 1);
+			pango_layout_set_font_description (pl, interface_default.ultimatte_picto_font_description);
+
+			pango_cairo_show_layout (cr, pl);
+		}
+
+		pango_layout_set_text (pl, "U", 1);
+		pango_layout_set_font_description (pl, interface_default.ultimatte_picto_font_description);
+
+		pango_cairo_show_layout (cr, pl);
+	}
 
 	g_object_unref(pl);
 
