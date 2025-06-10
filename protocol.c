@@ -638,7 +638,7 @@ void send_jpeg_image_request_cmd (ptz_t *ptz)
 	struct timeval current_time, elapsed_time;
 	struct tm *time;
 	FILE *jpeg_file;
-	char jpeg_file_name[40];
+	char jpeg_file_name[128];
 
 g_mutex_lock (&ptz->cmd_mutex);
 
