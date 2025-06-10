@@ -42,7 +42,7 @@ gpointer controller_switch_ptz (ptz_thread_t *ptz_thread)
 	int port_number;
 	SOCKET sock;
 
-	port_number = ptz_thread->ptz_ptr->index + 1;
+	port_number = ptz_thread->ptz->index + 1;
 
 	if (port_number == 10) {
 		controller_cmd[28] = '1';
