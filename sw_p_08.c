@@ -72,8 +72,9 @@ gboolean sw_p_08_server_started = FALSE;
 
 remote_device_t remote_devices[2];
 
-char tally_cameras_set = MAX_CAMERAS + 1;
-char tally_ptz = MAX_CAMERAS + 1;
+char tally_cameras_set = MAX_MEMORIES + 1;
+char tally_ptz = MAX_MEMORIES + 1;
+char tally_memory = MAX_MEMORIES + 1;
 
 
 gboolean g_source_select_cameras_set_page (gpointer page_num)
@@ -95,6 +96,21 @@ gboolean g_source_show_control_window (ptz_t *ptz)
 	show_control_window (ptz, GTK_WIN_POS_CENTER);
 
 //	if (trackball != NULL) gdk_window_get_device_position_double (ptz->control_window.gdk_window, trackball, &ptz->control_window.x, &ptz->control_window.y, NULL);
+
+	return G_SOURCE_REMOVE;
+}
+
+gboolean g_source_recall_memory (memory_t *memory)
+{
+	memory_thread_t *memory_thread;
+
+	if (!memory->empty) {
+		g_signal_handler_block (memory->button, memory->button_handler_id);
+
+		memory_thread = g_malloc (sizeof (memory_thread_t));
+		memory_thread->memory = memory;
+		memory_thread->thread = g_thread_new (NULL, (GThreadFunc)load_memory, memory_thread);
+	}
 
 	return G_SOURCE_REMOVE;
 }
@@ -183,13 +199,20 @@ void show_matrix_window (void)
 			gtk_grid_attach (GTK_GRID (grid), widget, 0, 1, 1, 1);
 
 			#ifdef _WIN32
+				widget = gtk_image_new_from_pixbuf (pixbuf_grille_1);
+			#elif defined (__linux)
+				widget = gtk_image_new_from_resource ("/org/PTZ-Memory/images/grille_1.png");
+			#endif
+			gtk_grid_attach (GTK_GRID (grid), widget, 0, 2, 1, 1);
+
+			#ifdef _WIN32
 				widget = gtk_image_new_from_pixbuf (pixbuf_grille_3);
 			#elif defined (__linux)
 				widget = gtk_image_new_from_resource ("/org/PTZ-Memory/images/grille_3.png");
 			#endif
-			gtk_grid_attach (GTK_GRID (grid), widget, 0, 2, 1, 1);
+			gtk_grid_attach (GTK_GRID (grid), widget, 0, 3, 1, 1);
 
-			for (i = 1; i < MAX_CAMERAS; i++) {
+			for (i = 1; i < MAX_MEMORIES; i++) {
 				sprintf (label, "%d", i + 1);
 				widget = gtk_label_new (label);
 				gtk_widget_set_margin_bottom (widget, MARGIN_VALUE);
@@ -203,56 +226,81 @@ void show_matrix_window (void)
 			gtk_grid_attach (GTK_GRID (grid), widget, i, 1, 1, 1);
 
 			#ifdef _WIN32
+				widget = gtk_image_new_from_pixbuf (pixbuf_grille_2);
+			#elif defined (__linux)
+				widget = gtk_image_new_from_resource ("/org/PTZ-Memory/images/grille_2.png");
+			#endif
+			gtk_grid_attach (GTK_GRID (grid), widget, i, 2, 1, 1);
+
+			#ifdef _WIN32
 				widget = gtk_image_new_from_pixbuf (pixbuf_grille_4);
 			#elif defined (__linux)
 				widget = gtk_image_new_from_resource ("/org/PTZ-Memory/images/grille_4.png");
 			#endif
-			gtk_grid_attach (GTK_GRID (grid), widget, i, 2, 1, 1);
+			gtk_grid_attach (GTK_GRID (grid), widget, i, 3, 1, 1);
 			}
 
 				widget = gtk_label_new ("Echap");
 				gtk_widget_set_margin_bottom (widget, MARGIN_VALUE);
-			gtk_grid_attach (GTK_GRID (grid), widget, MAX_CAMERAS, 0, 1, 1);
+			gtk_grid_attach (GTK_GRID (grid), widget, MAX_MEMORIES, 0, 1, 1);
 
 			#ifdef _WIN32
 				widget = gtk_image_new_from_pixbuf (pixbuf_grille_2);
 			#elif defined (__linux)
 				widget = gtk_image_new_from_resource ("/org/PTZ-Memory/images/grille_2.png");
 			#endif
-			gtk_grid_attach (GTK_GRID (grid), widget, MAX_CAMERAS, 1, 1, 1);
+			gtk_grid_attach (GTK_GRID (grid), widget, MAX_MEMORIES, 1, 1, 1);
+
+			#ifdef _WIN32
+				widget = gtk_image_new_from_pixbuf (pixbuf_grille_2);
+			#elif defined (__linux)
+				widget = gtk_image_new_from_resource ("/org/PTZ-Memory/images/grille_2.png");
+			#endif
+			gtk_grid_attach (GTK_GRID (grid), widget, MAX_MEMORIES, 2, 1, 1);
 
 			#ifdef _WIN32
 				widget = gtk_image_new_from_pixbuf (pixbuf_grille_4);
 			#elif defined (__linux)
 				widget = gtk_image_new_from_resource ("/org/PTZ-Memory/images/grille_4.png");
 			#endif
-			gtk_grid_attach (GTK_GRID (grid), widget, MAX_CAMERAS, 2, 1, 1);
+			gtk_grid_attach (GTK_GRID (grid), widget, MAX_MEMORIES, 3, 1, 1);
 
 				widget = gtk_label_new ("Rien");
 				gtk_widget_set_margin_bottom (widget, MARGIN_VALUE);
-			gtk_grid_attach (GTK_GRID (grid), widget, MAX_CAMERAS + 1, 0, 1, 1);
+			gtk_grid_attach (GTK_GRID (grid), widget, MAX_MEMORIES + 1, 0, 1, 1);
 
 			#ifdef _WIN32
 				widget = gtk_image_new_from_pixbuf (pixbuf_grille_2);
 			#elif defined (__linux)
 				widget = gtk_image_new_from_resource ("/org/PTZ-Memory/images/grille_2.png");
 			#endif
-			gtk_grid_attach (GTK_GRID (grid), widget, MAX_CAMERAS + 1, 1, 1, 1);
+			gtk_grid_attach (GTK_GRID (grid), widget, MAX_MEMORIES + 1, 1, 1, 1);
+
+			#ifdef _WIN32
+				widget = gtk_image_new_from_pixbuf (pixbuf_grille_2);
+			#elif defined (__linux)
+				widget = gtk_image_new_from_resource ("/org/PTZ-Memory/images/grille_2.png");
+			#endif
+			gtk_grid_attach (GTK_GRID (grid), widget, MAX_MEMORIES + 1, 2, 1, 1);
 
 			#ifdef _WIN32
 				widget = gtk_image_new_from_pixbuf (pixbuf_grille_4);
 			#elif defined (__linux)
 				widget = gtk_image_new_from_resource ("/org/PTZ-Memory/images/grille_4.png");
 			#endif
-			gtk_grid_attach (GTK_GRID (grid), widget, MAX_CAMERAS + 1, 2, 1, 1);
+			gtk_grid_attach (GTK_GRID (grid), widget, MAX_MEMORIES + 1, 3, 1, 1);
 
 				widget = gtk_label_new (" 1: Ensemble de caméras");
 				gtk_widget_set_halign (widget, GTK_ALIGN_START);
-			gtk_grid_attach (GTK_GRID (grid), widget, MAX_CAMERAS + 2, 1, 1, 1);
+			gtk_grid_attach (GTK_GRID (grid), widget, MAX_MEMORIES + 2, 1, 1, 1);
 
 				widget = gtk_label_new (" 2: PTZ");
 				gtk_widget_set_halign (widget, GTK_ALIGN_START);
-			gtk_grid_attach (GTK_GRID (grid), widget, MAX_CAMERAS + 2, 2, 1, 1);
+			gtk_grid_attach (GTK_GRID (grid), widget, MAX_MEMORIES + 2, 2, 1, 1);
+
+				widget = gtk_label_new (" 3: Mémoire");
+				gtk_widget_set_halign (widget, GTK_ALIGN_START);
+			gtk_grid_attach (GTK_GRID (grid), widget, MAX_MEMORIES + 2, 3, 1, 1);
 		gtk_box_pack_start (GTK_BOX (box), grid, FALSE, FALSE, 0);
 	gtk_container_add (GTK_CONTAINER (window), box);
 
@@ -324,14 +372,14 @@ void ask_to_connect_pgm_to_ctrl_opv (void)
 {
 	g_mutex_lock (&sw_p_08_mutex);
 
-	tally_ptz = MAX_CAMERAS;
+	tally_ptz = MAX_MEMORIES;
 
 	sw_p_08_buffer[2] = 0x04;			//CROSSPOINT CONNECTED Message
 	sw_p_08_buffer[3] = 0;
 	sw_p_08_buffer[4] = 0;
 	sw_p_08_buffer[5] = 1;				//Dest	"2: PTZ"
-	sw_p_08_buffer[6] = MAX_CAMERAS;	//Src   "Echap"
-#if MAX_CAMERAS == DLE
+	sw_p_08_buffer[6] = MAX_MEMORIES;	//Src   "Echap"
+#if MAX_MEMORIES == DLE
 	sw_p_08_buffer[7] = DLE;
 	sw_p_08_buffer[8] = 5;
 	sw_p_08_buffer[9] = -26;
@@ -343,7 +391,7 @@ void ask_to_connect_pgm_to_ctrl_opv (void)
 	if (remote_devices[1].src_socket != INVALID_SOCKET) send (remote_devices[1].src_socket, sw_p_08_buffer, 12, 0);
 #else
 	sw_p_08_buffer[7] = 5;
-	sw_p_08_buffer[8] = -10 - MAX_CAMERAS;
+	sw_p_08_buffer[8] = -10 - MAX_MEMORIES;
 	sw_p_08_buffer[9] = DLE;
 	sw_p_08_buffer[10] = ETX;
 	sw_p_08_buffer_len = 11;
@@ -378,7 +426,43 @@ void ask_to_connect_ptz_to_ctrl_opv (ptz_t *ptz)
 		if (remote_devices[1].src_socket != INVALID_SOCKET) send (remote_devices[1].src_socket, sw_p_08_buffer, 12, 0);
 	} else {
 		sw_p_08_buffer[7] = 5;
-		sw_p_08_buffer[8] = -10 -tally_ptz;
+		sw_p_08_buffer[8] = -10 - tally_ptz;
+		sw_p_08_buffer[9] = DLE;
+		sw_p_08_buffer[10] = ETX;
+		sw_p_08_buffer_len = 11;
+
+		if (remote_devices[0].src_socket != INVALID_SOCKET) send (remote_devices[0].src_socket, sw_p_08_buffer, 11, 0);
+		if (remote_devices[1].src_socket != INVALID_SOCKET) send (remote_devices[1].src_socket, sw_p_08_buffer, 11, 0);
+	}
+
+	g_mutex_unlock (&sw_p_08_mutex);
+}
+
+void tell_memory_is_selected (int index)
+{
+	g_mutex_lock (&sw_p_08_mutex);
+
+	tally_memory = index;
+
+	sw_p_08_buffer[2] = 0x04;			//CROSSPOINT CONNECTED Message
+	sw_p_08_buffer[3] = 0;
+	sw_p_08_buffer[4] = 0;
+	sw_p_08_buffer[5] = 2;				//Dest	"3: Mémoire"
+	sw_p_08_buffer[6] = tally_memory;	//Src
+
+	if (tally_memory == DLE) {
+		sw_p_08_buffer[7] = DLE;
+		sw_p_08_buffer[8] = 5;
+		sw_p_08_buffer[9] = -27;
+		sw_p_08_buffer[10] = DLE;
+//		sw_p_08_buffer[11] = ETX;
+		sw_p_08_buffer_len = 12;
+
+		if (remote_devices[0].src_socket != INVALID_SOCKET) send (remote_devices[0].src_socket, sw_p_08_buffer, 12, 0);
+		if (remote_devices[1].src_socket != INVALID_SOCKET) send (remote_devices[1].src_socket, sw_p_08_buffer, 12, 0);
+	} else {
+		sw_p_08_buffer[7] = 5;
+		sw_p_08_buffer[8] = -11 - tally_memory;
 		sw_p_08_buffer[9] = DLE;
 		sw_p_08_buffer[10] = ETX;
 		sw_p_08_buffer_len = 11;
@@ -396,7 +480,8 @@ void send_ok_plus_crosspoint_tally_message (SOCKET sock, char dest)
 
 	if (dest == 0) src = tally_cameras_set;
 	else if (dest == 1) src = tally_ptz;
-	else src = MAX_CAMERAS + 1;
+	else if (dest == 2) src = tally_memory;
+	else src = MAX_MEMORIES + 1;
 
 	full_sw_p_08_buffer[4] = 0x03;	//CROSSPOINT TALLY Message
 	full_sw_p_08_buffer[5] = 0x00;
@@ -463,10 +548,12 @@ gboolean recv_from_remote_device_socket (remote_device_t *remote_device, char* b
 			buffer[i] = remote_device->buffer[remote_device->index++];
 		} else {
 			if ((remote_device->recv_len = recv (remote_device->src_socket, remote_device->buffer, 256, 0)) <= 0) return FALSE;
+
 			buffer[i] = remote_device->buffer[0];
 			remote_device->index = 1;
 		}
 	}
+
 	return TRUE;
 }
 
@@ -474,6 +561,7 @@ gpointer receive_message_from_remote_device (remote_device_t *remote_device)
 {
 	char buffer[8];
 	ptz_t *ptz;
+	memory_t *memory;
 
 	while (recv_from_remote_device_socket (remote_device, buffer, 2)) {
 		g_mutex_lock (&sw_p_08_mutex);
@@ -498,13 +586,13 @@ gpointer receive_message_from_remote_device (remote_device_t *remote_device)
 					if ((0x02 + buffer[0] + buffer[1] + buffer[2] + buffer[3] + buffer[4] + buffer[5]) == 0) {
 						send (remote_device->src_socket, OK, 2, 0);
 
-						if (buffer[2] == 0) {
+						if (buffer[2] == 0) {			//Dest	"1: Ensemble de caméras"
 							if (buffer[3] < number_of_cameras_sets) {
 								g_idle_add ((GSourceFunc)g_source_select_cameras_set_page, GINT_TO_POINTER ((int)buffer[3]));
 
 								tally_cameras_set = buffer[3];
-							} else tally_cameras_set = MAX_CAMERAS + 1;
-						} else if (buffer[2] == 1) {
+							} else tally_cameras_set = MAX_MEMORIES + 1;
+						} else if (buffer[2] == 1) {	//Dest	"2: PTZ"
 							g_mutex_lock (&cameras_sets_mutex);
 
 							if ((current_cameras_set != NULL) && (buffer[3] < current_cameras_set->number_of_cameras)) {
@@ -515,12 +603,34 @@ gpointer receive_message_from_remote_device (remote_device_t *remote_device)
 								if (ptz->active && gtk_widget_get_sensitive (ptz->name_grid)) {
 									g_idle_add ((GSourceFunc)g_source_show_control_window, ptz);
 
-									tally_ptz = ptz->index;
-								} else tally_ptz = MAX_CAMERAS + 1;
+									tally_ptz = buffer[3];
+								} else tally_ptz = MAX_MEMORIES + 1;
 							} else {
 								g_mutex_unlock (&cameras_sets_mutex);
 
-								tally_ptz = MAX_CAMERAS + 1;
+								tally_ptz = MAX_MEMORIES + 1;
+							}
+						} else if (buffer[2] == 2) {	//Dest	"3: Mémoire"
+							g_mutex_lock (&cameras_sets_mutex);
+
+							if ((current_cameras_set != NULL) && (tally_ptz < current_cameras_set->number_of_cameras) && (buffer[3] < MAX_MEMORIES)) {
+								ptz = current_cameras_set->cameras[(int)tally_ptz];
+
+								g_mutex_unlock (&cameras_sets_mutex);
+
+								if (ptz->is_on) {
+									memory = ptz->memories + buffer[3];
+
+									if (!memory->empty) {
+										g_idle_add ((GSourceFunc)g_source_recall_memory, memory);
+
+										tally_memory = buffer[3];
+									} else tally_memory = MAX_MEMORIES + 1;
+								} else tally_memory = MAX_MEMORIES + 1;
+							} else {
+								g_mutex_unlock (&cameras_sets_mutex);
+
+								tally_memory = MAX_MEMORIES + 1;
 							}
 						}
 
@@ -651,8 +761,9 @@ void stop_sw_p_08 (void)
 	shutdown (sw_p_08_socket, SHUT_RD);
 	closesocket (sw_p_08_socket);
 
-	tally_cameras_set = MAX_CAMERAS + 1;
-	tally_ptz = MAX_CAMERAS + 1;
+	tally_cameras_set = MAX_MEMORIES + 1;
+	tally_ptz = MAX_MEMORIES + 1;
+	tally_memory = MAX_MEMORIES + 1;
 
 	if (remote_devices[0].thread != NULL) {
 		g_thread_join (remote_devices[0].thread);
