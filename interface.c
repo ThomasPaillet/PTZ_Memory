@@ -24,7 +24,10 @@
 #include "settings.h"
 
 
-interface_param_t interface_default = { TRUE, 1.0, 320, 180, "FreeMono Bold 110px", "FreeMono Bold 80px", "FreeMono 24px", NULL, NULL, NULL, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.2, 0, 0, TRUE, TRUE };
+interface_param_t interface_default = { TRUE, TRUE, TRUE, FALSE, 1.0, 320, 180, "FreeMono Bold 110px", "FreeMono Bold 80px", "FreeMono 24px", "FreeMono Bold 32px", NULL, NULL, NULL, NULL, 0, 0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.2 };
+
+gdouble ultimatte_picto_x = 158;
+gdouble ultimatte_picto_y = 30;
 
 const char interface_settings_txt[] = "_Interface";
 const char pixel_txt[] = "pixel";
@@ -35,6 +38,7 @@ GtkWidget *interface_settings_window;
 GtkWidget *orientation_check_button;
 GtkWidget *show_linked_memories_names_entries_check_button;
 GtkWidget *show_linked_memories_names_labels_check_button;
+GtkWidget *dont_show_not_active_cameras_check_button;
 GtkWidget *thumbnail_size_scale;
 GtkWidget *memories_button_vertical_margins_scale, *vertical_margins_label;
 GtkWidget *memories_button_horizontal_margins_scale, *horizontal_margins_label;
@@ -42,6 +46,7 @@ GtkWidget *memories_button_horizontal_margins_scale, *horizontal_margins_label;
 gulong orientation_check_button_handler_id;
 gulong show_linked_memories_names_entries_check_button_handler_id;
 gulong show_linked_memories_names_labels_check_button_handler_id;
+gulong dont_show_not_active_cameras_check_button_handler_id;
 gulong thumbnail_size_scale_handler_id;
 gulong memories_button_vertical_margins_scale_handler_id;
 gulong memories_button_horizontal_margins_scale_handler_id;
@@ -58,6 +63,7 @@ void orientation_check_button_toggled (GtkToggleButton *togglebutton)
 	int i, j;
 	ptz_t *ptz;
 	char memories_name[MAX_MEMORIES][MEMORIES_NAME_LENGTH + 1];
+	gboolean inactive_cameras_at_begining;
 
 	current_cameras_set->layout.orientation = interface_default.orientation = gtk_toggle_button_get_active (togglebutton);
 
@@ -67,6 +73,9 @@ void orientation_check_button_toggled (GtkToggleButton *togglebutton)
 	}
 
 	gtk_widget_destroy (current_cameras_set->page_box);
+
+	if (interface_default.orientation) ultimatte_picto_x = interface_default.thumbnail_height - (22 * interface_default.thumbnail_size);
+	else ultimatte_picto_x = interface_default.thumbnail_width + 10 - (22 * interface_default.thumbnail_size);
 
 	for (i = 0; i < current_cameras_set->number_of_cameras; i++) {
 		ptz = current_cameras_set->cameras[i];
@@ -109,6 +118,37 @@ void orientation_check_button_toggled (GtkToggleButton *togglebutton)
 	gtk_widget_show_all (current_cameras_set->page);
 
 	if (!interface_default.show_linked_memories_names_entries) gtk_widget_hide (current_cameras_set->linked_memories_names_entries);
+
+	if (interface_default.dont_show_not_active_cameras) {
+		inactive_cameras_at_begining = FALSE;
+		ptz = current_cameras_set->cameras[0];
+
+		if (!ptz->active) {
+			gtk_widget_hide (ptz->name_grid);
+			gtk_widget_hide (ptz->memories_grid);
+
+			inactive_cameras_at_begining = TRUE;
+		}
+
+		for (i = 1; i < current_cameras_set->number_of_cameras; i++) {
+			ptz = current_cameras_set->cameras[i];
+
+			if (!ptz->active) {
+				gtk_widget_hide (ptz->name_separator);
+				gtk_widget_hide (ptz->name_grid);
+				gtk_widget_hide (ptz->memories_separator);
+				gtk_widget_hide (ptz->memories_grid);
+			} else {
+				if (inactive_cameras_at_begining) {
+					gtk_widget_hide (ptz->name_separator);
+					gtk_widget_hide (ptz->memories_separator);
+
+					inactive_cameras_at_begining = FALSE;
+				}
+			}
+		}
+	}
+
 	if (!interface_default.show_linked_memories_names_labels) gtk_widget_hide (current_cameras_set->linked_memories_names_labels);
 
 	backup_needed = TRUE;
@@ -130,6 +170,75 @@ void show_linked_memories_names_labels_check_button_toggled (GtkToggleButton *to
 
 	if (interface_default.show_linked_memories_names_labels) gtk_widget_show (current_cameras_set->linked_memories_names_labels);
 	else gtk_widget_hide (current_cameras_set->linked_memories_names_labels);
+
+	backup_needed = TRUE;
+}
+
+void dont_show_not_active_cameras_check_button_toggled (GtkToggleButton *togglebutton)
+{
+	int i;
+	ptz_t *ptz;
+	gboolean inactive_cameras_at_begining;
+
+	current_cameras_set->layout.dont_show_not_active_cameras = interface_default.dont_show_not_active_cameras = gtk_toggle_button_get_active (togglebutton);
+
+	inactive_cameras_at_begining = FALSE;
+
+	if (interface_default.dont_show_not_active_cameras) {
+		ptz = current_cameras_set->cameras[0];
+
+		if (!ptz->active) {
+			gtk_widget_hide (ptz->name_grid);
+			gtk_widget_hide (ptz->memories_grid);
+
+			inactive_cameras_at_begining = TRUE;
+		}
+
+		for (i = 1; i < current_cameras_set->number_of_cameras; i++) {
+			ptz = current_cameras_set->cameras[i];
+
+			if (!ptz->active) {
+				gtk_widget_hide (ptz->name_separator);
+				gtk_widget_hide (ptz->name_grid);
+				gtk_widget_hide (ptz->memories_separator);
+				gtk_widget_hide (ptz->memories_grid);
+			} else {
+				if (inactive_cameras_at_begining) {
+					gtk_widget_hide (ptz->name_separator);
+					gtk_widget_hide (ptz->memories_separator);
+
+					inactive_cameras_at_begining = FALSE;
+				}
+			}
+		}
+	} else {
+		ptz = current_cameras_set->cameras[0];
+
+		if (!ptz->active) {
+			gtk_widget_show (ptz->name_grid);
+			gtk_widget_show (ptz->memories_grid);
+
+			inactive_cameras_at_begining = TRUE;
+		}
+
+		for (i = 1; i < current_cameras_set->number_of_cameras; i++) {
+			ptz = current_cameras_set->cameras[i];
+
+			if (!ptz->active) {
+				gtk_widget_show (ptz->name_separator);
+				gtk_widget_show (ptz->name_grid);
+				gtk_widget_show (ptz->memories_separator);
+				gtk_widget_show (ptz->memories_grid);
+			} else {
+				if (inactive_cameras_at_begining) {
+					gtk_widget_show (ptz->name_separator);
+					gtk_widget_show (ptz->memories_separator);
+
+					inactive_cameras_at_begining = FALSE;
+				}
+			}
+		}
+	}
 
 	backup_needed = TRUE;
 }
@@ -161,12 +270,22 @@ void thumbnail_size_value_changed (GtkRange *range)
 	current_cameras_set->layout.memory_name_font[9] = interface_default.memory_name_font[9];
 	current_cameras_set->layout.memory_name_font[10] = interface_default.memory_name_font[10];
 
+	sprintf (interface_default.ultimatte_picto_font + 14, "%dpx", (int)(32.0 * interface_default.thumbnail_size));
+	current_cameras_set->layout.ultimatte_picto_font[14] = interface_default.ultimatte_picto_font[14];
+	current_cameras_set->layout.ultimatte_picto_font[15] = interface_default.ultimatte_picto_font[15];
+
 	pango_font_description_free (interface_default.ptz_name_font_description);
 	current_cameras_set->layout.ptz_name_font_description = interface_default.ptz_name_font_description = pango_font_description_from_string (interface_default.ptz_name_font);
 	pango_font_description_free (interface_default.ghost_ptz_name_font_description);
 	current_cameras_set->layout.ghost_ptz_name_font_description = interface_default.ghost_ptz_name_font_description = pango_font_description_from_string (interface_default.ghost_ptz_name_font);
 	pango_font_description_free (interface_default.memory_name_font_description);
 	current_cameras_set->layout.memory_name_font_description = interface_default.memory_name_font_description = pango_font_description_from_string (interface_default.memory_name_font);
+	pango_font_description_free (interface_default.ultimatte_picto_font_description);
+	current_cameras_set->layout.ultimatte_picto_font_description = interface_default.ultimatte_picto_font_description = pango_font_description_from_string (interface_default.ultimatte_picto_font);
+
+	if (interface_default.orientation) ultimatte_picto_x = interface_default.thumbnail_height - (22 * interface_default.thumbnail_size);
+	else ultimatte_picto_x = interface_default.thumbnail_width + 10 - (22 * interface_default.thumbnail_size);
+	ultimatte_picto_y =  30 * interface_default.thumbnail_size;
 
 	for (i = 0; i < current_cameras_set->number_of_cameras; i++) {
 		ptz = current_cameras_set->cameras[i];
@@ -276,6 +395,8 @@ void show_interface_settings_window (void)
 	UPDATE_INTERFACE_CHECK_BUTTON(show_linked_memories_names_entries)
 
 	UPDATE_INTERFACE_CHECK_BUTTON(show_linked_memories_names_labels)
+
+	UPDATE_INTERFACE_CHECK_BUTTON(dont_show_not_active_cameras)
 
 	g_signal_handler_block (thumbnail_size_scale, thumbnail_size_scale_handler_id);
 	gtk_range_set_value (GTK_RANGE (thumbnail_size_scale), interface_default.thumbnail_size * 100.0);
@@ -431,6 +552,20 @@ void create_interface_settings_window (void)
 					show_linked_memories_names_labels_check_button_handler_id = g_signal_connect (G_OBJECT (show_linked_memories_names_labels_check_button), "toggled", G_CALLBACK (show_linked_memories_names_labels_check_button_toggled), NULL);
 					gtk_widget_set_margin_start (show_linked_memories_names_labels_check_button, MARGIN_VALUE);
 				gtk_box_pack_end (GTK_BOX (box3), show_linked_memories_names_labels_check_button, FALSE, FALSE, 0);
+			gtk_box_pack_start (GTK_BOX (box2), box3, FALSE, FALSE, 0);
+
+				box3 = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
+				gtk_widget_set_margin_top (box3, MARGIN_VALUE);
+				gtk_widget_set_margin_start (box3, MARGIN_VALUE);
+				gtk_widget_set_margin_end (box3, MARGIN_VALUE);
+				gtk_widget_set_margin_bottom (box3, MARGIN_VALUE);
+					widget =  gtk_label_new ("Ne pas afficher les caméras non pilotables :");
+				gtk_box_pack_start (GTK_BOX (box3), widget, FALSE, FALSE, 0);
+
+					dont_show_not_active_cameras_check_button = gtk_check_button_new ();
+					dont_show_not_active_cameras_check_button_handler_id = g_signal_connect (G_OBJECT (dont_show_not_active_cameras_check_button), "toggled", G_CALLBACK (dont_show_not_active_cameras_check_button_toggled), NULL);
+					gtk_widget_set_margin_start (dont_show_not_active_cameras_check_button, MARGIN_VALUE);
+				gtk_box_pack_end (GTK_BOX (box3), dont_show_not_active_cameras_check_button, FALSE, FALSE, 0);
 			gtk_box_pack_start (GTK_BOX (box2), box3, FALSE, FALSE, 0);
 
 				box3 = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
