@@ -21,33 +21,12 @@
 #define __PTZ_H
 
 
-#ifdef _WIN32
-	#include <winsock2.h>
-
-	#define SHUT_RD SD_RECEIVE
-
-	void WSAInit (void);
-
-	void timersub (const struct timeval* tvp, const struct timeval* uvp, struct timeval* vvp);
-
-#elif defined (__linux)
-	#include <sys/socket.h>
-	#include <netinet/in.h>
-	#include <arpa/inet.h>
-	#include <netdb.h>
-
-	#define SOCKET int
-	#define INVALID_SOCKET -1
-	#define closesocket close
-	#define WSAInit()
-	#define WSACleanup()
-#endif
-
-
 #include <gtk/gtk.h>
 #include <sys/time.h>
+#include "network_header.h"
 
 #include "memory.h"
+#include "ultimatte.h"
 
 
 #define AW_HE130 0
@@ -55,7 +34,7 @@
 
 #define MAX_CAMERAS_SET 8
 #define MAX_CAMERAS 15
-#define MAX_MEMORIES 20
+#define MAX_MEMORIES 15
 
 
 typedef struct {
@@ -65,7 +44,6 @@ typedef struct {
 	gboolean is_on;
 
 	char ip_address[16];
-	char new_ip_address[16];
 	gboolean ip_address_is_valid;
 
 	struct sockaddr_in address;
@@ -100,6 +78,7 @@ typedef struct {
 	GtkWidget *name_grid;
 	GtkWidget *name_drawing_area;
 	gboolean enter_notify_name_drawing_area;
+	gboolean enter_notify_ultimatte_picto;
 	GtkWidget *memories_separator;
 	GtkWidget *memories_grid;
 	GtkWidget *tally[6];
@@ -112,10 +91,12 @@ typedef struct {
 	int error_code;
 
 	GtkWidget *ghost_body;
+
+	ultimatte_t *ultimatte;
 } ptz_t;
 
 typedef struct {
-	ptz_t *ptz_ptr;
+	ptz_t *ptz;
 	GThread *thread;
 } ptz_thread_t;
 
