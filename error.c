@@ -224,7 +224,7 @@ void start_error_log (void)
 {
 	struct timeval current_time;
 	struct tm *time;
-	char error_log_file_name[24];
+	char error_log_file_name[64];
 
 	gettimeofday (&current_time, NULL);
 	time = localtime (&current_time.tv_sec);
