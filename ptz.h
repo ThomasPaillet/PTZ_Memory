@@ -22,7 +22,6 @@
 
 
 #include <gtk/gtk.h>
-#include <sys/time.h>
 #include "network_header.h"
 
 #include "memory.h"
@@ -30,7 +29,12 @@
 
 
 #define AW_HE130 0
-#define AW_UE150 1
+#define AW_HE145 1
+#define AW_UE80 2
+#define AW_UE150 3
+#define AW_UE150A 4
+#define AW_UE160 5
+#define UNKNOWN_PTZ 6
 
 #define MAX_CAMERAS_SET 8
 #define MAX_CAMERAS 15
@@ -57,7 +61,7 @@ typedef struct {
 	char last_ctrl_cmd[16];
 	int last_ctrl_cmd_len;
 
-	struct timeval last_time;
+	GDateTime *last_time;
 	GMutex cmd_mutex;
 
 	memory_t memories[MAX_MEMORIES];
@@ -66,10 +70,10 @@ typedef struct {
 
 	gboolean auto_focus;
 
-	int zoom_position;
+	unsigned int zoom_position;
 	char zoom_position_cmd[8];
 
-	int focus_position;
+	unsigned int focus_position;
 	char focus_position_cmd[8];
 
 	GMutex lens_information_mutex;
@@ -92,6 +96,26 @@ typedef struct {
 
 	GtkWidget *ghost_body;
 
+	gint32 free_d_Pan;
+	gint32 free_d_Tilt;
+
+	gint32 free_d_optical_axis_height;
+
+	gint32 free_d_X;
+	gint32 free_d_Y;
+	gint32 free_d_Z;
+	gint32 free_d_P;
+
+	gint32 incomming_free_d_X;
+	gint32 incomming_free_d_Y;
+	gint32 incomming_free_d_Z;
+	gint32 incomming_free_d_Pan;
+
+	GMutex free_d_mutex;
+
+	gboolean monitor_pan_tilt;
+	GThread *monitor_pan_tilt_thread;
+
 	ultimatte_t *ultimatte;
 } ptz_t;
 
@@ -101,11 +125,18 @@ typedef struct {
 } ptz_thread_t;
 
 
+extern char *ptz_model[];
+
+
 void init_ptz (ptz_t *ptz);
+
+void check_ptz_model (ptz_t *ptz);
 
 gboolean ptz_is_on (ptz_t *ptz);
 
 gboolean ptz_is_off (ptz_t *ptz);
+
+gpointer monitor_ptz_pan_tilt_position (ptz_t *ptz);
 
 gboolean free_ptz_thread (ptz_thread_t *ptz_thread);
 
