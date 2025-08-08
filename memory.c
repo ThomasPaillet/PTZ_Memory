@@ -22,6 +22,7 @@
 #include "cameras_set.h"
 #include "controller.h"
 #include "interface.h"
+#include "logging.h"
 #include "main_window.h"
 #include "protocol.h"
 #include "settings.h"
@@ -65,8 +66,8 @@ gpointer save_memory (memory_thread_t *memory_thread)
 	char buf[128];
 	int len;
 
-	if (ptz->model == AW_HE130) send_thumbnail_320_request_cmd (memory);
-	else send_thumbnail_640_request_cmd (memory);
+	if (ptz->model == AW_UE150) send_thumbnail_640_request_cmd (memory);
+	else send_thumbnail_320_request_cmd (memory);
 
 	if (!ptz->is_on) return NULL;
 
@@ -86,6 +87,11 @@ gpointer save_memory (memory_thread_t *memory_thread)
 	memory->focus_position_hexa[0] = ptz->focus_position_cmd[4];
 	memory->focus_position_hexa[1] = ptz->focus_position_cmd[5];
 	memory->focus_position_hexa[2] = ptz->focus_position_cmd[6];
+
+	LOG_PTZ_STRING("Save zoom_position")
+	LOG_PTZ_STRING(ptz->zoom_position_cmd)
+	LOG_PTZ_STRING("Save focus_position")
+	LOG_PTZ_STRING(ptz->focus_position_cmd)
 
 	g_mutex_unlock (&ptz->lens_information_mutex);
 
@@ -108,6 +114,12 @@ gpointer save_memory (memory_thread_t *memory_thread)
 	if ((ptz->ultimatte != NULL) && (ptz->ultimatte->connected)) {
 		len = sprintf (buf, "FILE:\nSave: %s %s %d\n\n", current_cameras_set->name, ptz->name, memory->index);
 		send (ptz->ultimatte->socket, buf, len, 0);
+
+		if (logging && log_ultimatte) {
+			g_mutex_lock (&logging_mutex);
+			log_ultimatte_command (__FILE__, ptz->ultimatte->ip_address, buf, len);
+			g_mutex_unlock (&logging_mutex);
+		}
 	}
 
 	send_ptz_request_command_string (ptz, "#APC", buf);
@@ -136,6 +148,8 @@ gpointer load_memory (memory_thread_t *memory_thread)
 	char buf[128];
 	int len;
 
+	LOG_PTZ_STRING("Load memory")
+
 	send_ptz_control_command (ptz, memory->pan_tilt_position_cmd, TRUE);
 
 	if (controller_is_used && controller_ip_address_is_valid) {
@@ -156,12 +170,18 @@ gpointer load_memory (memory_thread_t *memory_thread)
 		ptz->previous_loaded_memory = memory;
 	}
 
-	g_mutex_lock (&ptz->lens_information_mutex);
-
 	if ((ptz->ultimatte != NULL) && (ptz->ultimatte->connected)) {
 		len = sprintf (buf, "FILE:\nLoad: %s %s %d\n\n", current_cameras_set->name, ptz->name, memory->index);
 		send (ptz->ultimatte->socket, buf, len, 0);
+
+		if (logging && log_ultimatte) {
+			g_mutex_lock (&logging_mutex);
+			log_ultimatte_command (__FILE__, ptz->ultimatte->ip_address, buf, len);
+			g_mutex_unlock (&logging_mutex);
+		}
 	}
+
+	g_mutex_lock (&ptz->lens_information_mutex);
 
 	if (ptz->zoom_position != memory->zoom_position) {
 		ptz->zoom_position = memory->zoom_position;
@@ -202,6 +222,10 @@ gpointer load_other_memory (memory_thread_t *memory_thread)
 {
 	memory_t *memory = memory_thread->memory;
 	ptz_t *ptz = memory->ptz_ptr;
+	char buf[128];
+	int len;
+
+	LOG_PTZ_STRING("Load other memory")
 
 	send_ptz_control_command (ptz, memory->pan_tilt_position_cmd, TRUE);
 
@@ -215,6 +239,17 @@ gpointer load_other_memory (memory_thread_t *memory_thread)
 		}
 	
 		ptz->previous_loaded_memory = memory;
+	}
+
+	if ((ptz->ultimatte != NULL) && (ptz->ultimatte->connected)) {
+		len = sprintf (buf, "FILE:\nLoad: %s %s %d\n\n", current_cameras_set->name, ptz->name, memory->index);
+		send (ptz->ultimatte->socket, buf, len, 0);
+
+		if (logging && log_ultimatte) {
+			g_mutex_lock (&logging_mutex);
+			log_ultimatte_command (__FILE__, ptz->ultimatte->ip_address, buf, len);
+			g_mutex_unlock (&logging_mutex);
+		}
 	}
 
 	g_mutex_lock (&ptz->lens_information_mutex);
@@ -290,6 +325,12 @@ gboolean memory_button_button_press_event (GtkButton *button, GdkEventButton *ev
 			if ((ptz->ultimatte != NULL) && (ptz->ultimatte->connected)) {
 				len = sprintf (buf, "FILE:\nDelete: %s %s %d\n\n", current_cameras_set->name, ptz->name, memory->index);
 				send (ptz->ultimatte->socket, buf, len, 0);
+
+				if (logging && log_ultimatte) {
+					g_mutex_lock (&logging_mutex);
+					log_ultimatte_command (__FILE__, ptz->ultimatte->ip_address, buf, len);
+					g_mutex_unlock (&logging_mutex);
+				}
 			}
 
 			backup_needed = TRUE;
