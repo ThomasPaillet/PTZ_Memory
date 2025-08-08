@@ -305,24 +305,10 @@ switch {
 radio {
   -gtk-icon-shadow: 0 -1px rgba(0,0,0,0.827451);
   -gtk-icon-source: none;
-  background-image: linear-gradient(rgb(44,49,51) 20%, rgb(37,41,43) 90%);
-  border-bottom-color: rgb(11,12,12);
-  border-bottom-style: solid;
-  border-bottom-width: 1px;
-  border-image-repeat: initial;
-  border-image-slice: initial;
-  border-image-source: initial;
-  border-image-width: initial;
-  border-left-color: rgb(11,12,12);
-  border-left-style: solid;
-  border-left-width: 1px;
-  border-right-color: rgb(11,12,12);
-  border-right-style: solid;
-  border-right-width: 1px;
-  border-top-color: rgb(11,12,12);
-  border-top-style: solid;
-  border-top-width: 1px;
-  box-shadow: 0 1px rgba(255,255,255,0.05) inset, 0 -2px rgb(42,46,48) inset, 0 -1px rgb(30,33,34) inset, 0 1px rgba(0,0,0,0.1);
+  border-bottom-width: 0px;
+  border-left-width: 0px;
+  border-right-width: 0px;
+  border-top-width: 0px;
   color: rgb(238,238,236);
   margin-bottom: 0;
   margin-left: 4px;
@@ -344,7 +330,6 @@ check,
 	border-width: 0;
 	min-height: 16px;
 	min-width: 16px;
-	transition: none;
   outline-color: rgba(238,238,236,0.3);
   text-shadow: 0 -1px rgba(0,0,0,0.827451);
 }
@@ -357,6 +342,16 @@ check {
 check:checked {
 	-gtk-icon-shadow: none;
 	-gtk-icon-source: url("assets/checkbox-checked.png");
+}
+
+radio {
+	-gtk-icon-shadow: none;
+	-gtk-icon-source: url("assets/radio-unselected.png");
+}
+
+radio:checked {
+	-gtk-icon-shadow: none;
+	-gtk-icon-source: url("assets/radio-selected.png");
 }
 
 radio {
@@ -18218,3 +18213,4 @@ colorswatch#add-color-button overlay:backdrop {
 colorswatch#add-color-button overlay:backdrop label {
   color: rgb(145,148,148);
 }
+
