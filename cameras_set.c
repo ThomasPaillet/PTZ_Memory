@@ -62,7 +62,14 @@ typedef struct camera_configuration_widgets_s {
 	GtkWidget *ip_entry[4];
 	GtkWidget *dot[3];
 
-	GtkWidget *slash;
+	GtkWidget *separator1;
+
+//Free-d
+	GtkWidget *free_d_X_label, *free_d_Y_label, *free_d_Z_label, *free_d_Pan_label;
+	GtkEntryBuffer *free_d_X_entry_buffer, *free_d_Y_entry_buffer, *free_d_Z_entry_buffer, *free_d_Pan_entry_buffer;
+	GtkWidget *free_d_X_entry, *free_d_Y_entry, *free_d_Z_entry, *free_d_Pan_entry;
+
+	GtkWidget *separator2;
 
 //Ultimatte
 	GtkEntryBuffer *ultimatte_ip_entry_buffer[4];
@@ -86,6 +93,15 @@ void camera_switch_activated (GtkSwitch *camera_switch, GParamSpec *pspec, camer
 	gtk_widget_set_sensitive (camera_configuration_widgets->ip_entry[2], active);
 	gtk_widget_set_sensitive (camera_configuration_widgets->dot[2], active);
 	gtk_widget_set_sensitive (camera_configuration_widgets->ip_entry[3], active);
+
+	gtk_widget_set_sensitive (camera_configuration_widgets->free_d_X_label, active);
+	gtk_widget_set_sensitive (camera_configuration_widgets->free_d_X_entry, active);
+	gtk_widget_set_sensitive (camera_configuration_widgets->free_d_Y_label, active);
+	gtk_widget_set_sensitive (camera_configuration_widgets->free_d_Y_entry, active);
+	gtk_widget_set_sensitive (camera_configuration_widgets->free_d_Z_label, active);
+	gtk_widget_set_sensitive (camera_configuration_widgets->free_d_Z_entry, active);
+	gtk_widget_set_sensitive (camera_configuration_widgets->free_d_Pan_label, active);
+	gtk_widget_set_sensitive (camera_configuration_widgets->free_d_Pan_entry, active);
 
 	gtk_widget_set_sensitive (camera_configuration_widgets->ultimatte_ip_entry[0], active);
 	gtk_widget_set_sensitive (camera_configuration_widgets->ultimatte_dot[0], active);
@@ -115,7 +131,18 @@ void number_of_cameras_has_changed (GtkComboBoxText *combo_box_text, cameras_set
 			gtk_widget_hide (cameras_configuration_widgets[i].ultimatte_dot[0]);
 			gtk_widget_hide (cameras_configuration_widgets[i].ultimatte_ip_entry[0]);
 
-			gtk_widget_hide (cameras_configuration_widgets[i].slash);
+			gtk_widget_hide (cameras_configuration_widgets[i].separator2);
+
+			gtk_widget_hide (cameras_configuration_widgets[i].free_d_Pan_entry);
+			gtk_widget_hide (cameras_configuration_widgets[i].free_d_Pan_label);
+			gtk_widget_hide (cameras_configuration_widgets[i].free_d_Z_entry);
+			gtk_widget_hide (cameras_configuration_widgets[i].free_d_Z_label);
+			gtk_widget_hide (cameras_configuration_widgets[i].free_d_Y_entry);
+			gtk_widget_hide (cameras_configuration_widgets[i].free_d_Y_label);
+			gtk_widget_hide (cameras_configuration_widgets[i].free_d_X_entry);
+			gtk_widget_hide (cameras_configuration_widgets[i].free_d_X_label);
+
+			gtk_widget_hide (cameras_configuration_widgets[i].separator1);
 
 			gtk_widget_hide (cameras_configuration_widgets[i].ip_entry[3]);
 			gtk_widget_hide (cameras_configuration_widgets[i].dot[2]);
@@ -141,7 +168,18 @@ void number_of_cameras_has_changed (GtkComboBoxText *combo_box_text, cameras_set
 			gtk_widget_show (cameras_configuration_widgets[i].dot[2]);
 			gtk_widget_show (cameras_configuration_widgets[i].ip_entry[3]);
 
-			gtk_widget_show (cameras_configuration_widgets[i].slash);
+			gtk_widget_show (cameras_configuration_widgets[i].separator1);
+
+			gtk_widget_show (cameras_configuration_widgets[i].free_d_X_label);
+			gtk_widget_show (cameras_configuration_widgets[i].free_d_X_entry);
+			gtk_widget_show (cameras_configuration_widgets[i].free_d_Y_label);
+			gtk_widget_show (cameras_configuration_widgets[i].free_d_Y_entry);
+			gtk_widget_show (cameras_configuration_widgets[i].free_d_Z_label);
+			gtk_widget_show (cameras_configuration_widgets[i].free_d_Z_entry);
+			gtk_widget_show (cameras_configuration_widgets[i].free_d_Pan_label);
+			gtk_widget_show (cameras_configuration_widgets[i].free_d_Pan_entry);
+
+			gtk_widget_show (cameras_configuration_widgets[i].separator2);
 
 			gtk_widget_show (cameras_configuration_widgets[i].ultimatte_ip_entry[0]);
 			gtk_widget_show (cameras_configuration_widgets[i].ultimatte_dot[0]);
@@ -262,12 +300,20 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 				}
 			}
 
+			if (ptz->monitor_pan_tilt) {
+				ptz->monitor_pan_tilt = FALSE;
+
+				g_thread_join (ptz->monitor_pan_tilt_thread);
+			}
+
 			if (ptz->ultimatte != NULL) {
 				if (ptz->ultimatte->connected) {
 					ptz->ultimatte->will_be_destroyed = TRUE;
 					disconnect_ultimatte (ptz->ultimatte);
 				} else g_free (ptz->ultimatte);
 			}
+
+			g_date_time_unref (ptz->last_time);
 
 			g_free (ptz);
 		}
@@ -337,6 +383,7 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 				else create_ptz_widgets_vertical (ptz);
 			} else {
 				ptz->active = FALSE;
+				ptz->is_on = FALSE;
 				cameras_set->number_of_ghost_cameras++;
 
 				if ((ptz->ip_address_is_valid) && (ptz->error_code != CAMERA_IS_UNREACHABLE_ERROR)) {
@@ -369,6 +416,17 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 							if (interface_default.thumbnail_width != 320) g_object_unref (G_OBJECT (ptz->memories[j].scaled_pixbuf));
 						}
 					}
+				}
+
+				if (ptz->monitor_pan_tilt) {
+					g_mutex_lock (&ptz->free_d_mutex);
+
+					ptz->monitor_pan_tilt = FALSE;
+
+					g_thread_join (ptz->monitor_pan_tilt_thread);
+					ptz->monitor_pan_tilt_thread = NULL;
+
+					g_mutex_unlock (&ptz->free_d_mutex);
 				}
 
 				if (ptz->ultimatte != NULL) {
@@ -462,6 +520,7 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 			if (gslist_itr != NULL) {
 				ptz->ip_address_is_valid = FALSE;
 				ptz->ip_address[0] = '\0';
+
 				ptz_is_off (ptz);
 			} else if (strcmp (new_ip_address, ptz->ip_address) != 0) {
 				if (new_cameras_set == NULL) {
@@ -493,12 +552,28 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 				ptz_thread = g_malloc (sizeof (ptz_thread_t));
 				ptz_thread->ptz = ptz;
 				ptz_thread->thread = g_thread_new (NULL, (GThreadFunc)start_ptz, ptz_thread);
+			} else {
+				if ((ptz->ultimatte != NULL) && (!ptz->ultimatte->connected) && (ptz->ultimatte->connection_thread == NULL))
+					ptz->ultimatte->connection_thread = g_thread_new (NULL, (GThreadFunc)connect_ultimatte, ptz->ultimatte);
 			}
 		} else {
 			ptz->ip_address_is_valid = FALSE;
 			ptz->ip_address[0] = '\0';
+
 			ptz_is_off (ptz);
 		}
+
+		sscanf (gtk_entry_buffer_get_text (cameras_configuration_widgets[i].free_d_X_entry_buffer), "%d", &j);
+		ptz->free_d_X = j * 64;
+
+		sscanf (gtk_entry_buffer_get_text (cameras_configuration_widgets[i].free_d_Y_entry_buffer), "%d", &j);
+		ptz->free_d_Y = j * 64;
+
+		sscanf (gtk_entry_buffer_get_text (cameras_configuration_widgets[i].free_d_Z_entry_buffer), "%d", &j);
+		ptz->free_d_Z = j * 64;
+
+		sscanf (gtk_entry_buffer_get_text (cameras_configuration_widgets[i].free_d_Pan_entry_buffer), "%d", &j);
+		ptz->free_d_P = j * 32768;
 	}
 
 	g_slist_free (ip_addresss_list);
@@ -524,7 +599,11 @@ gboolean cameras_set_configuration_window_cancel (void)
 	g_free (cameras_configuration_widgets);
 
 	if (new_cameras_set != NULL) {
-		for (i = 0; i < 5; i++) g_free (new_cameras_set->cameras[i]);
+		for (i = 0; i < 5; i++) {
+			g_date_time_unref (new_cameras_set->cameras[i]->last_time);
+
+			g_free (new_cameras_set->cameras[i]);
+		}
 
 		pango_font_description_free (new_cameras_set->layout.ptz_name_font_description);
 		pango_font_description_free (new_cameras_set->layout.ghost_ptz_name_font_description);
@@ -642,9 +721,13 @@ void show_cameras_set_configuration_window (void)
 		gtk_widget_set_margin_bottom (widget, MARGIN_VALUE);
 		gtk_grid_attach (GTK_GRID (cameras_set_configuration_window_grid), widget, 2, 0, 7, 1);
 
+		widget = gtk_label_new ("Position (millimètre) / Orientation (degré) :");
+		gtk_widget_set_margin_bottom (widget, MARGIN_VALUE);
+		gtk_grid_attach (GTK_GRID (cameras_set_configuration_window_grid), widget, 10, 0, 8, 1);
+
 		widget = gtk_label_new ("Ultimatte :");
 		gtk_widget_set_margin_bottom (widget, MARGIN_VALUE);
-		gtk_grid_attach (GTK_GRID (cameras_set_configuration_window_grid), widget, 10, 0, 7, 1);
+		gtk_grid_attach (GTK_GRID (cameras_set_configuration_window_grid), widget, 19, 0, 7, 1);
 
 		cameras_configuration_widgets = g_malloc (MAX_CAMERAS * sizeof (camera_configuration_widgets_t));
 		new_number_of_cameras = cameras_set->number_of_cameras;
@@ -754,10 +837,86 @@ void show_cameras_set_configuration_window (void)
 			gtk_grid_attach (GTK_GRID (cameras_set_configuration_window_grid), cameras_configuration_widgets[i].ip_entry[3], 8, j, 1, 1);
 			if (!ptz->active) gtk_widget_set_sensitive (cameras_configuration_widgets[i].ip_entry[3], FALSE);
 
-			cameras_configuration_widgets[i].slash = gtk_label_new ("/");
-			gtk_widget_set_margin_start (cameras_configuration_widgets[i].slash, MARGIN_VALUE);
-			gtk_widget_set_margin_end (cameras_configuration_widgets[i].slash, MARGIN_VALUE);
-			gtk_grid_attach (GTK_GRID (cameras_set_configuration_window_grid), cameras_configuration_widgets[i].slash, 9, j, 1, 1);
+			cameras_configuration_widgets[i].separator1 = gtk_separator_new  (GTK_ORIENTATION_VERTICAL);
+			gtk_widget_set_margin_start (cameras_configuration_widgets[i].separator1, MARGIN_VALUE);
+			gtk_widget_set_margin_end (cameras_configuration_widgets[i].separator1, MARGIN_VALUE);
+			gtk_grid_attach (GTK_GRID (cameras_set_configuration_window_grid), cameras_configuration_widgets[i].separator1, 9, j, 1, 1);
+
+			cameras_configuration_widgets[i].free_d_X_label = gtk_label_new ("X :");
+			gtk_widget_set_margin_end (cameras_configuration_widgets[i].free_d_X_label, MARGIN_VALUE);
+			gtk_widget_set_margin_bottom (cameras_configuration_widgets[i].free_d_X_label, MARGIN_VALUE);
+			gtk_grid_attach (GTK_GRID (cameras_set_configuration_window_grid), cameras_configuration_widgets[i].free_d_X_label, 10, j, 1, 1);
+
+			if (ptz->active) {
+				sprintf (camera_name, "%d", ptz->free_d_X / 64);
+				cameras_configuration_widgets[i].free_d_X_entry_buffer = gtk_entry_buffer_new (camera_name, strlen (camera_name));
+			} else cameras_configuration_widgets[i].free_d_X_entry_buffer = gtk_entry_buffer_new ("0", 1);
+			cameras_configuration_widgets[i].free_d_X_entry = gtk_entry_new_with_buffer (cameras_configuration_widgets[i].free_d_X_entry_buffer);
+			gtk_entry_set_input_purpose (GTK_ENTRY (cameras_configuration_widgets[i].free_d_X_entry), GTK_INPUT_PURPOSE_NUMBER);
+			gtk_entry_set_max_length (GTK_ENTRY (cameras_configuration_widgets[i].free_d_X_entry), 7);
+			gtk_entry_set_width_chars (GTK_ENTRY (cameras_configuration_widgets[i].free_d_X_entry), 7);
+			gtk_entry_set_alignment (GTK_ENTRY (cameras_configuration_widgets[i].free_d_X_entry), 0.5);
+			gtk_widget_set_margin_bottom (cameras_configuration_widgets[i].free_d_X_entry, MARGIN_VALUE);
+			gtk_grid_attach (GTK_GRID (cameras_set_configuration_window_grid), cameras_configuration_widgets[i].free_d_X_entry, 11, j, 1, 1);
+
+			cameras_configuration_widgets[i].free_d_Y_label = gtk_label_new ("Y :");
+			gtk_widget_set_margin_start (cameras_configuration_widgets[i].free_d_Y_label, MARGIN_VALUE * 2);
+			gtk_widget_set_margin_end (cameras_configuration_widgets[i].free_d_Y_label, MARGIN_VALUE);
+			gtk_widget_set_margin_bottom (cameras_configuration_widgets[i].free_d_Y_label, MARGIN_VALUE);
+			gtk_grid_attach (GTK_GRID (cameras_set_configuration_window_grid), cameras_configuration_widgets[i].free_d_Y_label, 12, j, 1, 1);
+
+			if (ptz->active) {
+				sprintf (camera_name, "%d", ptz->free_d_Y / 64);
+				cameras_configuration_widgets[i].free_d_Y_entry_buffer = gtk_entry_buffer_new (camera_name, strlen (camera_name));
+			} else cameras_configuration_widgets[i].free_d_Y_entry_buffer = gtk_entry_buffer_new ("0", 1);
+			cameras_configuration_widgets[i].free_d_Y_entry = gtk_entry_new_with_buffer (cameras_configuration_widgets[i].free_d_Y_entry_buffer);
+			gtk_entry_set_input_purpose (GTK_ENTRY (cameras_configuration_widgets[i].free_d_Y_entry), GTK_INPUT_PURPOSE_NUMBER);
+			gtk_entry_set_max_length (GTK_ENTRY (cameras_configuration_widgets[i].free_d_Y_entry), 7);
+			gtk_entry_set_width_chars (GTK_ENTRY (cameras_configuration_widgets[i].free_d_Y_entry), 7);
+			gtk_entry_set_alignment (GTK_ENTRY (cameras_configuration_widgets[i].free_d_Y_entry), 0.5);
+			gtk_widget_set_margin_bottom (cameras_configuration_widgets[i].free_d_Y_entry, MARGIN_VALUE);
+			gtk_grid_attach (GTK_GRID (cameras_set_configuration_window_grid), cameras_configuration_widgets[i].free_d_Y_entry, 13, j, 1, 1);
+
+			cameras_configuration_widgets[i].free_d_Z_label = gtk_label_new ("Z :");
+			gtk_widget_set_margin_start (cameras_configuration_widgets[i].free_d_Z_label, MARGIN_VALUE * 2);
+			gtk_widget_set_margin_end (cameras_configuration_widgets[i].free_d_Z_label, MARGIN_VALUE);
+			gtk_widget_set_margin_bottom (cameras_configuration_widgets[i].free_d_Z_label, MARGIN_VALUE);
+			gtk_grid_attach (GTK_GRID (cameras_set_configuration_window_grid), cameras_configuration_widgets[i].free_d_Z_label, 14, j, 1, 1);
+
+			if (ptz->active) {
+				sprintf (camera_name, "%d", ptz->free_d_Z / 64);
+				cameras_configuration_widgets[i].free_d_Z_entry_buffer = gtk_entry_buffer_new (camera_name, strlen (camera_name));
+			} else cameras_configuration_widgets[i].free_d_Z_entry_buffer = gtk_entry_buffer_new ("0", 1);
+			cameras_configuration_widgets[i].free_d_Z_entry = gtk_entry_new_with_buffer (cameras_configuration_widgets[i].free_d_Z_entry_buffer);
+			gtk_entry_set_input_purpose (GTK_ENTRY (cameras_configuration_widgets[i].free_d_Z_entry), GTK_INPUT_PURPOSE_NUMBER);
+			gtk_entry_set_max_length (GTK_ENTRY (cameras_configuration_widgets[i].free_d_Z_entry), 7);
+			gtk_entry_set_width_chars (GTK_ENTRY (cameras_configuration_widgets[i].free_d_Z_entry), 7);
+			gtk_entry_set_alignment (GTK_ENTRY (cameras_configuration_widgets[i].free_d_Z_entry), 0.5);
+			gtk_widget_set_margin_bottom (cameras_configuration_widgets[i].free_d_Z_entry, MARGIN_VALUE);
+			gtk_grid_attach (GTK_GRID (cameras_set_configuration_window_grid), cameras_configuration_widgets[i].free_d_Z_entry, 15, j, 1, 1);
+
+			cameras_configuration_widgets[i].free_d_Pan_label = gtk_label_new ("/ Pan :");
+			gtk_widget_set_margin_start (cameras_configuration_widgets[i].free_d_Pan_label, MARGIN_VALUE);
+			gtk_widget_set_margin_end (cameras_configuration_widgets[i].free_d_Pan_label, MARGIN_VALUE);
+			gtk_widget_set_margin_bottom (cameras_configuration_widgets[i].free_d_Pan_label, MARGIN_VALUE);
+			gtk_grid_attach (GTK_GRID (cameras_set_configuration_window_grid), cameras_configuration_widgets[i].free_d_Pan_label, 16, j, 1, 1);
+
+			if (ptz->active) {
+				sprintf (camera_name, "%d", ptz->free_d_P / 32768);
+				cameras_configuration_widgets[i].free_d_Pan_entry_buffer = gtk_entry_buffer_new (camera_name, strlen (camera_name));
+			} else cameras_configuration_widgets[i].free_d_Pan_entry_buffer = gtk_entry_buffer_new ("0", 1);
+			cameras_configuration_widgets[i].free_d_Pan_entry = gtk_entry_new_with_buffer (cameras_configuration_widgets[i].free_d_Pan_entry_buffer);
+			gtk_entry_set_input_purpose (GTK_ENTRY (cameras_configuration_widgets[i].free_d_Pan_entry), GTK_INPUT_PURPOSE_NUMBER);
+			gtk_entry_set_max_length (GTK_ENTRY (cameras_configuration_widgets[i].free_d_Pan_entry), 4);
+			gtk_entry_set_width_chars (GTK_ENTRY (cameras_configuration_widgets[i].free_d_Pan_entry), 4);
+			gtk_entry_set_alignment (GTK_ENTRY (cameras_configuration_widgets[i].free_d_Pan_entry), 0.5);
+			gtk_widget_set_margin_bottom (cameras_configuration_widgets[i].free_d_Pan_entry, MARGIN_VALUE);
+			gtk_grid_attach (GTK_GRID (cameras_set_configuration_window_grid), cameras_configuration_widgets[i].free_d_Pan_entry, 17, j, 1, 1);
+
+			cameras_configuration_widgets[i].separator2 = gtk_separator_new  (GTK_ORIENTATION_VERTICAL);
+			gtk_widget_set_margin_start (cameras_configuration_widgets[i].separator2, MARGIN_VALUE);
+			gtk_widget_set_margin_end (cameras_configuration_widgets[i].separator2, MARGIN_VALUE);
+			gtk_grid_attach (GTK_GRID (cameras_set_configuration_window_grid), cameras_configuration_widgets[i].separator2, 18, j, 1, 1);
 
 			if ((ptz->ultimatte != NULL) && (ptz->ultimatte->ip_address_is_valid)) {
 				for (l = 1; ptz->ultimatte->ip_address[l] != '.'; l++) {}
@@ -772,14 +931,14 @@ void show_cameras_set_configuration_window (void)
 			gtk_entry_set_width_chars (GTK_ENTRY (cameras_configuration_widgets[i].ultimatte_ip_entry[0]), 3);
 			gtk_entry_set_alignment (GTK_ENTRY (cameras_configuration_widgets[i].ultimatte_ip_entry[0]), 0.5);
 			gtk_widget_set_margin_bottom (cameras_configuration_widgets[i].ultimatte_ip_entry[0], MARGIN_VALUE);
-			gtk_grid_attach (GTK_GRID (cameras_set_configuration_window_grid), cameras_configuration_widgets[i].ultimatte_ip_entry[0], 10, j, 1, 1);
+			gtk_grid_attach (GTK_GRID (cameras_set_configuration_window_grid), cameras_configuration_widgets[i].ultimatte_ip_entry[0], 19, j, 1, 1);
 			if (!ptz->active) gtk_widget_set_sensitive (cameras_configuration_widgets[i].ultimatte_ip_entry[0], FALSE);
 
 			cameras_configuration_widgets[i].ultimatte_dot[0] = gtk_label_new (".");
 			gtk_widget_set_margin_start (cameras_configuration_widgets[i].ultimatte_dot[0], 2);
 			gtk_widget_set_margin_end (cameras_configuration_widgets[i].ultimatte_dot[0], 2);
 			gtk_widget_set_margin_bottom (cameras_configuration_widgets[i].ultimatte_dot[0], MARGIN_VALUE);
-			gtk_grid_attach (GTK_GRID (cameras_set_configuration_window_grid), cameras_configuration_widgets[i].ultimatte_dot[0], 11, j, 1, 1);
+			gtk_grid_attach (GTK_GRID (cameras_set_configuration_window_grid), cameras_configuration_widgets[i].ultimatte_dot[0], 20, j, 1, 1);
 			if (!ptz->active) gtk_widget_set_sensitive (cameras_configuration_widgets[i].ultimatte_dot[0], FALSE);
 
 			if ((ptz->ultimatte != NULL) && (ptz->ultimatte->ip_address_is_valid)) {
@@ -795,14 +954,14 @@ void show_cameras_set_configuration_window (void)
 			gtk_entry_set_width_chars (GTK_ENTRY (cameras_configuration_widgets[i].ultimatte_ip_entry[1]), 3);
 			gtk_entry_set_alignment (GTK_ENTRY (cameras_configuration_widgets[i].ultimatte_ip_entry[1]), 0.5);
 			gtk_widget_set_margin_bottom (cameras_configuration_widgets[i].ultimatte_ip_entry[1], MARGIN_VALUE);
-			gtk_grid_attach (GTK_GRID (cameras_set_configuration_window_grid), cameras_configuration_widgets[i].ultimatte_ip_entry[1], 12, j, 1, 1);
+			gtk_grid_attach (GTK_GRID (cameras_set_configuration_window_grid), cameras_configuration_widgets[i].ultimatte_ip_entry[1], 21, j, 1, 1);
 			if (!ptz->active) gtk_widget_set_sensitive (cameras_configuration_widgets[i].ultimatte_ip_entry[1], FALSE);
 
 			cameras_configuration_widgets[i].ultimatte_dot[1] = gtk_label_new (".");
 			gtk_widget_set_margin_start (cameras_configuration_widgets[i].ultimatte_dot[1], 2);
 			gtk_widget_set_margin_end (cameras_configuration_widgets[i].ultimatte_dot[1], 2);
 			gtk_widget_set_margin_bottom (cameras_configuration_widgets[i].ultimatte_dot[1], MARGIN_VALUE);
-			gtk_grid_attach (GTK_GRID (cameras_set_configuration_window_grid), cameras_configuration_widgets[i].ultimatte_dot[1], 13, j, 1, 1);
+			gtk_grid_attach (GTK_GRID (cameras_set_configuration_window_grid), cameras_configuration_widgets[i].ultimatte_dot[1], 22, j, 1, 1);
 			if (!ptz->active) gtk_widget_set_sensitive (cameras_configuration_widgets[i].ultimatte_dot[1], FALSE);
 
 			if ((ptz->ultimatte != NULL) && (ptz->ultimatte->ip_address_is_valid)) {
@@ -818,14 +977,14 @@ void show_cameras_set_configuration_window (void)
 			gtk_entry_set_width_chars (GTK_ENTRY (cameras_configuration_widgets[i].ultimatte_ip_entry[2]), 3);
 			gtk_entry_set_alignment (GTK_ENTRY (cameras_configuration_widgets[i].ultimatte_ip_entry[2]), 0.5);
 			gtk_widget_set_margin_bottom (cameras_configuration_widgets[i].ultimatte_ip_entry[2], MARGIN_VALUE);
-			gtk_grid_attach (GTK_GRID (cameras_set_configuration_window_grid), cameras_configuration_widgets[i].ultimatte_ip_entry[2], 14, j, 1, 1);
+			gtk_grid_attach (GTK_GRID (cameras_set_configuration_window_grid), cameras_configuration_widgets[i].ultimatte_ip_entry[2], 23, j, 1, 1);
 			if (!ptz->active) gtk_widget_set_sensitive (cameras_configuration_widgets[i].ultimatte_ip_entry[2], FALSE);
 
 			cameras_configuration_widgets[i].ultimatte_dot[2] = gtk_label_new (".");
 			gtk_widget_set_margin_start (cameras_configuration_widgets[i].ultimatte_dot[2], 2);
 			gtk_widget_set_margin_end (cameras_configuration_widgets[i].ultimatte_dot[2], 2);
 			gtk_widget_set_margin_bottom (cameras_configuration_widgets[i].ultimatte_dot[2], MARGIN_VALUE);
-			gtk_grid_attach (GTK_GRID (cameras_set_configuration_window_grid), cameras_configuration_widgets[i].ultimatte_dot[2], 15, j, 1, 1);
+			gtk_grid_attach (GTK_GRID (cameras_set_configuration_window_grid), cameras_configuration_widgets[i].ultimatte_dot[2], 24, j, 1, 1);
 			if (!ptz->active) gtk_widget_set_sensitive (cameras_configuration_widgets[i].ultimatte_dot[2], FALSE);
 
 			if ((ptz->ultimatte != NULL) && (ptz->ultimatte->ip_address_is_valid)) {
@@ -840,7 +999,7 @@ void show_cameras_set_configuration_window (void)
 			gtk_entry_set_width_chars (GTK_ENTRY (cameras_configuration_widgets[i].ultimatte_ip_entry[3]), 3);
 			gtk_entry_set_alignment (GTK_ENTRY (cameras_configuration_widgets[i].ultimatte_ip_entry[3]), 0.5);
 			gtk_widget_set_margin_bottom (cameras_configuration_widgets[i].ultimatte_ip_entry[3], MARGIN_VALUE);
-			gtk_grid_attach (GTK_GRID (cameras_set_configuration_window_grid), cameras_configuration_widgets[i].ultimatte_ip_entry[3], 16, j, 1, 1);
+			gtk_grid_attach (GTK_GRID (cameras_set_configuration_window_grid), cameras_configuration_widgets[i].ultimatte_ip_entry[3], 25, j, 1, 1);
 			if (!ptz->active) gtk_widget_set_sensitive (cameras_configuration_widgets[i].ultimatte_ip_entry[3], FALSE);
 		}
 		gtk_container_add (GTK_CONTAINER (frame2), cameras_set_configuration_window_grid);
@@ -939,10 +1098,73 @@ void show_cameras_set_configuration_window (void)
 		gtk_widget_set_margin_bottom (cameras_configuration_widgets[i].ip_entry[3], MARGIN_VALUE);
 		gtk_grid_attach (GTK_GRID (cameras_set_configuration_window_grid), cameras_configuration_widgets[i].ip_entry[3], 8, j, 1, 1);
 
-		cameras_configuration_widgets[i].slash = gtk_label_new ("/");
-		gtk_widget_set_margin_start (cameras_configuration_widgets[i].slash, MARGIN_VALUE);
-		gtk_widget_set_margin_end (cameras_configuration_widgets[i].slash, MARGIN_VALUE);
-		gtk_grid_attach (GTK_GRID (cameras_set_configuration_window_grid), cameras_configuration_widgets[i].slash, 9, j, 1, 1);
+		cameras_configuration_widgets[i].separator2 = gtk_separator_new  (GTK_ORIENTATION_VERTICAL);
+		gtk_widget_set_margin_start (cameras_configuration_widgets[i].separator2, MARGIN_VALUE);
+		gtk_widget_set_margin_end (cameras_configuration_widgets[i].separator2, MARGIN_VALUE);
+		gtk_grid_attach (GTK_GRID (cameras_set_configuration_window_grid), cameras_configuration_widgets[i].separator2, 9, j, 1, 1);
+
+		cameras_configuration_widgets[i].free_d_X_label = gtk_label_new ("X :");
+		gtk_widget_set_margin_end (cameras_configuration_widgets[i].free_d_X_label, 2);
+		gtk_widget_set_margin_bottom (cameras_configuration_widgets[i].free_d_X_label, MARGIN_VALUE);
+		gtk_grid_attach (GTK_GRID (cameras_set_configuration_window_grid), cameras_configuration_widgets[i].free_d_X_label, 10, j, 1, 1);
+
+		cameras_configuration_widgets[i].free_d_X_entry_buffer = gtk_entry_buffer_new ("0", 1);
+		cameras_configuration_widgets[i].free_d_X_entry = gtk_entry_new_with_buffer (cameras_configuration_widgets[i].free_d_X_entry_buffer);
+		gtk_entry_set_input_purpose (GTK_ENTRY (cameras_configuration_widgets[i].free_d_X_entry), GTK_INPUT_PURPOSE_NUMBER);
+		gtk_entry_set_max_length (GTK_ENTRY (cameras_configuration_widgets[i].free_d_X_entry), 7);
+		gtk_entry_set_width_chars (GTK_ENTRY (cameras_configuration_widgets[i].free_d_X_entry), 7);
+		gtk_entry_set_alignment (GTK_ENTRY (cameras_configuration_widgets[i].free_d_X_entry), 0.5);
+		gtk_widget_set_margin_bottom (cameras_configuration_widgets[i].free_d_X_entry, MARGIN_VALUE);
+		gtk_grid_attach (GTK_GRID (cameras_set_configuration_window_grid), cameras_configuration_widgets[i].free_d_X_entry, 11, j, 1, 1);
+
+		cameras_configuration_widgets[i].free_d_Y_label = gtk_label_new ("Y :");
+		gtk_widget_set_margin_start (cameras_configuration_widgets[i].free_d_Y_label, 2);
+		gtk_widget_set_margin_end (cameras_configuration_widgets[i].free_d_Y_label, 2);
+		gtk_widget_set_margin_bottom (cameras_configuration_widgets[i].free_d_Y_label, MARGIN_VALUE);
+		gtk_grid_attach (GTK_GRID (cameras_set_configuration_window_grid), cameras_configuration_widgets[i].free_d_Y_label, 12, j, 1, 1);
+
+		cameras_configuration_widgets[i].free_d_Y_entry_buffer = gtk_entry_buffer_new ("0", 1);
+		cameras_configuration_widgets[i].free_d_Y_entry = gtk_entry_new_with_buffer (cameras_configuration_widgets[i].free_d_Y_entry_buffer);
+		gtk_entry_set_input_purpose (GTK_ENTRY (cameras_configuration_widgets[i].free_d_Y_entry), GTK_INPUT_PURPOSE_NUMBER);
+		gtk_entry_set_max_length (GTK_ENTRY (cameras_configuration_widgets[i].free_d_Y_entry), 7);
+		gtk_entry_set_width_chars (GTK_ENTRY (cameras_configuration_widgets[i].free_d_Y_entry), 7);
+		gtk_entry_set_alignment (GTK_ENTRY (cameras_configuration_widgets[i].free_d_Y_entry), 0.5);
+		gtk_widget_set_margin_bottom (cameras_configuration_widgets[i].free_d_Y_entry, MARGIN_VALUE);
+		gtk_grid_attach (GTK_GRID (cameras_set_configuration_window_grid), cameras_configuration_widgets[i].free_d_Y_entry, 13, j, 1, 1);
+
+		cameras_configuration_widgets[i].free_d_Z_label = gtk_label_new ("Z :");
+		gtk_widget_set_margin_start (cameras_configuration_widgets[i].free_d_Z_label, 2);
+		gtk_widget_set_margin_end (cameras_configuration_widgets[i].free_d_Z_label, 2);
+		gtk_widget_set_margin_bottom (cameras_configuration_widgets[i].free_d_Z_label, MARGIN_VALUE);
+		gtk_grid_attach (GTK_GRID (cameras_set_configuration_window_grid), cameras_configuration_widgets[i].free_d_Z_label, 14, j, 1, 1);
+
+		cameras_configuration_widgets[i].free_d_Z_entry_buffer = gtk_entry_buffer_new ("0", 1);
+		cameras_configuration_widgets[i].free_d_Z_entry = gtk_entry_new_with_buffer (cameras_configuration_widgets[i].free_d_Z_entry_buffer);
+		gtk_entry_set_input_purpose (GTK_ENTRY (cameras_configuration_widgets[i].free_d_Z_entry), GTK_INPUT_PURPOSE_NUMBER);
+		gtk_entry_set_max_length (GTK_ENTRY (cameras_configuration_widgets[i].free_d_Z_entry), 7);
+		gtk_entry_set_width_chars (GTK_ENTRY (cameras_configuration_widgets[i].free_d_Z_entry), 7);
+		gtk_entry_set_alignment (GTK_ENTRY (cameras_configuration_widgets[i].free_d_Z_entry), 0.5);
+		gtk_widget_set_margin_bottom (cameras_configuration_widgets[i].free_d_Z_entry, MARGIN_VALUE);
+		gtk_grid_attach (GTK_GRID (cameras_set_configuration_window_grid), cameras_configuration_widgets[i].free_d_Z_entry, 15, j, 1, 1);
+
+		cameras_configuration_widgets[i].free_d_Pan_label = gtk_label_new ("Pan :");
+		gtk_widget_set_margin_start (cameras_configuration_widgets[i].free_d_Pan_label, 2);
+		gtk_widget_set_margin_bottom (cameras_configuration_widgets[i].free_d_Pan_label, MARGIN_VALUE);
+		gtk_grid_attach (GTK_GRID (cameras_set_configuration_window_grid), cameras_configuration_widgets[i].free_d_Pan_label, 16, j, 1, 1);
+
+		cameras_configuration_widgets[i].free_d_Pan_entry_buffer = gtk_entry_buffer_new ("0", 1);
+		cameras_configuration_widgets[i].free_d_Pan_entry = gtk_entry_new_with_buffer (cameras_configuration_widgets[i].free_d_Pan_entry_buffer);
+		gtk_entry_set_input_purpose (GTK_ENTRY (cameras_configuration_widgets[i].free_d_Pan_entry), GTK_INPUT_PURPOSE_NUMBER);
+		gtk_entry_set_max_length (GTK_ENTRY (cameras_configuration_widgets[i].free_d_Pan_entry), 4);
+		gtk_entry_set_width_chars (GTK_ENTRY (cameras_configuration_widgets[i].free_d_Pan_entry), 4);
+		gtk_entry_set_alignment (GTK_ENTRY (cameras_configuration_widgets[i].free_d_Pan_entry), 0.5);
+		gtk_widget_set_margin_bottom (cameras_configuration_widgets[i].free_d_Pan_entry, MARGIN_VALUE);
+		gtk_grid_attach (GTK_GRID (cameras_set_configuration_window_grid), cameras_configuration_widgets[i].free_d_Pan_entry, 17, j, 1, 1);
+
+		cameras_configuration_widgets[i].separator1 = gtk_separator_new  (GTK_ORIENTATION_VERTICAL);
+		gtk_widget_set_margin_start (cameras_configuration_widgets[i].separator1, MARGIN_VALUE);
+		gtk_widget_set_margin_end (cameras_configuration_widgets[i].separator1, MARGIN_VALUE);
+		gtk_grid_attach (GTK_GRID (cameras_set_configuration_window_grid), cameras_configuration_widgets[i].separator1, 18, j, 1, 1);
 
 		cameras_configuration_widgets[i].ultimatte_ip_entry_buffer[0] = gtk_entry_buffer_new (network_address[0], network_address_len[0]);
 		cameras_configuration_widgets[i].ultimatte_ip_entry[0] = gtk_entry_new_with_buffer (cameras_configuration_widgets[i].ultimatte_ip_entry_buffer[0]);
@@ -952,13 +1174,13 @@ void show_cameras_set_configuration_window (void)
 		gtk_entry_set_width_chars (GTK_ENTRY (cameras_configuration_widgets[i].ultimatte_ip_entry[0]), 3);
 		gtk_entry_set_alignment (GTK_ENTRY (cameras_configuration_widgets[i].ultimatte_ip_entry[0]), 0.5);
 		gtk_widget_set_margin_bottom (cameras_configuration_widgets[i].ultimatte_ip_entry[0], MARGIN_VALUE);
-		gtk_grid_attach (GTK_GRID (cameras_set_configuration_window_grid), cameras_configuration_widgets[i].ultimatte_ip_entry[0], 10, j, 1, 1);
+		gtk_grid_attach (GTK_GRID (cameras_set_configuration_window_grid), cameras_configuration_widgets[i].ultimatte_ip_entry[0], 19, j, 1, 1);
 
 		cameras_configuration_widgets[i].ultimatte_dot[0] = gtk_label_new (".");
 		gtk_widget_set_margin_start (cameras_configuration_widgets[i].ultimatte_dot[0], 2);
 		gtk_widget_set_margin_end (cameras_configuration_widgets[i].ultimatte_dot[0], 2);
 		gtk_widget_set_margin_bottom (cameras_configuration_widgets[i].ultimatte_dot[0], MARGIN_VALUE);
-		gtk_grid_attach (GTK_GRID (cameras_set_configuration_window_grid), cameras_configuration_widgets[i].ultimatte_dot[0], 11, j, 1, 1);
+		gtk_grid_attach (GTK_GRID (cameras_set_configuration_window_grid), cameras_configuration_widgets[i].ultimatte_dot[0], 20, j, 1, 1);
 
 		cameras_configuration_widgets[i].ultimatte_ip_entry_buffer[1] = gtk_entry_buffer_new (network_address[1], network_address_len[1]);
 		cameras_configuration_widgets[i].ultimatte_ip_entry[1] = gtk_entry_new_with_buffer (cameras_configuration_widgets[i].ultimatte_ip_entry_buffer[1]);
@@ -968,13 +1190,13 @@ void show_cameras_set_configuration_window (void)
 		gtk_entry_set_width_chars (GTK_ENTRY (cameras_configuration_widgets[i].ultimatte_ip_entry[1]), 3);
 		gtk_entry_set_alignment (GTK_ENTRY (cameras_configuration_widgets[i].ultimatte_ip_entry[1]), 0.5);
 		gtk_widget_set_margin_bottom (cameras_configuration_widgets[i].ultimatte_ip_entry[1], MARGIN_VALUE);
-		gtk_grid_attach (GTK_GRID (cameras_set_configuration_window_grid), cameras_configuration_widgets[i].ultimatte_ip_entry[1], 12, j, 1, 1);
+		gtk_grid_attach (GTK_GRID (cameras_set_configuration_window_grid), cameras_configuration_widgets[i].ultimatte_ip_entry[1], 21, j, 1, 1);
 
 		cameras_configuration_widgets[i].ultimatte_dot[1] = gtk_label_new (".");
 		gtk_widget_set_margin_start (cameras_configuration_widgets[i].ultimatte_dot[1], 2);
 		gtk_widget_set_margin_end (cameras_configuration_widgets[i].ultimatte_dot[1], 2);
 		gtk_widget_set_margin_bottom (cameras_configuration_widgets[i].ultimatte_dot[1], MARGIN_VALUE);
-		gtk_grid_attach (GTK_GRID (cameras_set_configuration_window_grid), cameras_configuration_widgets[i].ultimatte_dot[1], 13, j, 1, 1);
+		gtk_grid_attach (GTK_GRID (cameras_set_configuration_window_grid), cameras_configuration_widgets[i].ultimatte_dot[1], 22, j, 1, 1);
 
 		cameras_configuration_widgets[i].ultimatte_ip_entry_buffer[2] = gtk_entry_buffer_new (network_address[2], network_address_len[2]);
 		cameras_configuration_widgets[i].ultimatte_ip_entry[2] = gtk_entry_new_with_buffer (cameras_configuration_widgets[i].ultimatte_ip_entry_buffer[2]);
@@ -984,13 +1206,13 @@ void show_cameras_set_configuration_window (void)
 		gtk_entry_set_width_chars (GTK_ENTRY (cameras_configuration_widgets[i].ultimatte_ip_entry[2]), 3);
 		gtk_entry_set_alignment (GTK_ENTRY (cameras_configuration_widgets[i].ultimatte_ip_entry[2]), 0.5);
 		gtk_widget_set_margin_bottom (cameras_configuration_widgets[i].ultimatte_ip_entry[2], MARGIN_VALUE);
-		gtk_grid_attach (GTK_GRID (cameras_set_configuration_window_grid), cameras_configuration_widgets[i].ultimatte_ip_entry[2], 14, j, 1, 1);
+		gtk_grid_attach (GTK_GRID (cameras_set_configuration_window_grid), cameras_configuration_widgets[i].ultimatte_ip_entry[2], 23, j, 1, 1);
 
 		cameras_configuration_widgets[i].ultimatte_dot[2] = gtk_label_new (".");
 		gtk_widget_set_margin_start (cameras_configuration_widgets[i].ultimatte_dot[2], 2);
 		gtk_widget_set_margin_end (cameras_configuration_widgets[i].ultimatte_dot[2], 2);
 		gtk_widget_set_margin_bottom (cameras_configuration_widgets[i].ultimatte_dot[2], MARGIN_VALUE);
-		gtk_grid_attach (GTK_GRID (cameras_set_configuration_window_grid), cameras_configuration_widgets[i].ultimatte_dot[2], 15, j, 1, 1);
+		gtk_grid_attach (GTK_GRID (cameras_set_configuration_window_grid), cameras_configuration_widgets[i].ultimatte_dot[2], 24, j, 1, 1);
 
 		cameras_configuration_widgets[i].ultimatte_ip_entry_buffer[3] = gtk_entry_buffer_new (NULL, -1);
 		cameras_configuration_widgets[i].ultimatte_ip_entry[3] = gtk_entry_new_with_buffer (cameras_configuration_widgets[i].ultimatte_ip_entry_buffer[3]);
@@ -1000,7 +1222,7 @@ void show_cameras_set_configuration_window (void)
 		gtk_entry_set_width_chars (GTK_ENTRY (cameras_configuration_widgets[i].ultimatte_ip_entry[3]), 3);
 		gtk_entry_set_alignment (GTK_ENTRY (cameras_configuration_widgets[i].ultimatte_ip_entry[3]), 0.5);
 		gtk_widget_set_margin_bottom (cameras_configuration_widgets[i].ultimatte_ip_entry[3], MARGIN_VALUE);
-		gtk_grid_attach (GTK_GRID (cameras_set_configuration_window_grid), cameras_configuration_widgets[i].ultimatte_ip_entry[3], 16, j, 1, 1);
+		gtk_grid_attach (GTK_GRID (cameras_set_configuration_window_grid), cameras_configuration_widgets[i].ultimatte_ip_entry[3], 25, j, 1, 1);
 
 		i++;
 		j++;
@@ -1102,6 +1324,12 @@ void delete_cameras_set (void)
 					}
 				}
 
+				if (ptz->monitor_pan_tilt) {
+					ptz->monitor_pan_tilt = FALSE;
+
+					g_thread_join (ptz->monitor_pan_tilt_thread);
+				}
+
 				if (ptz->ultimatte != NULL) {
 					if (ptz->ultimatte->connected) {
 						ptz->ultimatte->will_be_destroyed = TRUE;
@@ -1109,6 +1337,8 @@ void delete_cameras_set (void)
 					} else g_free (ptz->ultimatte);
 				}
 			}
+
+			g_date_time_unref (ptz->last_time);
 
 			g_free (ptz);
 		}
