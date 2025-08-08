@@ -22,8 +22,9 @@
 #include "cameras_set.h"
 #include "control_window.h"
 #include "controller.h"
-#include "error.h"
+#include "free_d.h"
 #include "interface.h"
+#include "logging.h"
 #include "protocol.h"
 #include "settings.h"
 #include "sw_p_08.h"
@@ -182,25 +183,34 @@ void main_window_notebook_switch_page (GtkNotebook *notebook, GtkWidget *page, g
 	ultimatte_t *ultimatte;
 	gboolean tallies[MAX_CAMERAS];
 
-	if (send_ip_tally) {
-		for (i = 0; i < current_cameras_set->number_of_cameras; i++) {
-			ptz = current_cameras_set->cameras[i];
-
-			if (ptz->tally_1_is_on) {
-				tallies[i] = TRUE;
-
-				if (ptz->is_on) send_ptz_control_command (ptz, "#DA0", TRUE);
-
-				ptz->tally_1_is_on = FALSE;
-			} else tallies[i] = FALSE;
-		}
-	}
-
 	g_mutex_lock (&cameras_sets_mutex);
 
 	if (current_cameras_set != NULL) {
 		for (i = 0; i < current_cameras_set->number_of_cameras; i++) {
-			ultimatte = current_cameras_set->cameras[i]->ultimatte;
+			ptz = current_cameras_set->cameras[i];
+
+			if (send_ip_tally) {
+				if (ptz->tally_1_is_on) {
+					tallies[i] = TRUE;
+
+					if (ptz->is_on) send_ptz_control_command (ptz, "#DA0", TRUE);
+
+					ptz->tally_1_is_on = FALSE;
+				} else tallies[i] = FALSE;
+			}
+
+			if (ptz->monitor_pan_tilt) {
+				g_mutex_lock (&ptz->free_d_mutex);
+
+				ptz->monitor_pan_tilt = FALSE;
+
+				g_thread_join (ptz->monitor_pan_tilt_thread);
+				ptz->monitor_pan_tilt_thread = NULL;
+
+				g_mutex_unlock (&ptz->free_d_mutex);
+			}
+
+			ultimatte = ptz->ultimatte;
 
 			if ((ultimatte != NULL) && (ultimatte->connected)) disconnect_ultimatte (ultimatte);
 		}
@@ -222,7 +232,23 @@ void main_window_notebook_switch_page (GtkNotebook *notebook, GtkWidget *page, g
 		for (i = 0; i < current_cameras_set->number_of_cameras; i++) {
 			ptz = current_cameras_set->cameras[i];
 
+			if (send_ip_tally) {
+				if (tallies[i]) {
+					if (ptz->is_on) send_ptz_control_command (ptz, "#DA1", TRUE);
+
+					ptz->tally_1_is_on = TRUE;
+				}
+			}
+
 			if (ptz->is_on) {
+				if ((outgoing_free_d_started) && (ptz->model == AW_HE130)) {
+					g_mutex_lock (&ptz->free_d_mutex);
+
+					if (ptz->monitor_pan_tilt_thread == NULL) ptz->monitor_pan_tilt_thread = g_thread_new (NULL, (GThreadFunc)monitor_ptz_pan_tilt_position, ptz);
+
+					g_mutex_unlock (&ptz->free_d_mutex);
+				}
+
 				ultimatte = ptz->ultimatte;
 
 				if ((ultimatte != NULL) && (!ultimatte->connected) && (ultimatte->connection_thread == NULL)) ultimatte->connection_thread = g_thread_new (NULL, (GThreadFunc)connect_ultimatte, ultimatte);
@@ -231,18 +257,6 @@ void main_window_notebook_switch_page (GtkNotebook *notebook, GtkWidget *page, g
 	}
 
 	g_mutex_unlock (&cameras_sets_mutex);
-
-	if (send_ip_tally) {
-		for (i = 0; i < current_cameras_set->number_of_cameras; i++) {
-			if (tallies[i]) {
-				ptz = current_cameras_set->cameras[i];
-
-				if (ptz->is_on) send_ptz_control_command (ptz, "#DA1", TRUE);
-
-				ptz->tally_1_is_on = TRUE;
-			}
-		}
-	}
 
 	if (page_num != tally_cameras_set) tell_cameras_set_is_selected (page_num);
 }
@@ -599,9 +613,11 @@ int main (int argc, char** argv)
 	g_resources_register (gresources_get_resource ());
 #endif
 
+	init_sw_p_08 ();
+
 	init_tally ();
 
-	init_sw_p_08 ();
+	init_free_d ();
 
 	main_css_provider = gtk_css_provider_new ();
 	file = g_file_new_for_path ("resources" G_DIR_SEPARATOR_S "Adwaita-dark.css");
@@ -626,6 +642,8 @@ int main (int argc, char** argv)
 	create_memory_name_window ();
 
 	load_config_file ();
+
+	init_logging ();
 
 	if (number_of_cameras_sets <= 1) gtk_notebook_set_show_tabs (GTK_NOTEBOOK (main_window_notebook), FALSE);
 
@@ -685,8 +703,6 @@ int main (int argc, char** argv)
 		show_cameras_set_configuration_window ();
 	}
 
-	start_error_log ();
-
 	start_update_notification ();
 
 	for (cameras_set_itr = cameras_sets; cameras_set_itr != NULL; cameras_set_itr = cameras_set_itr->next) {
@@ -694,32 +710,40 @@ int main (int argc, char** argv)
 			ptz = cameras_set_itr->cameras[i];
 
 			if (ptz->active) {
-/*				ptz_is_off (ptz);
+				ptz_is_off (ptz);
 
 				if (ptz->ip_address_is_valid) {
 					ptz_thread = g_malloc (sizeof (ptz_thread_t));
 					ptz_thread->ptz = ptz;
 					ptz_thread->thread = g_thread_new (NULL, (GThreadFunc)start_ptz, ptz_thread);
-				}*/
+				}
 			}
 		}
 	}
 
+	start_sw_p_08 ();
+
 	start_tally ();
 
-	start_sw_p_08 ();
+	start_incomming_free_d ();
+
+	if (free_d_output_ip_address_is_valid) start_outgoing_freed_d ();
+
 
 	gtk_main ();
 
+
 	if (backup_needed) save_config_file ();
 
-	stop_sw_p_08 ();
+	stop_outgoing_freed_d ();
+
+	stop_incomming_free_d ();
 
 	stop_tally ();
 
-	stop_update_notification ();
+	stop_sw_p_08 ();
 
-	stop_error_log ();
+	stop_update_notification ();
 
 	destroy_control_window ();
 
@@ -730,6 +754,8 @@ int main (int argc, char** argv)
 			ultimatte = cameras_set_itr->cameras[i]->ultimatte;
 
 			if ((ultimatte != NULL) && (ultimatte->connected)) disconnect_ultimatte (ultimatte);
+
+			ptz->monitor_pan_tilt = FALSE;
 		}
 
 		pango_font_description_free (cameras_set_itr->layout.ptz_name_font_description);
@@ -737,6 +763,8 @@ int main (int argc, char** argv)
 		pango_font_description_free (cameras_set_itr->layout.memory_name_font_description);
 		pango_font_description_free (cameras_set_itr->layout.ultimatte_picto_font_description);
 	}
+
+	if (logging) stop_logging ();
 
 	g_list_free (pointing_devices);
 #ifdef _WIN32
