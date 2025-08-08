@@ -28,8 +28,6 @@
 
 	void WSAInit (void);
 
-	void timersub (const struct timeval* tvp, const struct timeval* uvp, struct timeval* vvp);
-
 #elif defined (__linux)
 	#include <sys/socket.h>
 	#include <netinet/in.h>
@@ -45,3 +43,4 @@
 
 
 #endif
+
