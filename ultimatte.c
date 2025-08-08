@@ -19,6 +19,8 @@
 
 #include "ultimatte.h"
 
+#include "logging.h"
+
 
 void init_ultimatte (ultimatte_t *ultimatte)
 {
@@ -63,15 +65,23 @@ gpointer connect_ultimatte (ultimatte_t *ultimatte)
 	if (connect (ultimatte->socket, (struct sockaddr *) &ultimatte->address, sizeof (struct sockaddr_in)) == 0) {
 		ultimatte->connected = TRUE;
 
+		LOG_ULTIMATTE_2_STRINGS(ultimatte->ip_address," is connected")
+
 		g_idle_add ((GSourceFunc)g_source_ultimatte_is_connected, ultimatte);
 
 		while ((recv_len = recv (ultimatte->socket, buffer, sizeof (buffer), 0)) > 0) {
-			buffer[recv_len] = '\0';
+			if (logging && log_ultimatte) {
+				g_mutex_lock (&logging_mutex);
+				log_ultimatte_message (buffer, recv_len);
+				g_mutex_unlock (&logging_mutex);
+			}
 		}
 
 		closesocket (ultimatte->socket);
 		ultimatte->connected = FALSE;
 	} else closesocket (ultimatte->socket);
+
+	LOG_ULTIMATTE_2_STRINGS(ultimatte->ip_address," is disconnected")
 
 	g_idle_add ((GSourceFunc)g_source_ultimatte_is_disconnected, ultimatte);
 
@@ -80,6 +90,7 @@ gpointer connect_ultimatte (ultimatte_t *ultimatte)
 
 void disconnect_ultimatte (ultimatte_t *ultimatte)
 {
-	send (ultimatte->socket, "quit\n", 5, 0);
+	closesocket (ultimatte->socket);
+	ultimatte->connected = FALSE;
 }
 
