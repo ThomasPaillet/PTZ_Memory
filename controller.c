@@ -19,12 +19,14 @@
 
 #include "controller.h"
 
+#include "logging.h"
 #include "protocol.h"
 
 
 gboolean controller_is_used = FALSE;
 
-char controller_ip_address[16] = {'\0'};
+char controller_ip_address[16] = { '\0' };
+
 gboolean controller_ip_address_is_valid = FALSE;
 
 struct sockaddr_in controller_address;
@@ -39,8 +41,9 @@ int controller_cmd_size;
 
 gpointer controller_switch_ptz (ptz_thread_t *ptz_thread)
 {
-	int port_number;
+	int port_number, size;
 	SOCKET sock;
+	char buffer[264];
 
 	port_number = ptz_thread->ptz->index + 1;
 
@@ -52,12 +55,27 @@ gpointer controller_switch_ptz (ptz_thread_t *ptz_thread)
 		controller_cmd[29] = '0' + port_number;
 	} else {
 		g_idle_add ((GSourceFunc)free_ptz_thread, ptz_thread);
+
 		return NULL;
 	}
 
 	sock = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
-	if (connect (sock, (struct sockaddr *) &controller_address, sizeof (struct sockaddr_in)) == 0) send (sock, controller_cmd, controller_cmd_size, 0);
+	if (connect (sock, (struct sockaddr *) &controller_address, sizeof (struct sockaddr_in)) == 0) {
+		send (sock, controller_cmd, controller_cmd_size, 0);
+
+		if (logging && log_panasonic) {
+			g_mutex_lock (&logging_mutex);
+			log_controller_command (__FILE__, controller_cmd, controller_cmd_size);
+			g_mutex_unlock (&logging_mutex);
+
+			size = recv (sock, buffer, sizeof (buffer), 0);
+
+			g_mutex_lock (&logging_mutex);
+			log_controller_response (__FILE__, buffer, size);
+			g_mutex_unlock (&logging_mutex);
+		}
+	}
 
 	closesocket (sock);
 
