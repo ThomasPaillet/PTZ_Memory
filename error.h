@@ -74,10 +74,6 @@ gboolean Motor_Disconnect_Error_AW_UE150 (struct in_addr *src_in_addr);
 
 gboolean error_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz);
 
-void start_error_log (void);
-
-void stop_error_log (void);
-
 
 #endif
 
