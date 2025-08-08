@@ -27,6 +27,7 @@
 extern gboolean controller_is_used;
 
 extern char controller_ip_address[16];
+
 extern gboolean controller_ip_address_is_valid;
 
 extern struct sockaddr_in controller_address;
