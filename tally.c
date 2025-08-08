@@ -22,20 +22,8 @@
 #include "cameras_set.h"
 #include "control_window.h"
 #include "interface.h"
+#include "logging.h"
 #include "protocol.h"
-
-
-typedef struct tsl_umd_v5_packet_s {
-	guint16 total_byte_count;
-	guint8 minor_version_number;
-	guint8 flags;
-	guint16 screen;
-
-	guint16 index;
-	guint16 control;
-	guint16 length;
-	char text[2038];
-} tsl_umd_v5_packet_t;
 
 
 gboolean send_ip_tally = FALSE;
@@ -281,13 +269,16 @@ void init_tally (void)
 	tsl_umd_v5_address.sin_addr.s_addr = inet_addr (my_ip_address);
 }
 
-gpointer receive_tsl_umd_v5_msg (gpointer data)
+gpointer receive_tsl_umd_v5_packet (gpointer data)
 {
 	int msg_len;
 	tsl_umd_v5_packet_t packet;
 	ptz_t *ptz;
 
+//	while ((msg_len = recv (tsl_umd_v5_socket, (char*)&packet, sizeof (tsl_umd_v5_packet_t), 0)) > 1) {
 	while ((msg_len = recv (tsl_umd_v5_socket, (char*)&packet, 2048, 0)) > 1) {
+		LOG_TSL_UMD_V5_PACKET(&packet)
+
 		if (current_cameras_set != NULL) {
 			if (packet.index < current_cameras_set->number_of_cameras) {
 				ptz = current_cameras_set->cameras[packet.index];
@@ -319,7 +310,7 @@ void start_tally (void)
 	tsl_umd_v5_socket = socket (AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 	bind (tsl_umd_v5_socket, (struct sockaddr *)&tsl_umd_v5_address, sizeof (struct sockaddr_in));
 
-	tsl_umd_v5_thread = g_thread_new (NULL, receive_tsl_umd_v5_msg, NULL);
+	tsl_umd_v5_thread = g_thread_new (NULL, receive_tsl_umd_v5_packet, NULL);
 }
 
 void stop_tally (void)
