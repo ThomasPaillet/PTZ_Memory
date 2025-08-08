@@ -20,6 +20,7 @@
 #include "error.h"
 
 #include "cameras_set.h"
+#include "logging.h"
 
 #include <stdio.h>
 
@@ -29,8 +30,6 @@
 	ptz_t *ptz; \
 	cameras_set_t *cameras_set_itr; \
 	int i; \
-	struct timeval current_time; \
-	struct tm *time; \
  \
 	ptz = NULL; \
  \
@@ -42,10 +41,7 @@
 				if (ptz == NULL) { \
 					ptz = cameras_set_itr->cameras[i]; \
  \
-					gettimeofday (&current_time, NULL); \
-					time = localtime (&current_time.tv_sec); \
- \
-					fprintf (error_log_file, "%02dh %02dm %02ds: Camera %s (%s) -> %s\n", time->tm_hour, time->tm_min, time->tm_sec, ptz->name, ptz->ip_address, s); \
+					LOG_PTZ_STRING(s); \
 				} else ptz = cameras_set_itr->cameras[i]; \
  \
 				ptz->error_code = c; \
@@ -69,8 +65,6 @@
 	ptz_t *ptz; \
 	cameras_set_t *cameras_set_itr; \
 	int i; \
-	struct timeval current_time; \
-	struct tm *time; \
  \
 	ptz = NULL; \
  \
@@ -82,10 +76,7 @@
 				if (ptz == NULL) { \
 					ptz = cameras_set_itr->cameras[i]; \
  \
-					gettimeofday (&current_time, NULL); \
-					time = localtime (&current_time.tv_sec); \
- \
-					fprintf (error_log_file, "%02dh %02dm %02ds: Camera %s (%s) -> %s\n", time->tm_hour, time->tm_min, time->tm_sec, ptz->name, ptz->ip_address, s); \
+					LOG_PTZ_STRING(s); \
 				} else ptz = cameras_set_itr->cameras[i]; \
  \
 				ptz->error_code = c; \
@@ -105,23 +96,14 @@
 }
 
 
-FILE *error_log_file = NULL;
-
-
 gboolean camera_is_unreachable (ptz_t *ptz)
 {
-	struct timeval current_time;
-	struct tm *time;
-
 	ptz_is_off (ptz);
 
 	gtk_widget_queue_draw (ptz->error_drawing_area);
 	gtk_widget_set_tooltip_text (ptz->error_drawing_area, "La caméra n'est pas connectée au réseau");
 
-	gettimeofday (&current_time, NULL);
-	time = localtime (&current_time.tv_sec);
-
-	fprintf (error_log_file, "%02dh %02dm %02ds: La caméra %s (%s) n'est pas connectée au réseau\n", time->tm_hour, time->tm_min, time->tm_sec, ptz->name, ptz->ip_address);
+	LOG_PTZ_STRING("is not connected physically")
 
 	return G_SOURCE_REMOVE;
 }
@@ -131,8 +113,6 @@ gboolean clear_ptz_error (struct in_addr *src_in_addr)
 	ptz_t *ptz;
 	cameras_set_t *cameras_set_itr;
 	int i;
-	struct timeval current_time;
-	struct tm *time;
 
 	ptz = NULL;
 
@@ -144,10 +124,7 @@ gboolean clear_ptz_error (struct in_addr *src_in_addr)
 				if (ptz == NULL) {
 					ptz = cameras_set_itr->cameras[i];
 
-					gettimeofday (&current_time, NULL);
-					time = localtime (&current_time.tv_sec);
-
-					fprintf (error_log_file, "%02dh %02dm %02ds: Camera %s (%s) -> Normal\n", time->tm_hour, time->tm_min, time->tm_sec, ptz->name, ptz->ip_address);
+					LOG_PTZ_STRING("Normal");
 				} else ptz = cameras_set_itr->cameras[i];
 
 				ptz->error_code = 0x00;
@@ -218,23 +195,5 @@ gboolean error_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 	cairo_paint (cr);
 
 	return GDK_EVENT_PROPAGATE;
-}
-
-void start_error_log (void)
-{
-	struct timeval current_time;
-	struct tm *time;
-	char error_log_file_name[64];
-
-	gettimeofday (&current_time, NULL);
-	time = localtime (&current_time.tv_sec);
-
-	sprintf (error_log_file_name, "20%02d-%02d-%02d_Errors.log", time->tm_year - 100, time->tm_mon + 1, time->tm_mday);
-	error_log_file = fopen (error_log_file_name, "a");
-}
-
-void stop_error_log (void)
-{
-	fclose (error_log_file);
 }
 
