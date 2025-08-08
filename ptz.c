@@ -23,12 +23,20 @@
 #include "control_window.h"
 #include "controller.h"
 #include "error.h"
+#include "free_d.h"
 #include "interface.h"
+#include "logging.h"
 #include "main_window.h"
 #include "protocol.h"
 #include "settings.h"
 #include "sw_p_08.h"
 #include "tally.h"
+
+#include <unistd.h>	//gethostname usleep
+
+
+char *ptz_model[] = { "AW-HE130", "AW-HE145", "AW-UE80", "AW-UE150", "AW-UE150A", "AW-UE160", "UNKNOWN" };
+gint32 ptz_optical_axis_height[] = { 175 * 64, 210.5 * 64, 147.5 * 64, 210.5 * 64, 211.1 * 64, 219.7 * 64, 0 };
 
 
 void init_ptz (ptz_t *ptz)
@@ -97,6 +105,44 @@ void init_ptz (ptz_t *ptz)
 	ptz->error_code = 0x00;
 
 	ptz->ultimatte = NULL;
+
+	ptz->free_d_Pan = 0x00;
+	ptz->free_d_Tilt = 0x00;
+
+	ptz->free_d_X = 0x00;
+	ptz->free_d_Y = 0x00;
+	ptz->free_d_Z = 0x00;
+	ptz->free_d_P = 0x00;
+
+	ptz->free_d_optical_axis_height = 0x00;
+
+	ptz->incomming_free_d_X = 0x00;
+	ptz->incomming_free_d_Y = 0x00;
+	ptz->incomming_free_d_Z = 0x00;
+	ptz->incomming_free_d_Pan = 0x00;
+
+	g_mutex_init (&ptz->free_d_mutex);
+
+	ptz->monitor_pan_tilt = FALSE;
+	ptz->monitor_pan_tilt_thread = NULL;
+}
+
+void check_ptz_model (ptz_t *ptz)
+{
+	char buffer[16];
+	int i;
+
+	send_cam_request_command_string (ptz, "QID", buffer);
+
+	g_mutex_lock (&ptz->free_d_mutex);
+
+	for (i = 0; i < UNKNOWN_PTZ; i++) {
+		if (strcmp (buffer, ptz_model[i]) == 0) break;
+	}
+	ptz->model = i;
+	ptz->free_d_optical_axis_height = ptz_optical_axis_height[i];
+
+	g_mutex_unlock (&ptz->free_d_mutex);
 }
 
 gboolean ptz_is_on (ptz_t *ptz)
@@ -104,6 +150,14 @@ gboolean ptz_is_on (ptz_t *ptz)
 	int i;
 
 	ptz->is_on = TRUE;
+
+	if (outgoing_free_d_started && (ptz->model == AW_HE130)) {
+		g_mutex_lock (&ptz->free_d_mutex);
+
+		if (ptz->monitor_pan_tilt_thread == NULL) ptz->monitor_pan_tilt_thread = g_thread_new (NULL, (GThreadFunc)monitor_ptz_pan_tilt_position, ptz);
+
+		g_mutex_unlock (&ptz->free_d_mutex);
+	}
 
 	gtk_widget_set_sensitive (ptz->name_grid, TRUE);
 	gtk_widget_set_sensitive (ptz->memories_grid, TRUE);
@@ -126,18 +180,90 @@ gboolean ptz_is_off (ptz_t *ptz)
 
 	if (ptz == current_ptz) hide_control_window ();
 
-	if ((ptz->error_code != CAMERA_IS_UNREACHABLE_ERROR) && (ptz->error_code != 0x00)) {
+	if (((ptz->error_code != CAMERA_IS_UNREACHABLE_ERROR) && (ptz->error_code != 0x00)) || (!ptz->ip_address_is_valid)) {
 		ptz->error_code = 0x00;
 		gtk_widget_queue_draw (ptz->error_drawing_area);
 		gtk_widget_set_tooltip_text (ptz->error_drawing_area, NULL);
 	}
 
+	if (ptz->previous_loaded_memory != NULL) {
+		ptz->previous_loaded_memory->is_loaded = FALSE;
+		ptz->previous_loaded_memory = NULL;
+	}
+
 	gtk_widget_set_sensitive (ptz->name_grid, FALSE);
 	gtk_widget_set_sensitive (ptz->memories_grid, FALSE);
+
+	if (ptz->monitor_pan_tilt) {
+		g_mutex_lock (&ptz->free_d_mutex);
+
+		ptz->monitor_pan_tilt = FALSE;
+
+//		g_thread_join (ptz->monitor_pan_tilt_thread);
+		ptz->monitor_pan_tilt_thread = NULL;
+
+		g_mutex_unlock (&ptz->free_d_mutex);
+	}
 
 	if ((ptz->ultimatte != NULL) && (ptz->ultimatte->connected)) disconnect_ultimatte (ptz->ultimatte);
 
 	return G_SOURCE_REMOVE;
+}
+
+gpointer monitor_ptz_pan_tilt_position (ptz_t *ptz)
+{
+	char buffer[64];
+	gint32 pan;
+	gint32 tilt;
+
+	ptz->monitor_pan_tilt = TRUE;
+
+	do {
+		if (ptz == current_ptz) {
+			g_mutex_lock (&ptz->cmd_mutex);
+
+			if ((control_window_focus_timeout_id != 0) || (control_window_pan_tilt_timeout_id != 0) || (control_window_zoom_timeout_id != 0)) {
+				g_mutex_unlock (&ptz->cmd_mutex);
+
+				usleep (130000);
+
+				continue;
+			} else g_mutex_unlock (&ptz->cmd_mutex);
+		}
+
+		send_ptz_request_command_string (ptz, "#APC", buffer);
+
+		if (buffer[3] <= '9') pan = (buffer[3] - '0') * 4096;
+		else pan = (buffer[3] - '7') * 4096;
+		if (buffer[4] <= '9') pan += (buffer[4] - '0') * 256;
+		else pan += (buffer[4] - '7') * 256;
+		if (buffer[5] <= '9') pan += (buffer[5] - '0') * 16;
+		else pan += (buffer[5] - '7') * 16;
+		if (buffer[6] <= '9') pan += buffer[6] - '0';
+		else pan += buffer[6] - '7';
+
+		if (buffer[7] <= '9') tilt = (buffer[7] - '0') * 4096;
+		else tilt = (buffer[7] - '7') * 256;
+		if (buffer[8] <= '9') tilt += (buffer[8] - '0') * 256;
+		else tilt += (buffer[8] - '7') * 256;
+		if (buffer[9] <= '9') tilt += (buffer[9] - '0') * 16;
+		else tilt += (buffer[9] - '7') * 16;
+		if (buffer[10] <= '9') tilt += buffer[10] - '0';
+		else tilt += buffer[10] - '7';
+
+		g_mutex_lock (&ptz->free_d_mutex);
+
+		ptz->free_d_Pan = (0x8000 - pan) * 270;
+		ptz->free_d_Tilt = (0x8000 - tilt) * 270;
+
+		g_mutex_unlock (&ptz->free_d_mutex);
+
+		if (ptz == current_ptz) gtk_widget_queue_draw (control_window_pan_tilt_label);
+
+		usleep (130000);
+	} while (ptz->monitor_pan_tilt);
+
+	return NULL;
 }
 
 gboolean free_ptz_thread (ptz_thread_t *ptz_thread)
@@ -153,42 +279,54 @@ gpointer start_ptz (ptz_thread_t *ptz_thread)
 	ptz_t *ptz = ptz_thread->ptz;
 	int response = 0;
 	char buffer[16];
+	guint32 zoom;
+	guint32 focus;
 
 	send_update_start_cmd (ptz);
 
 	if (ptz->error_code != CAMERA_IS_UNREACHABLE_ERROR) send_ptz_request_command (ptz, "#O", &response);
 
 	if (response == 1) {
-		send_cam_request_command_string (ptz, "QID", buffer);
-		if (memcmp (buffer, "AW-HE130", 8) == 0) ptz->model = AW_HE130;
-		else ptz->model = AW_UE150;
+		check_ptz_model (ptz);
 
 		send_cam_request_command (ptz, "QAF", &response);
 		if (response == 1) ptz->auto_focus = TRUE;
 		else ptz->auto_focus = FALSE;
 
+		g_mutex_lock (&ptz->lens_information_mutex);
+
 		send_ptz_request_command_string (ptz, "#LPI", buffer);
+
 		ptz->zoom_position_cmd[4] = buffer[3];
 		ptz->zoom_position_cmd[5] = buffer[4];
 		ptz->zoom_position_cmd[6] = buffer[5];
+
+		if (buffer[3] <= '9') zoom = (buffer[3] - '0') * 256;
+		else zoom = (buffer[3] - '7') * 256;
+		if (buffer[4] <= '9') zoom += (buffer[4] - '0') * 16;
+		else zoom += (buffer[4] - '7') * 16;
+		if (buffer[5] <= '9') zoom += buffer[5] - '0';
+		else zoom += buffer[5] - '7';
 
 		ptz->focus_position_cmd[4] = buffer[6];
 		ptz->focus_position_cmd[5] = buffer[7];
 		ptz->focus_position_cmd[6] = buffer[8];
 
-		if (buffer[3] <= '9') ptz->zoom_position = (buffer[3] - '0') * 256;
-		else ptz->zoom_position = (buffer[3] - '7') * 256;
-		if (buffer[4] <= '9') ptz->zoom_position += (buffer[4] - '0') * 16;
-		else ptz->zoom_position += (buffer[4] - '7') * 16;
-		if (buffer[5] <= '9') ptz->zoom_position += buffer[5] - '0';
-		else ptz->zoom_position += buffer[5] - '7';
+		if (buffer[6] <= '9') focus = (buffer[6] - '0') * 256;
+		else focus = (buffer[6] - '7') * 256;
+		if (buffer[7] <= '9') focus += (buffer[7] - '0') * 16;
+		else focus += (buffer[7] - '7') * 16;
+		if (buffer[8] <= '9') focus += buffer[8] - '0';
+		else focus += buffer[8] - '7';
 
-		if (buffer[6] <= '9') ptz->focus_position = (buffer[6] - '0') * 256;
-		else ptz->focus_position = (buffer[6] - '7') * 256;
-		if (buffer[7] <= '9') ptz->focus_position += (buffer[7] - '0') * 16;
-		else ptz->focus_position += (buffer[7] - '7') * 16;
-		if (buffer[8] <= '9') ptz->focus_position += buffer[8] - '0';
-		else ptz->focus_position += buffer[8] - '7';
+		g_mutex_lock (&ptz->free_d_mutex);
+
+		ptz->zoom_position = zoom;
+		ptz->focus_position = focus;
+
+		g_mutex_unlock (&ptz->free_d_mutex);
+
+		g_mutex_unlock (&ptz->lens_information_mutex);
 
 		send_ptz_control_command (ptz, "#LPC1", TRUE);
 
@@ -237,6 +375,7 @@ gboolean name_drawing_area_button_press_event (GtkButton *widget, GdkEventButton
 		if ((ultimatte != NULL) && (event->x > ultimatte_picto_x) && (event->y < ultimatte_picto_y)) {
 			if ((!ultimatte->connected) && (ultimatte->connection_thread == NULL))
 				ultimatte->connection_thread = g_thread_new (NULL, (GThreadFunc)connect_ultimatte, ultimatte);
+			else disconnect_ultimatte (ultimatte);
 		} else {
 			show_control_window (ptz, GTK_WIN_POS_MOUSE);
 
