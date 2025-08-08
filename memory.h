@@ -42,10 +42,10 @@ typedef struct {
 
 	char pan_tilt_position_cmd[13];
 
-	int zoom_position;
+	unsigned int zoom_position;
 	char zoom_position_hexa[3];
 
-	int focus_position;
+	unsigned int focus_position;
 	char focus_position_hexa[3];
 
 	char name[MEMORIES_NAME_LENGTH * 4 + 1];
