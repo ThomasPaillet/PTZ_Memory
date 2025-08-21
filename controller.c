@@ -66,13 +66,13 @@ gpointer controller_switch_ptz (ptz_thread_t *ptz_thread)
 
 		if (logging && log_panasonic) {
 			g_mutex_lock (&logging_mutex);
-			log_controller_command (__FILE__, controller_cmd, controller_cmd_size);
+			log_controller_command (__FILE__, controller_ip_address, controller_cmd, controller_cmd_size);
 			g_mutex_unlock (&logging_mutex);
 
 			size = recv (sock, buffer, sizeof (buffer), 0);
 
 			g_mutex_lock (&logging_mutex);
-			log_controller_response (__FILE__, buffer, size);
+			log_controller_response (__FILE__, controller_ip_address, buffer, size);
 			g_mutex_unlock (&logging_mutex);
 		}
 	}

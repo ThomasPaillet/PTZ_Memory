@@ -27,19 +27,6 @@
 #define TSL_UMD_V5_UDP_PORT 8900
 
 
-typedef struct tsl_umd_v5_packet_s {
-	guint16 total_byte_count;
-	guint8 minor_version_number;
-	guint8 flags;
-	guint16 screen;
-
-	guint16 index;
-	guint16 control;
-	guint16 length;
-	char text[2038];
-} tsl_umd_v5_packet_t;
-
-
 extern gboolean send_ip_tally;
 
 extern struct sockaddr_in tsl_umd_v5_address;

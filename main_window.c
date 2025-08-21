@@ -204,7 +204,7 @@ void main_window_notebook_switch_page (GtkNotebook *notebook, GtkWidget *page, g
 
 				ptz->monitor_pan_tilt = FALSE;
 
-				g_thread_join (ptz->monitor_pan_tilt_thread);
+//				g_thread_join (ptz->monitor_pan_tilt_thread);
 				ptz->monitor_pan_tilt_thread = NULL;
 
 				g_mutex_unlock (&ptz->free_d_mutex);

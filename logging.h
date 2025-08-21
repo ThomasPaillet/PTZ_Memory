@@ -163,6 +163,12 @@
 	g_mutex_unlock (&logging_mutex); \
 	}
 
+#define LOG_PTZ_ERROR(s) if (logging && log_panasonic) { \
+	g_mutex_lock (&logging_mutex); \
+	log_ptz_error (__FILE__, ptz, s); \
+	g_mutex_unlock (&logging_mutex); \
+	}
+
 #define LOG_SW_P_08_OUTGOING_MESSAGE(a,m,s) if (logging && log_sw_p_08) { \
 	g_mutex_lock (&logging_mutex); \
 	log_sw_p_08_outgoing_message (__FILE__, a, m, s); \
@@ -181,9 +187,15 @@
 	g_mutex_unlock (&logging_mutex); \
 	}
 
-#define LOG_FREE_D_MESSAGE(a,m,s,b) if (logging && log_free_d) { \
+#define LOG_FREE_D_OUTGOING_MESSAGE(a,m,s) if (logging && log_free_d) { \
 	g_mutex_lock (&logging_mutex); \
-	log_free_d_message(__FILE__, a, m, s, b); \
+	log_free_d_outgoing_message(__FILE__, a, m, s); \
+	g_mutex_unlock (&logging_mutex); \
+	}
+
+#define LOG_FREE_D_INCOMMING_MESSAGE(a,m,s) if (logging && log_free_d) { \
+	g_mutex_lock (&logging_mutex); \
+	log_free_d_incomming_message(__FILE__, a, m, s); \
 	g_mutex_unlock (&logging_mutex); \
 	}
 
@@ -223,21 +235,25 @@ void log_ptz_response (const char *c_source_filename, ptz_t *ptz, const char *re
 
 void log_ptz_update_notification (const char *c_source_filename, const char *ip_address, const char *update_notification);
 
-void log_controller_command (const char *c_source_filename, const char *cmd, int len);
+void log_ptz_error (const char *c_source_filename, ptz_t *ptz, const char *str);
 
-void log_controller_response (const char *c_source_filename, const char *response, int len);
+void log_controller_command (const char *c_source_filename, const char *ip_address, const char *cmd, int len);
+
+void log_controller_response (const char *c_source_filename, const char *ip_address, const char *response, int len);
 
 void log_sw_p_08_outgoing_message (const char *c_source_filename, const char *ip_address, const char *sw_p_08_message, int len);
 
 void log_sw_p_08_incomming_message (const char *c_source_filename, const char *ip_address, const char *sw_p_08_message, int len);
 
-void log_tsl_umd_v5_packet (tsl_umd_v5_packet_t *packet);
+void log_tsl_umd_v5_packet (const char *packet);
 
 void log_ultimatte_command (const char *c_source_filename, const char *ip_address, const char *ultimatte_command, int len);
 
 void log_ultimatte_message (const char *ultimatte_message, int len);
 
-void log_free_d_message (const char *c_source_filename, const char *ip_address, const char *free_d_message, int len, gboolean );
+void log_free_d_outgoing_message (const char *c_source_filename, const char *ip_address, const unsigned char *free_d_message, int len);
+
+void log_free_d_incomming_message (const char *c_source_filename, const char *ip_address, const unsigned char *free_d_message, int len);
 
 void init_logging (void);
 

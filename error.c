@@ -41,42 +41,7 @@
 				if (ptz == NULL) { \
 					ptz = cameras_set_itr->cameras[i]; \
  \
-					LOG_PTZ_STRING(s); \
-				} else ptz = cameras_set_itr->cameras[i]; \
- \
-				ptz->error_code = c; \
-				gtk_widget_queue_draw (ptz->error_drawing_area); \
-				gtk_widget_set_tooltip_text (ptz->error_drawing_area, s); \
- \
-				break; \
-			} \
-		} \
-	} \
- \
-	g_mutex_unlock (&cameras_sets_mutex); \
- \
-	g_free (src_in_addr); \
- \
-	return G_SOURCE_REMOVE; \
-}
-
-#define PTZ_ERROR_S(f,c,s,m) gboolean f##_##m (struct in_addr *src_in_addr) \
-{ \
-	ptz_t *ptz; \
-	cameras_set_t *cameras_set_itr; \
-	int i; \
- \
-	ptz = NULL; \
- \
-	g_mutex_lock (&cameras_sets_mutex); \
- \
-	for (cameras_set_itr = cameras_sets; cameras_set_itr != NULL; cameras_set_itr = cameras_set_itr->next) { \
-		for (i = 0; i < cameras_set_itr->number_of_cameras; i++) { \
-			if (cameras_set_itr->cameras[i]->address.sin_addr.s_addr == src_in_addr->s_addr) { \
-				if (ptz == NULL) { \
-					ptz = cameras_set_itr->cameras[i]; \
- \
-					LOG_PTZ_STRING(s); \
+					LOG_PTZ_ERROR(s); \
 				} else ptz = cameras_set_itr->cameras[i]; \
  \
 				ptz->error_code = c; \
@@ -157,32 +122,44 @@ PTZ_ERROR(Spec_Limit_Over,0x22,"Spec Limit Over")
 PTZ_ERROR(ABB_execution_failed,0x60,"ABB execution failed")
 PTZ_ERROR(ABB_execution_failed_busy_status,0x61,"ABB execution failed (busy status)")
 
-PTZ_ERROR_S(Network_communication_Error,0x24,"Network communication Error",AW_HE130)
-PTZ_ERROR_S(CAMERA_communication_Error,0x25,"CAMERA communication Error",AW_HE130)
-PTZ_ERROR_S(CAMERA_RX_Over_run_Error,0x26,"CAMERA RX Over run Error",AW_HE130)
-PTZ_ERROR_S(CAMERA_RX_Framing_Error,0x27,"CAMERA RX Framing Error",AW_HE130)
-PTZ_ERROR_S(CAMERA_RX_Command_Buffer_Overflow,0x28,"CAMERA RX Command Buffer Overflow",AW_HE130)
+PTZ_ERROR(Network_communication_Error,0x24,"Network communication Error")
+PTZ_ERROR(CAMERA_communication_Error,0x25,"CAMERA communication Error")
+PTZ_ERROR(CAMERA_RX_Over_run_Error,0x26,"CAMERA RX Over run Error")
+PTZ_ERROR(CAMERA_RX_Framing_Error,0x27,"CAMERA RX Framing Error")
+PTZ_ERROR(CAMERA_RX_Command_Buffer_Overflow,0x28,"CAMERA RX Command Buffer Overflow")
 
-PTZ_ERROR_S(FPGA_Config_Error,0x23,"FPGA Config Error",AW_UE150)
-PTZ_ERROR_S(NET_Life_monitoring_Error,0x24,"NET Life-monitoring Error",AW_UE150)
-PTZ_ERROR_S(BE_Life_monitoring_Error,0x25,"BE Life-monitoring Error",AW_UE150)
-PTZ_ERROR_S(IF_BE_UART_Buffer_Overflow,0x26,"IF/BE UART Buffer Overflow",AW_UE150)
-PTZ_ERROR_S(IF_BE_UART_Framing_Error,0x27,"IF/BE UART Framing Error",AW_UE150)
-PTZ_ERROR_S(IF_BE_UART_Buffer_Overflow_2,0x28,"IF/BE UART Buffer Overflow",AW_UE150)
-PTZ_ERROR_S(CAM_Life_monitoring_Error,0x29,"CAM Life-monitoring Error",AW_UE150)
-PTZ_ERROR_S(Fan1_error,0x31,"Fan1 error",AW_UE150)
-PTZ_ERROR_S(Fan2_error,0x32,"Fan2 error",AW_UE150)
-PTZ_ERROR_S(High_Temp,0x33,"High Temp",AW_UE150)
-PTZ_ERROR_S(Low_Temp,0x36,"Low Temp",AW_UE150)
-PTZ_ERROR_S(Temp_Sensor_Error,0x40,"Temp Sensor Error",AW_UE150)
-PTZ_ERROR_S(Lens_Initialize_Error,0x41,"Lens Initialize Error",AW_UE150)
-PTZ_ERROR_S(PT_Initialize_Error,0x42,"PT. Initialize Error",AW_UE150)
-PTZ_ERROR_S(MR_Level_Error,0x50,"MR Level Error",AW_UE150)
-PTZ_ERROR_S(MR_Offset_Error,0x52,"MR Offset Error",AW_UE150)
-PTZ_ERROR_S(Origin_Offset_Error,0x53,"Origin Offset Error",AW_UE150)
-PTZ_ERROR_S(Angle_MR_Sensor_Error,0x54,"Angle MR Sensor Error",AW_UE150)
-PTZ_ERROR_S(PT_Gear_Error,0x55,"PT. Gear Error",AW_UE150)
-PTZ_ERROR_S(Motor_Disconnect_Error,0x56,"Motor Disconnect Error",AW_UE150)
+PTZ_ERROR(FPGA_Config_Error,0x23,"FPGA Config Error")
+PTZ_ERROR(NET_Life_monitoring_Error,0x24,"NET Life-monitoring Error")
+PTZ_ERROR(BE_Life_monitoring_Error,0x25,"BE Life-monitoring Error")
+PTZ_ERROR(IF_BE_UART_Buffer_Overflow,0x26,"IF/BE UART Buffer Overflow")
+PTZ_ERROR(IF_BE_UART_Framing_Error,0x27,"IF/BE UART Framing Error")
+PTZ_ERROR(IF_BE_UART_Buffer_Overflow_2,0x28,"IF/BE UART Buffer Overflow")
+
+PTZ_ERROR(CAM_Life_monitoring_Error,0x29,"CAM Life-monitoring Error")
+PTZ_ERROR(NET_Life_monitoring_Error_2,0x30,"NET Life-monitoring Error")
+PTZ_ERROR(Fan1_error,0x31,"Fan1 error")
+PTZ_ERROR(Fan2_error,0x32,"Fan2 error")
+PTZ_ERROR(High_Temp,0x33,"High Temp")
+PTZ_ERROR(Low_Temp,0x36,"Low Temp")
+PTZ_ERROR(Wiper_Error,0x39,"Wiper Error")
+PTZ_ERROR(Temp_Sensor_Error,0x40,"Temp Sensor Error")
+PTZ_ERROR(Lens_Initialize_Error,0x41,"Lens Initialize Error")
+PTZ_ERROR(PT_Initialize_Error,0x42,"PT. Initialize Error")
+PTZ_ERROR(PoEpp_Software_auth_Timeout,0x43,"PoE++ Software auth. Timeout")
+PTZ_ERROR(PoEp_Software_auth_Timeout,0x45,"PoE+ Software auth. Timeout")
+PTZ_ERROR(USB_Streaming_Error,0x47,"USB Streaming Error")
+PTZ_ERROR(MR_Level_Error,0x50,"MR Level Error")
+PTZ_ERROR(MR_Offset_Error,0x52,"MR Offset Error")
+PTZ_ERROR(Origin_Offset_Error,0x53,"Origin Offset Error")
+PTZ_ERROR(Angle_MR_Sensor_Error,0x54,"Angle MR Sensor Error")
+PTZ_ERROR(PT_Gear_Error,0x55,"PT. Gear Error")
+PTZ_ERROR(Motor_Disconnect_Error,0x56,"Motor Disconnect Error")
+PTZ_ERROR(Gyro_Error,0x57,"Gyro Error")
+PTZ_ERROR(PT_Initialize_Error_2,0x58,"PT. Initialize Error")
+PTZ_ERROR(Update_Firmware_Error,0x60,"Update Firmware Error")
+PTZ_ERROR(Update_Hardware_Error,0x61,"Update Hardware Error")
+PTZ_ERROR(Update_Error,0x62,"Update Error")
+PTZ_ERROR(Update_Fan_Error,0x63,"Update Fan Error")
 
 gboolean error_draw (GtkWidget *widget, cairo_t *cr, ptz_t *ptz)
 {

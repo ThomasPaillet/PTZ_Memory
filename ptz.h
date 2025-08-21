@@ -61,7 +61,7 @@ typedef struct {
 	char last_ctrl_cmd[16];
 	int last_ctrl_cmd_len;
 
-	GDateTime *last_time;
+	gint64 last_time;
 	GMutex cmd_mutex;
 
 	memory_t memories[MAX_MEMORIES];
@@ -126,6 +126,7 @@ typedef struct {
 
 
 extern char *ptz_model[];
+extern gint32 ptz_optical_axis_height[];
 
 
 void init_ptz (ptz_t *ptz);

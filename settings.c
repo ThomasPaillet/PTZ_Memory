@@ -103,7 +103,7 @@ void show_about_window (void)
 		gtk_label_set_markup (GTK_LABEL (widget), "<b>Mémoires Pan Tilt Zoom pour caméras PTZ Panasonic</b>");
 		gtk_box_pack_start (GTK_BOX (box), widget, FALSE, FALSE, 0);
 
-		widget = gtk_label_new ("Version 2.0");
+		widget = gtk_label_new ("Version 2.1");
 		gtk_box_pack_start (GTK_BOX (box), widget, FALSE, FALSE, 0);
 #ifdef _WIN32
 		widget = gtk_image_new_from_pixbuf (pixbuf_logo);

@@ -269,36 +269,81 @@ void init_tally (void)
 	tsl_umd_v5_address.sin_addr.s_addr = inet_addr (my_ip_address);
 }
 
-gpointer receive_tsl_umd_v5_packet (gpointer data)
+/*
+typedef struct tsl_umd_v5_packet_s {
+	guint16 total_byte_count;
+	guint8 minor_version_number;
+	guint8 flags;
+	guint16 screen;
+
+	guint16 index;
+	guint16 control;
+	guint16 length;
+	char text[2036];
+} tsl_umd_v5_packet_t;
+*/
+
+gpointer receive_tsl_umd_v5_packet (void)
 {
-	int msg_len;
-	tsl_umd_v5_packet_t packet;
+	int size, ptr, i;
+	char packet[2048];
+	guint16 total_byte_count, index, control, length;
 	ptz_t *ptz;
 
-//	while ((msg_len = recv (tsl_umd_v5_socket, (char*)&packet, sizeof (tsl_umd_v5_packet_t), 0)) > 1) {
-	while ((msg_len = recv (tsl_umd_v5_socket, (char*)&packet, 2048, 0)) > 1) {
-		LOG_TSL_UMD_V5_PACKET(&packet)
+	while ((size = recv (tsl_umd_v5_socket, packet, 2048, 0)) > 1) {
+		LOG_TSL_UMD_V5_PACKET(packet)
 
 		if (current_cameras_set != NULL) {
-			if (packet.index < current_cameras_set->number_of_cameras) {
-				ptz = current_cameras_set->cameras[packet.index];
-				ptz->tally_data = packet.control;
+			total_byte_count = *((guint16 *)packet);
+			ptr = 6;
 
-				if ((packet.control & 0x80) && (packet.control & 0x40)) ptz->tally_brightness = 1.0;
-				else if (packet.control & 0x80) ptz->tally_brightness = 0.8;
-				else if (packet.control & 0x40) ptz->tally_brightness = 0.6;
-				else ptz->tally_brightness = 0.4;
+			do {
+				index = *((guint16 *)(packet + ptr));
+				control = *((guint16 *)(packet + ptr + 2));
+				length = *((guint16 *)(packet + ptr + 4));
 
-				if (packet.control & 0x30) {
-					if (send_ip_tally && ptz->ip_address_is_valid && ptz->is_on && !ptz->tally_1_is_on) send_ptz_control_command (ptz, "#DA1", TRUE);
-					ptz->tally_1_is_on = TRUE;
-				} else {
-					if (send_ip_tally && ptz->ip_address_is_valid && ptz->is_on && ptz->tally_1_is_on) send_ptz_control_command (ptz, "#DA0", TRUE);
-					ptz->tally_1_is_on = FALSE;
+				if (index < current_cameras_set->number_of_cameras) {
+					ptz = current_cameras_set->cameras[index];
+					ptz->tally_data = control;
+
+					if ((control & 0x80) && (control & 0x40)) ptz->tally_brightness = 1.0;
+					else if (control & 0x80) ptz->tally_brightness = 0.8;
+					else if (control & 0x40) ptz->tally_brightness = 0.6;
+					else ptz->tally_brightness = 0.4;
+
+					if (control & 0x30) {
+						if (send_ip_tally && ptz->ip_address_is_valid && ptz->is_on && !ptz->tally_1_is_on) send_ptz_control_command (ptz, "#DA1", TRUE);
+						ptz->tally_1_is_on = TRUE;
+					} else {
+						if (send_ip_tally && ptz->ip_address_is_valid && ptz->is_on && ptz->tally_1_is_on) send_ptz_control_command (ptz, "#DA0", TRUE);
+						ptz->tally_1_is_on = FALSE;
+					}
+
+					g_idle_add ((GSourceFunc)g_source_ptz_tally_queue_draw, ptz);
+				} else if (index == 0xFFFF) {
+					for (i = 0; i < current_cameras_set->number_of_cameras; i++) {
+						ptz = current_cameras_set->cameras[i];
+						ptz->tally_data = control;
+
+						if ((control & 0x80) && (control & 0x40)) ptz->tally_brightness = 1.0;
+						else if (control & 0x80) ptz->tally_brightness = 0.8;
+						else if (control & 0x40) ptz->tally_brightness = 0.6;
+						else ptz->tally_brightness = 0.4;
+
+						if (control & 0x30) {
+							if (send_ip_tally && ptz->ip_address_is_valid && ptz->is_on && !ptz->tally_1_is_on) send_ptz_control_command (ptz, "#DA1", TRUE);
+							ptz->tally_1_is_on = TRUE;
+						} else {
+							if (send_ip_tally && ptz->ip_address_is_valid && ptz->is_on && ptz->tally_1_is_on) send_ptz_control_command (ptz, "#DA0", TRUE);
+							ptz->tally_1_is_on = FALSE;
+						}
+
+						g_idle_add ((GSourceFunc)g_source_ptz_tally_queue_draw, ptz);
+					}
 				}
 
-				g_idle_add ((GSourceFunc)g_source_ptz_tally_queue_draw, ptz);
-			}
+				ptr += 6 + length;
+			} while (ptr <= total_byte_count - 6);
 		}
 	}
 
@@ -310,7 +355,7 @@ void start_tally (void)
 	tsl_umd_v5_socket = socket (AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 	bind (tsl_umd_v5_socket, (struct sockaddr *)&tsl_umd_v5_address, sizeof (struct sockaddr_in));
 
-	tsl_umd_v5_thread = g_thread_new (NULL, receive_tsl_umd_v5_packet, NULL);
+	tsl_umd_v5_thread = g_thread_new (NULL, (GThreadFunc)receive_tsl_umd_v5_packet, NULL);
 }
 
 void stop_tally (void)

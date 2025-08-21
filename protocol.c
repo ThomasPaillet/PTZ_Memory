@@ -60,18 +60,14 @@ int full_http_header_size;
 
 
 #define WAIT_IF_NEEDED \
-	current_time = g_date_time_new_now_local (); \
+	current_time = g_get_monotonic_time (); \
  \
-	elapsed_time = g_date_time_difference (current_time, ptz->last_time); \
- \
-	g_date_time_unref (ptz->last_time); \
+	elapsed_time = current_time - ptz->last_time; \
  \
 	if (elapsed_time < 130000) { \
 		usleep (130000 - elapsed_time); \
  \
-		ptz->last_time = g_date_time_add (current_time, 130000 - elapsed_time); \
- \
-		g_date_time_unref (current_time); \
+		ptz->last_time = current_time + 130000 - elapsed_time; \
 	} else ptz->last_time = current_time;
 
 #define COMMAND_FUNCTION_END \
@@ -164,7 +160,7 @@ void init_ptz_cmd (ptz_t *ptz)
 	ptz->last_ctrl_cmd[0] = '\0';
 	ptz->last_ctrl_cmd_len = 0;
 
-	ptz->last_time = g_date_time_new_now_local ();
+	ptz->last_time = g_get_monotonic_time ();
 
 	g_mutex_init (&ptz->cmd_mutex);
 }
@@ -174,8 +170,7 @@ void send_update_start_cmd (ptz_t *ptz)
 	int size, index;
 	char buffer[280];
 	SOCKET sock;
-	GDateTime *current_time;
-	GTimeSpan elapsed_time;
+	gint64 current_time, elapsed_time;
 
 g_mutex_lock (&ptz->cmd_mutex);
 
@@ -193,7 +188,7 @@ g_mutex_lock (&ptz->cmd_mutex);
 
 WAIT_IF_NEEDED
 
-	if (connect (sock, (struct sockaddr *) &ptz->address, sizeof (struct sockaddr_in)) == 0) {
+	if (connect (sock, (struct sockaddr *)&ptz->address, sizeof (struct sockaddr_in)) == 0) {
 		send (sock, buffer, size, 0);
 
 		LOG_PTZ_COMMAND(buffer)
@@ -225,8 +220,7 @@ void send_update_stop_cmd (ptz_t *ptz)
 	int size, index;
 	char buffer[280];
 	SOCKET sock;
-	GDateTime *current_time;
-	GTimeSpan elapsed_time;
+	gint64 current_time, elapsed_time;
 
 g_mutex_lock (&ptz->cmd_mutex);
 
@@ -244,7 +238,7 @@ g_mutex_lock (&ptz->cmd_mutex);
 
 WAIT_IF_NEEDED
 
-	if (connect (sock, (struct sockaddr *) &ptz->address, sizeof (struct sockaddr_in)) == 0) {
+	if (connect (sock, (struct sockaddr *)&ptz->address, sizeof (struct sockaddr_in)) == 0) {
 		send (sock, buffer, size, 0);
 
 		LOG_PTZ_COMMAND(buffer)
@@ -268,21 +262,20 @@ COMMAND_FUNCTION_END
 
 void send_ptz_request_command (ptz_t *ptz, char* cmd, int *response)
 {
-	int size, index;
+	int cmd_len, size, index;
 	char *http_cmd;
 	SOCKET sock;
-	GDateTime *current_time;
-	GTimeSpan elapsed_time;
+	gint64 current_time, elapsed_time;
 	char buffer[264];
 	int index_error, retry = 2;
 
 g_mutex_lock (&ptz->cmd_mutex);
 
-	size = 2;
-	while (cmd[size] != '\0') size++;
+	cmd_len = 2;
+	while (cmd[cmd_len] != '\0') cmd_len++;
 
-	memcpy (ptz->cmd_buffer + 39 - size, cmd, size);
-	http_cmd = ptz->cmd_buffer + 15 - size;
+	memcpy (ptz->cmd_buffer + 39 - cmd_len, cmd, cmd_len);
+	http_cmd = ptz->cmd_buffer + 15 - cmd_len;
 
 	if ((http_cmd != ptz->last_cmd) || (ptz->cam_ptz == TRUE)) {
 		memcpy (http_cmd, http_ptz_cmd, 24);
@@ -290,13 +283,13 @@ g_mutex_lock (&ptz->cmd_mutex);
 		ptz->cam_ptz = FALSE;
 	}
 
-	sock = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP);
-
 WAIT_IF_NEEDED
 
-	if (connect (sock, (struct sockaddr *) &ptz->address, sizeof (struct sockaddr_in)) == 0) {
-		do {
-			send (sock, http_cmd, size + full_http_header_size, 0);
+	do {
+		sock = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP);
+
+		if (connect (sock, (struct sockaddr *)&ptz->address, sizeof (struct sockaddr_in)) == 0) {
+			send (sock, http_cmd, cmd_len + full_http_header_size, 0);
 
 			LOG_PTZ_COMMAND(cmd)
 
@@ -310,54 +303,58 @@ WAIT_IF_NEEDED
 			buffer[index] = '\0';
 
 			LOG_PTZ_RESPONSE(buffer,index)
+
+			closesocket (sock);
 
 			if (index > 0) {
 				index_error = --index;
 				while (buffer[index_error] != '\n') index_error--;
 				index_error++;
 
-				if ((buffer[index_error] != 'e') && (buffer[index_error + 1] != 'R') && (buffer[index_error + 2] != '2')) break;
+				if (((buffer[index_error] != 'e') && (buffer[index_error] != 'E')) || (buffer[index_error + 1] != 'R') || (buffer[index_error + 2] != '2')) {
+					*response = buffer[index] - 48;
+
+					break;
+				}
 			}
 
 			*response = 0;
 
 			usleep (130000);
 
-			g_date_time_unref (ptz->last_time);
-			ptz->last_time = g_date_time_new_now_local ();
-		} while (retry--);
+			ptz->last_time = g_get_monotonic_time ();
+		} else {
+			*response = 0;
 
-		*response = buffer[index] - 48;
-	} else {
-		*response = 0;
+			closesocket (sock);
 
-		ptz->error_code = CAMERA_IS_UNREACHABLE_ERROR;
-		ptz->is_on = FALSE;
-		g_idle_add ((GSourceFunc)camera_is_unreachable, ptz);
-	}
+			ptz->error_code = CAMERA_IS_UNREACHABLE_ERROR;
+			ptz->is_on = FALSE;
+			g_idle_add ((GSourceFunc)camera_is_unreachable, ptz);
 
-	closesocket (sock);
+			break;
+		}
+	} while (retry--);
 
 g_mutex_unlock (&ptz->cmd_mutex);
 }
 
 void send_ptz_request_command_string (ptz_t *ptz, char* cmd, char *response)
 {
-	int size, index;
+	int cmd_len, size, index;
 	char *http_cmd;
 	SOCKET sock;
-	GDateTime *current_time;
-	GTimeSpan elapsed_time;
+	gint64 current_time, elapsed_time;
 	char buffer[264];
 	int retry = 2;
 
 g_mutex_lock (&ptz->cmd_mutex);
 
-	size = 3;
-	while (cmd[size] != '\0') size++;
+	cmd_len = 3;
+	while (cmd[cmd_len] != '\0') cmd_len++;
 
-	memcpy (ptz->cmd_buffer + 39 - size, cmd, size);
-	http_cmd = ptz->cmd_buffer + 15 - size;
+	memcpy (ptz->cmd_buffer + 39 - cmd_len, cmd, cmd_len);
+	http_cmd = ptz->cmd_buffer + 15 - cmd_len;
 
 	if ((http_cmd != ptz->last_cmd) || (ptz->cam_ptz == TRUE)) {
 		memcpy (http_cmd, http_ptz_cmd, 24);
@@ -365,13 +362,13 @@ g_mutex_lock (&ptz->cmd_mutex);
 		ptz->cam_ptz = FALSE;
 	}
 
-	sock = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP);
-
 WAIT_IF_NEEDED
 
-	if (connect (sock, (struct sockaddr *) &ptz->address, sizeof (struct sockaddr_in)) == 0) {
-		do {
-			send (sock, http_cmd, size + full_http_header_size, 0);
+	do {
+		sock = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP);
+
+		if (connect (sock, (struct sockaddr *)&ptz->address, sizeof (struct sockaddr_in)) == 0) {
+			send (sock, http_cmd, cmd_len + full_http_header_size, 0);
 
 			LOG_PTZ_COMMAND(cmd)
 
@@ -386,34 +383,47 @@ WAIT_IF_NEEDED
 
 			LOG_PTZ_RESPONSE(buffer,index)
 
+			closesocket (sock);
+
 			if (index > 0) {
 				index--;
 				while (buffer[index] != '\n') index--;
 				index++;
 
-				if ((buffer[index] != 'e') && (buffer[index + 1] != 'R') && (buffer[index + 2] != '2')) break;
+				if (((buffer[index] != 'e') && (buffer[index] != 'E')) || (buffer[index + 1] != 'R') || (buffer[index + 2] != '2')) {
+					strcpy (response, buffer + index);
+
+					break;
+				}
 			}
 
 			response[0] = '\0';
 
 			usleep (130000);
 
-			g_date_time_unref (ptz->last_time);
-			ptz->last_time = g_date_time_new_now_local ();
-		} while (retry--);
+			ptz->last_time = g_get_monotonic_time ();
+		} else {
+			response[0] = '\0';
 
-		strcpy (response, buffer + index);
+			closesocket (sock);
 
-COMMAND_FUNCTION_END
+			ptz->error_code = CAMERA_IS_UNREACHABLE_ERROR;
+			ptz->is_on = FALSE;
+			g_idle_add ((GSourceFunc)camera_is_unreachable, ptz);
 
+			break;
+		}
+	} while (retry--);
+
+g_mutex_unlock (&ptz->cmd_mutex);
+}
 
 void send_ptz_control_command (ptz_t *ptz, char* cmd, gboolean wait)
 {
 	int size, index;
 	char *http_cmd;
 	SOCKET sock;
-	GDateTime *current_time;
-	GTimeSpan elapsed_time;
+	gint64 current_time, elapsed_time;
 	char buffer[264];
 
 g_mutex_lock (&ptz->cmd_mutex);
@@ -440,7 +450,7 @@ g_mutex_lock (&ptz->cmd_mutex);
 WAIT_IF_NEEDED
 	}
 
-	if (connect (sock, (struct sockaddr *) &ptz->address, sizeof (struct sockaddr_in)) == 0) {
+	if (connect (sock, (struct sockaddr *)&ptz->address, sizeof (struct sockaddr_in)) == 0) {
 		send (sock, http_cmd, size + full_http_header_size, 0);
 
 		LOG_PTZ_COMMAND(cmd)
@@ -464,21 +474,20 @@ COMMAND_FUNCTION_END
 
 void send_cam_request_command (ptz_t *ptz, char* cmd, int *response)
 {
-	int size, index;
+	int cmd_len, size, index;
 	char *http_cmd;
 	SOCKET sock;
-	GDateTime *current_time;
-	GTimeSpan elapsed_time;
+	gint64 current_time, elapsed_time;
 	char buffer[264];
 	int index_error, retry = 2;
 
 g_mutex_lock (&ptz->cmd_mutex);
 
-	size = 3;
-	while (cmd[size] != '\0') size++;
+	cmd_len = 3;
+	while (cmd[cmd_len] != '\0') cmd_len++;
 
-	memcpy (ptz->cmd_buffer + 39 - size, cmd, size);
-	http_cmd = ptz->cmd_buffer + 15 - size;
+	memcpy (ptz->cmd_buffer + 39 - cmd_len, cmd, cmd_len);
+	http_cmd = ptz->cmd_buffer + 15 - cmd_len;
 
 	if ((http_cmd != ptz->last_cmd) || (ptz->cam_ptz == FALSE)) {
 		memcpy (http_cmd, http_cam_cmd, 24);
@@ -486,13 +495,13 @@ g_mutex_lock (&ptz->cmd_mutex);
 		ptz->cam_ptz = TRUE;
 	}
 
-	sock = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP);
-
 WAIT_IF_NEEDED
 
-	if (connect (sock, (struct sockaddr *) &ptz->address, sizeof (struct sockaddr_in)) == 0) {
-		do {
-			send (sock, http_cmd, size + full_http_header_size, 0);
+	do {
+		sock = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP);
+
+		if (connect (sock, (struct sockaddr *)&ptz->address, sizeof (struct sockaddr_in)) == 0) {
+			send (sock, http_cmd, cmd_len + full_http_header_size, 0);
 
 			LOG_PTZ_COMMAND(cmd)
 
@@ -506,6 +515,8 @@ WAIT_IF_NEEDED
 			buffer[index] = '\0';
 
 			LOG_PTZ_RESPONSE(buffer,index)
+
+			closesocket (sock);
 
 			if (index > 0) {
 				index--;
@@ -516,39 +527,50 @@ WAIT_IF_NEEDED
 				while (buffer[index_error] != '\n') index_error--;
 				index_error++;
 
-				if ((buffer[index_error] != 'E') && (buffer[index_error + 1] != 'R') && (buffer[index_error + 2] != '2')) break;
+				if ((buffer[index_error] != 'E') || (buffer[index_error + 1] != 'R') || (buffer[index_error + 2] != '2')) {
+					sscanf (buffer + index, "%x", response);
+
+					break;
+				}
 			}
 
 			*response = 0;
 
 			usleep (130000);
 
-			g_date_time_unref (ptz->last_time);
-			ptz->last_time = g_date_time_new_now_local ();
-		} while (retry--);
+			ptz->last_time = g_get_monotonic_time ();
+		} else {
+			*response = 0;
 
-		sscanf (buffer + index, "%x", response);
+			closesocket (sock);
 
-COMMAND_FUNCTION_END
+			ptz->error_code = CAMERA_IS_UNREACHABLE_ERROR;
+			ptz->is_on = FALSE;
+			g_idle_add ((GSourceFunc)camera_is_unreachable, ptz);
 
+			break;
+		}
+	} while (retry--);
+
+g_mutex_unlock (&ptz->cmd_mutex);
+}
 
 void send_cam_request_command_string (ptz_t *ptz, char* cmd, char *response)
 {
-	int size, index;
+	int cmd_len, size, index;
 	char *http_cmd;
 	SOCKET sock;
-	GDateTime *current_time;
-	GTimeSpan elapsed_time;
+	gint64 current_time, elapsed_time;
 	char buffer[264];
 	int retry = 2;
 
 g_mutex_lock (&ptz->cmd_mutex);
 
-	size = 3;
-	while (cmd[size] != '\0') size++;
+	cmd_len = 3;
+	while (cmd[cmd_len] != '\0') cmd_len++;
 
-	memcpy (ptz->cmd_buffer + 39 - size, cmd, size);
-	http_cmd = ptz->cmd_buffer + 15 - size;
+	memcpy (ptz->cmd_buffer + 39 - cmd_len, cmd, cmd_len);
+	http_cmd = ptz->cmd_buffer + 15 - cmd_len;
 
 	if ((http_cmd != ptz->last_cmd) || (ptz->cam_ptz == FALSE)) {
 		memcpy (http_cmd, http_cam_cmd, 24);
@@ -556,13 +578,13 @@ g_mutex_lock (&ptz->cmd_mutex);
 		ptz->cam_ptz = TRUE;
 	}
 
-	sock = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP);
-
 WAIT_IF_NEEDED
 
-	if (connect (sock, (struct sockaddr *) &ptz->address, sizeof (struct sockaddr_in)) == 0) {
-		do {
-			send (sock, http_cmd, size + full_http_header_size, 0);
+	do {
+		sock = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP);
+
+		if (connect (sock, (struct sockaddr *)&ptz->address, sizeof (struct sockaddr_in)) == 0) {
+			send (sock, http_cmd, cmd_len + full_http_header_size, 0);
 
 			LOG_PTZ_COMMAND(cmd)
 
@@ -577,36 +599,53 @@ WAIT_IF_NEEDED
 
 			LOG_PTZ_RESPONSE(buffer,index)
 
+			closesocket (sock);
+
 			if (index > 0) {
 				index--;
 				while ((buffer[index] != ':') && (buffer[index] != '\n')) index--;
 				index++;
 
 				if (buffer[index - 1] == ':') {
-					if ((buffer[index - 4] != 'E') && (buffer[index - 3] != 'R') && (buffer[index - 2] != '2')) break;
-				} else if ((buffer[index] != 'E') && (buffer[index + 1] != 'R') && (buffer[index + 2] != '2')) break;
+					if ((buffer[index - 4] != 'E') || (buffer[index - 3] != 'R') || (buffer[index - 2] != '2')) {
+						strcpy (response, buffer + index);
+
+						break;
+					}
+				} else if ((buffer[index] != 'E') || (buffer[index + 1] != 'R') || (buffer[index + 2] != '2')) {
+					strcpy (response, buffer + index);
+
+					break;
+				}
 			}
 
 			response[0] = '\0';
 
 			usleep (130000);
 
-			g_date_time_unref (ptz->last_time);
-			ptz->last_time = g_date_time_new_now_local ();
-		} while (retry--);
+			ptz->last_time = g_get_monotonic_time ();
+		} else {
+			response[0] = '\0';
 
-		strcpy (response, buffer + index);
+			closesocket (sock);
 
-COMMAND_FUNCTION_END
+			ptz->error_code = CAMERA_IS_UNREACHABLE_ERROR;
+			ptz->is_on = FALSE;
+			g_idle_add ((GSourceFunc)camera_is_unreachable, ptz);
 
+			break;
+		}
+	} while (retry--);
+
+g_mutex_unlock (&ptz->cmd_mutex);
+}
 
 void send_cam_control_command (ptz_t *ptz, char* cmd)
 {
 	int size, index;
 	char *http_cmd;
 	SOCKET sock;
-	GDateTime *current_time;
-	GTimeSpan elapsed_time;
+	gint64 current_time, elapsed_time;
 	char buffer[264];
 
 g_mutex_lock (&ptz->cmd_mutex);
@@ -631,7 +670,7 @@ g_mutex_lock (&ptz->cmd_mutex);
 
 WAIT_IF_NEEDED
 
-	if (connect (sock, (struct sockaddr *) &ptz->address, sizeof (struct sockaddr_in)) == 0) {
+	if (connect (sock, (struct sockaddr *)&ptz->address, sizeof (struct sockaddr_in)) == 0) {
 		send (sock, http_cmd, size + full_http_header_size, 0);
 
 		LOG_PTZ_COMMAND(cmd)
@@ -657,8 +696,7 @@ void send_thumbnail_320_request_cmd (memory_t *memory)
 {
 	ptz_t *ptz = memory->ptz_ptr;
 	SOCKET sock;
-	GDateTime *current_time;
-	GTimeSpan elapsed_time;
+	gint64 current_time, elapsed_time;
 	int size, index, i;
 	char buffer[20480];
 	int rowstride;
@@ -679,7 +717,7 @@ g_mutex_lock (&ptz->cmd_mutex);
 
 WAIT_IF_NEEDED
 
-	if (connect (sock, (struct sockaddr *) &ptz->address, sizeof (struct sockaddr_in)) == 0) {
+	if (connect (sock, (struct sockaddr *)&ptz->address, sizeof (struct sockaddr_in)) == 0) {
 		send (sock, buffer, 121 + size + http_header_size, 0);
 
 		LOG_PTZ_COMMAND(buffer)
@@ -727,8 +765,7 @@ void send_thumbnail_640_request_cmd (memory_t *memory)
 {
 	ptz_t *ptz = memory->ptz_ptr;
 	SOCKET sock;
-	GDateTime *current_time;
-	GTimeSpan elapsed_time;
+	gint64 current_time, elapsed_time;
 	int size, index, i;
 	char buffer[32768];
 	GdkPixbuf *pixbuf;
@@ -750,7 +787,7 @@ g_mutex_lock (&ptz->cmd_mutex);
 
 WAIT_IF_NEEDED
 
-	if (connect (sock, (struct sockaddr *) &ptz->address, sizeof (struct sockaddr_in)) == 0) {
+	if (connect (sock, (struct sockaddr *)&ptz->address, sizeof (struct sockaddr_in)) == 0) {
 		send (sock, buffer, 121 + size + http_header_size, 0);
 
 		LOG_PTZ_COMMAND(buffer)
@@ -804,8 +841,8 @@ void send_jpeg_image_request_cmd (ptz_t *ptz)
 	int size, index;
 	char buffer[8192];
 	SOCKET sock;
-	GDateTime *current_time;
-	GTimeSpan elapsed_time;
+	gint64 current_time, elapsed_time;
+	GDateTime *date_time;
 	FILE *jpeg_file;
 	char jpeg_file_name[128];
 
@@ -821,13 +858,15 @@ g_mutex_lock (&ptz->cmd_mutex);
 
 WAIT_IF_NEEDED
 
-	if (connect (sock, (struct sockaddr *) &ptz->address, sizeof (struct sockaddr_in)) == 0) {
+	if (connect (sock, (struct sockaddr *)&ptz->address, sizeof (struct sockaddr_in)) == 0) {
 		send (sock, buffer, 122 + size + http_header_size, 0);
 
 		LOG_PTZ_COMMAND(buffer)
 
-		sprintf (jpeg_file_name, "%04d-%02d-%02d %02dh-%02dm-%02ds Camera %s.jpg", g_date_time_get_year (current_time), g_date_time_get_month (current_time), g_date_time_get_day_of_month (current_time), g_date_time_get_hour (current_time), g_date_time_get_minute (current_time), g_date_time_get_second (current_time), ptz->name);
+		date_time = g_date_time_new_now_local ();
+		sprintf (jpeg_file_name, "%04d-%02d-%02d %02dh-%02dm-%02ds Camera %s.jpg", g_date_time_get_year (date_time), g_date_time_get_month (date_time), g_date_time_get_day_of_month (date_time), g_date_time_get_hour (date_time), g_date_time_get_minute (date_time), g_date_time_get_second (date_time), ptz->name);
 		jpeg_file = fopen (jpeg_file_name, "wb");
+		g_date_time_unref (date_time);
 
 		if (ptz->model == AW_HE130) recv (sock, buffer, sizeof (buffer), 0);
 		size = recv (sock, buffer, sizeof (buffer), 0);

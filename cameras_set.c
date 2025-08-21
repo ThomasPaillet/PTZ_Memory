@@ -266,6 +266,17 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 		for (i = new_number_of_cameras; i < cameras_set->number_of_cameras; i++) {
 			ptz = cameras_set->cameras[i];
 
+			if (ptz->monitor_pan_tilt) {
+				g_mutex_lock (&ptz->free_d_mutex);
+
+				ptz->monitor_pan_tilt = FALSE;
+
+//				g_thread_join (ptz->monitor_pan_tilt_thread);
+				ptz->monitor_pan_tilt_thread = NULL;
+
+				g_mutex_unlock (&ptz->free_d_mutex);
+			}
+
 			if ((ptz->ip_address_is_valid) && (ptz->error_code != CAMERA_IS_UNREACHABLE_ERROR)) {
 				for (cameras_set_itr = cameras_sets; cameras_set_itr != NULL; cameras_set_itr = cameras_set_itr->next) {
 					if (cameras_set == cameras_set_itr) continue;
@@ -277,7 +288,8 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 				}
 
 				if (cameras_set_itr == NULL) {
-					send_ptz_control_command (ptz, "#LPC0", TRUE);
+					if (ptz->is_on) send_ptz_control_command (ptz, "#LPC0", TRUE);
+
 					send_update_stop_cmd (ptz);
 				}
 			}
@@ -300,20 +312,12 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 				}
 			}
 
-			if (ptz->monitor_pan_tilt) {
-				ptz->monitor_pan_tilt = FALSE;
-
-				g_thread_join (ptz->monitor_pan_tilt_thread);
-			}
-
 			if (ptz->ultimatte != NULL) {
 				if (ptz->ultimatte->connected) {
 					ptz->ultimatte->will_be_destroyed = TRUE;
 					disconnect_ultimatte (ptz->ultimatte);
 				} else g_free (ptz->ultimatte);
 			}
-
-			g_date_time_unref (ptz->last_time);
 
 			g_free (ptz);
 		}
@@ -386,6 +390,17 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 				ptz->is_on = FALSE;
 				cameras_set->number_of_ghost_cameras++;
 
+				if (ptz->monitor_pan_tilt) {
+					g_mutex_lock (&ptz->free_d_mutex);
+
+					ptz->monitor_pan_tilt = FALSE;
+
+//					g_thread_join (ptz->monitor_pan_tilt_thread);
+					ptz->monitor_pan_tilt_thread = NULL;
+
+					g_mutex_unlock (&ptz->free_d_mutex);
+				}
+
 				if ((ptz->ip_address_is_valid) && (ptz->error_code != CAMERA_IS_UNREACHABLE_ERROR)) {
 					for (cameras_set_itr = cameras_sets; cameras_set_itr != NULL; cameras_set_itr = cameras_set_itr->next) {
 						if (cameras_set == cameras_set_itr) continue;
@@ -398,13 +413,15 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 					}
 
 					if (cameras_set_itr == NULL) {
-						send_ptz_control_command (ptz, "#LPC0", TRUE);
+						if (ptz->is_on) send_ptz_control_command (ptz, "#LPC0", TRUE);
+
 						send_update_stop_cmd (ptz);
 					}
 				}
 
 				ptz->ip_address[0] = '\0';
 				ptz->ip_address_is_valid = FALSE;
+				ptz->address.sin_addr.s_addr = INADDR_NONE;
 
 				if (ptz->name_grid != NULL) {
 					gtk_widget_destroy (ptz->name_grid);
@@ -416,17 +433,6 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 							if (interface_default.thumbnail_width != 320) g_object_unref (G_OBJECT (ptz->memories[j].scaled_pixbuf));
 						}
 					}
-				}
-
-				if (ptz->monitor_pan_tilt) {
-					g_mutex_lock (&ptz->free_d_mutex);
-
-					ptz->monitor_pan_tilt = FALSE;
-
-					g_thread_join (ptz->monitor_pan_tilt_thread);
-					ptz->monitor_pan_tilt_thread = NULL;
-
-					g_mutex_unlock (&ptz->free_d_mutex);
 				}
 
 				if (ptz->ultimatte != NULL) {
@@ -520,6 +526,7 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 			if (gslist_itr != NULL) {
 				ptz->ip_address_is_valid = FALSE;
 				ptz->ip_address[0] = '\0';
+				ptz->address.sin_addr.s_addr = INADDR_NONE;
 
 				ptz_is_off (ptz);
 			} else if (strcmp (new_ip_address, ptz->ip_address) != 0) {
@@ -535,7 +542,8 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 						}
 
 						if (cameras_set_itr == NULL) {
-							send_ptz_control_command (ptz, "#LPC0", TRUE);
+							if (ptz->is_on) send_ptz_control_command (ptz, "#LPC0", TRUE);
+
 							send_update_stop_cmd (ptz);
 						}
 					}
@@ -559,6 +567,7 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 		} else {
 			ptz->ip_address_is_valid = FALSE;
 			ptz->ip_address[0] = '\0';
+			ptz->address.sin_addr.s_addr = INADDR_NONE;
 
 			ptz_is_off (ptz);
 		}
@@ -599,11 +608,7 @@ gboolean cameras_set_configuration_window_cancel (void)
 	g_free (cameras_configuration_widgets);
 
 	if (new_cameras_set != NULL) {
-		for (i = 0; i < 5; i++) {
-			g_date_time_unref (new_cameras_set->cameras[i]->last_time);
-
-			g_free (new_cameras_set->cameras[i]);
-		}
+		for (i = 0; i < 5; i++) g_free (new_cameras_set->cameras[i]);
 
 		pango_font_description_free (new_cameras_set->layout.ptz_name_font_description);
 		pango_font_description_free (new_cameras_set->layout.ghost_ptz_name_font_description);
@@ -1301,6 +1306,17 @@ void delete_cameras_set (void)
 			ptz = cameras_set_itr->cameras[i];
 
 			if (ptz->active) {
+				if (ptz->monitor_pan_tilt) {
+					g_mutex_lock (&ptz->free_d_mutex);
+
+					ptz->monitor_pan_tilt = FALSE;
+
+//					g_thread_join (ptz->monitor_pan_tilt_thread);
+					ptz->monitor_pan_tilt_thread = NULL;
+
+					g_mutex_unlock (&ptz->free_d_mutex);
+				}
+
 				if ((ptz->ip_address_is_valid) && (ptz->error_code != CAMERA_IS_UNREACHABLE_ERROR)) {
 					for (other_cameras_set = cameras_sets; other_cameras_set != NULL; other_cameras_set = other_cameras_set->next) {
 						if (other_cameras_set == cameras_set_itr) continue;
@@ -1312,7 +1328,8 @@ void delete_cameras_set (void)
 					}
 	
 					if (other_cameras_set == NULL) {
-						send_ptz_control_command (ptz, "#LPC0", TRUE);
+						if (ptz->is_on) send_ptz_control_command (ptz, "#LPC0", TRUE);
+
 						send_update_stop_cmd (ptz);
 					}
 				}
@@ -1324,12 +1341,6 @@ void delete_cameras_set (void)
 					}
 				}
 
-				if (ptz->monitor_pan_tilt) {
-					ptz->monitor_pan_tilt = FALSE;
-
-					g_thread_join (ptz->monitor_pan_tilt_thread);
-				}
-
 				if (ptz->ultimatte != NULL) {
 					if (ptz->ultimatte->connected) {
 						ptz->ultimatte->will_be_destroyed = TRUE;
@@ -1337,8 +1348,6 @@ void delete_cameras_set (void)
 					} else g_free (ptz->ultimatte);
 				}
 			}
-
-			g_date_time_unref (ptz->last_time);
 
 			g_free (ptz);
 		}

@@ -1,4 +1,4 @@
-# PTZ Memory (pan/tilt/zoom/focus memories) for Panasonic PTZ cameras (AW-HE130, AW-UE150, ...)
+# PTZ Memory (pan/tilt/zoom/focus memories) for Panasonic PTZ cameras (AW-HE130, AW-UE150, AW-UE160, ...)
 ![PTZ-Memory](Screenshots/PTZ-Memory.png "PTZ-Memory")
 ![PTZ-Memory](Screenshots/PTZ-Memory-2.png "PTZ-Memory-2")
 
@@ -21,7 +21,7 @@ Right click on thumbnail : Allow you to name it.
 ## Miscellaneous :
 The settings, memories and thumbnails are stored in the file « PTZ-Memory.dat ».
 
-The errors detected by camera (motor, sensor, fan, ..) are stored in files named « 'date'_Errors.log », and a colored area (with a tooltip) appear beside the number of camera.
+When an error is detected by a camera (motor, sensor, fan, ..), a colored area (with a tooltip) appear beside the number of camera.
 
 Files in the folder « resources » define the layout of the software.
 

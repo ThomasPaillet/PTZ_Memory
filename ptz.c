@@ -47,6 +47,7 @@ void init_ptz (ptz_t *ptz)
 	ptz->is_on = FALSE;
 	ptz->ip_address[0] = '\0';
 	ptz->ip_address_is_valid = FALSE;
+	ptz->address.sin_addr.s_addr = INADDR_NONE;
 
 	init_ptz_cmd (ptz);
 
@@ -194,17 +195,6 @@ gboolean ptz_is_off (ptz_t *ptz)
 	gtk_widget_set_sensitive (ptz->name_grid, FALSE);
 	gtk_widget_set_sensitive (ptz->memories_grid, FALSE);
 
-	if (ptz->monitor_pan_tilt) {
-		g_mutex_lock (&ptz->free_d_mutex);
-
-		ptz->monitor_pan_tilt = FALSE;
-
-//		g_thread_join (ptz->monitor_pan_tilt_thread);
-		ptz->monitor_pan_tilt_thread = NULL;
-
-		g_mutex_unlock (&ptz->free_d_mutex);
-	}
-
 	if ((ptz->ultimatte != NULL) && (ptz->ultimatte->connected)) disconnect_ultimatte (ptz->ultimatte);
 
 	return G_SOURCE_REMOVE;
@@ -213,8 +203,8 @@ gboolean ptz_is_off (ptz_t *ptz)
 gpointer monitor_ptz_pan_tilt_position (ptz_t *ptz)
 {
 	char buffer[64];
-	gint32 pan;
-	gint32 tilt;
+	gint32 pan, tilt;
+	gint64 current_time, elapsed_time;
 
 	ptz->monitor_pan_tilt = TRUE;
 
@@ -260,7 +250,12 @@ gpointer monitor_ptz_pan_tilt_position (ptz_t *ptz)
 
 		if (ptz == current_ptz) gtk_widget_queue_draw (control_window_pan_tilt_label);
 
-		usleep (130000);
+		g_mutex_lock (&ptz->cmd_mutex);
+		current_time = g_get_monotonic_time ();
+		elapsed_time = current_time - ptz->last_time;
+		g_mutex_unlock (&ptz->cmd_mutex);
+
+		if (elapsed_time < 130000) usleep (130000 - elapsed_time);
 	} while (ptz->monitor_pan_tilt);
 
 	return NULL;
@@ -277,10 +272,9 @@ gboolean free_ptz_thread (ptz_thread_t *ptz_thread)
 gpointer start_ptz (ptz_thread_t *ptz_thread)
 {
 	ptz_t *ptz = ptz_thread->ptz;
-	int response = 0;
+	int response;
 	char buffer[16];
-	guint32 zoom;
-	guint32 focus;
+	guint32 zoom, focus;
 
 	send_update_start_cmd (ptz);
 
@@ -289,11 +283,14 @@ gpointer start_ptz (ptz_thread_t *ptz_thread)
 	if (response == 1) {
 		check_ptz_model (ptz);
 
+		send_ptz_request_command (ptz, "#INS", &response);
+		if (response == 1) ptz->free_d_optical_axis_height = - ptz->free_d_optical_axis_height;
+
+		g_mutex_lock (&ptz->lens_information_mutex);
+
 		send_cam_request_command (ptz, "QAF", &response);
 		if (response == 1) ptz->auto_focus = TRUE;
 		else ptz->auto_focus = FALSE;
-
-		g_mutex_lock (&ptz->lens_information_mutex);
 
 		send_ptz_request_command_string (ptz, "#LPI", buffer);
 
@@ -356,6 +353,17 @@ gpointer switch_ptz_off (ptz_thread_t *ptz_thread)
 	ptz_t *ptz = ptz_thread->ptz;
 
 	if (ptz->error_code == CAMERA_IS_UNREACHABLE_ERROR) send_update_start_cmd (ptz);
+
+	if (ptz->monitor_pan_tilt) {
+		g_mutex_lock (&ptz->free_d_mutex);
+
+		ptz->monitor_pan_tilt = FALSE;
+
+//		g_thread_join (ptz->monitor_pan_tilt_thread);
+		ptz->monitor_pan_tilt_thread = NULL;
+
+		g_mutex_unlock (&ptz->free_d_mutex);
+	}
 
 	if (ptz->error_code != CAMERA_IS_UNREACHABLE_ERROR) send_ptz_control_command (ptz, "#O0", TRUE);
 

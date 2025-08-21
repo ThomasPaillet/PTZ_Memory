@@ -38,25 +38,26 @@ GMutex logging_mutex;
 FILE *main_log_file;
 
 FILE *panasonic_log_file;
+FILE *panasonic_errors_log_file;
 FILE *sw_p_08_log_file;
 FILE *tsl_umd_v5_log_file;
 FILE *ultimatte_log_file;
 FILE *free_d_log_file;
 
-char *log_buffer;
+char *log_buffer = NULL;
+int log_buffer_size = 0;
 
 
 void log_int (const char *c_source_filename, int i, FILE *log_file)
 {
 	GDateTime *current_time;
-	int size;
 
 	current_time = g_date_time_new_now_local ();
 
-	size = sprintf (log_buffer, "%02dh %02dm %02ds %03dms: [%s] %d\n\n", g_date_time_get_hour (current_time), g_date_time_get_minute (current_time), g_date_time_get_second (current_time), g_date_time_get_microsecond (current_time) / 1000, c_source_filename, i);
+	log_buffer_size = sprintf (log_buffer, "%02dh %02dm %02ds %03dms: [%s] %d\n\n", g_date_time_get_hour (current_time), g_date_time_get_minute (current_time), g_date_time_get_second (current_time), g_date_time_get_microsecond (current_time) / 1000, c_source_filename, i);
 
-	fwrite (log_buffer, size, 1, main_log_file);
-	fwrite (log_buffer, size, 1, log_file);
+	fwrite (log_buffer, log_buffer_size, 1, main_log_file);
+	fwrite (log_buffer, log_buffer_size, 1, log_file);
 
 	if (fsync_log) {
 		F_SYNC (main_log_file);
@@ -69,14 +70,13 @@ void log_int (const char *c_source_filename, int i, FILE *log_file)
 void log_string (const char *c_source_filename, const char *str, FILE *log_file)
 {
 	GDateTime *current_time;
-	int size;
 
 	current_time = g_date_time_new_now_local ();
 
-	size = sprintf (log_buffer, "%02dh %02dm %02ds %03dms: [%s] %s\n\n", g_date_time_get_hour (current_time), g_date_time_get_minute (current_time), g_date_time_get_second (current_time), g_date_time_get_microsecond (current_time) / 1000, c_source_filename, str);
+	log_buffer_size = sprintf (log_buffer, "%02dh %02dm %02ds %03dms: [%s] %s\n\n", g_date_time_get_hour (current_time), g_date_time_get_minute (current_time), g_date_time_get_second (current_time), g_date_time_get_microsecond (current_time) / 1000, c_source_filename, str);
 
-	fwrite (log_buffer, size, 1, main_log_file);
-	fwrite (log_buffer, size, 1, log_file);
+	fwrite (log_buffer, log_buffer_size, 1, main_log_file);
+	fwrite (log_buffer, log_buffer_size, 1, log_file);
 
 	if (fsync_log) {
 		F_SYNC (main_log_file);
@@ -89,14 +89,13 @@ void log_string (const char *c_source_filename, const char *str, FILE *log_file)
 void log_2_strings (const char *c_source_filename, const char *str1, const char *str2, FILE *log_file)
 {
 	GDateTime *current_time;
-	int size;
 
 	current_time = g_date_time_new_now_local ();
 
-	size = sprintf (log_buffer, "%02dh %02dm %02ds %03dms: [%s] %s%s\n\n", g_date_time_get_hour (current_time), g_date_time_get_minute (current_time), g_date_time_get_second (current_time), g_date_time_get_microsecond (current_time) / 1000, c_source_filename, str1, str2);
+	log_buffer_size = sprintf (log_buffer, "%02dh %02dm %02ds %03dms: [%s] %s%s\n\n", g_date_time_get_hour (current_time), g_date_time_get_minute (current_time), g_date_time_get_second (current_time), g_date_time_get_microsecond (current_time) / 1000, c_source_filename, str1, str2);
 
-	fwrite (log_buffer, size, 1, main_log_file);
-	fwrite (log_buffer, size, 1, log_file);
+	fwrite (log_buffer, log_buffer_size, 1, main_log_file);
+	fwrite (log_buffer, log_buffer_size, 1, log_file);
 
 	if (fsync_log) {
 		F_SYNC (main_log_file);
@@ -109,14 +108,13 @@ void log_2_strings (const char *c_source_filename, const char *str1, const char 
 void log_string_int (const char *c_source_filename, const char *str, int i, FILE *log_file)
 {
 	GDateTime *current_time;
-	int size;
 
 	current_time = g_date_time_new_now_local ();
 
-	size = sprintf (log_buffer, "%02dh %02dm %02ds %03dms: [%s] %s%d\n\n", g_date_time_get_hour (current_time), g_date_time_get_minute (current_time), g_date_time_get_second (current_time), g_date_time_get_microsecond (current_time) / 1000, c_source_filename, str, i);
+	log_buffer_size = sprintf (log_buffer, "%02dh %02dm %02ds %03dms: [%s] %s%d\n\n", g_date_time_get_hour (current_time), g_date_time_get_minute (current_time), g_date_time_get_second (current_time), g_date_time_get_microsecond (current_time) / 1000, c_source_filename, str, i);
 
-	fwrite (log_buffer, size, 1, main_log_file);
-	fwrite (log_buffer, size, 1, log_file);
+	fwrite (log_buffer, log_buffer_size, 1, main_log_file);
+	fwrite (log_buffer, log_buffer_size, 1, log_file);
 
 	if (fsync_log) {
 		F_SYNC (main_log_file);
@@ -129,14 +127,13 @@ void log_string_int (const char *c_source_filename, const char *str, int i, FILE
 void log_ptz_string (const char *c_source_filename, ptz_t *ptz, const char *str)
 {
 	GDateTime *current_time;
-	int size;
 
 	current_time = g_date_time_new_now_local ();
 
-	size = sprintf (log_buffer, "%02dh %02dm %02ds %03dms: [%s] Camera %s (%s) %s\n\n", g_date_time_get_hour (current_time), g_date_time_get_minute (current_time), g_date_time_get_second (current_time), g_date_time_get_microsecond (current_time) / 1000, c_source_filename, ptz->name, ptz->ip_address, str);
+	log_buffer_size = sprintf (log_buffer, "%02dh %02dm %02ds %03dms: [%s] Camera %s (%s) %s\n\n", g_date_time_get_hour (current_time), g_date_time_get_minute (current_time), g_date_time_get_second (current_time), g_date_time_get_microsecond (current_time) / 1000, c_source_filename, ptz->name, ptz->ip_address, str);
 
-	fwrite (log_buffer, size, 1, main_log_file);
-	fwrite (log_buffer, size, 1, panasonic_log_file);
+	fwrite (log_buffer, log_buffer_size, 1, main_log_file);
+	fwrite (log_buffer, log_buffer_size, 1, panasonic_log_file);
 
 	if (fsync_log) {
 		F_SYNC (main_log_file);
@@ -149,14 +146,13 @@ void log_ptz_string (const char *c_source_filename, ptz_t *ptz, const char *str)
 void log_ptz_command (const char *c_source_filename, ptz_t *ptz, const char *cmd)
 {
 	GDateTime *current_time;
-	int size;
 
 	current_time = g_date_time_new_now_local ();
 
-	size = sprintf (log_buffer, "%02dh %02dm %02ds %03dms: [%s] Send command to camera %s (%s)       --> %s\n\n", g_date_time_get_hour (current_time), g_date_time_get_minute (current_time), g_date_time_get_second (current_time), g_date_time_get_microsecond (current_time) / 1000, c_source_filename, ptz->name, ptz->ip_address, cmd);
+	log_buffer_size = sprintf (log_buffer, "%02dh %02dm %02ds %03dms: [%s] Send command to camera %s (%s)       --> %s\n\n", g_date_time_get_hour (current_time), g_date_time_get_minute (current_time), g_date_time_get_second (current_time), g_date_time_get_microsecond (current_time) / 1000, c_source_filename, ptz->name, ptz->ip_address, cmd);
 
-	fwrite (log_buffer, size, 1, main_log_file);
-	fwrite (log_buffer, size, 1, panasonic_log_file);
+	fwrite (log_buffer, log_buffer_size, 1, main_log_file);
+	fwrite (log_buffer, log_buffer_size, 1, panasonic_log_file);
 
 	if (fsync_log) {
 		F_SYNC (main_log_file);
@@ -164,77 +160,68 @@ void log_ptz_command (const char *c_source_filename, ptz_t *ptz, const char *cmd
 	}
 
 	g_date_time_unref (current_time);
+}
+
+void log_ptz_ER1 (const char *c_source_filename, GDateTime *current_time, ptz_t *ptz, const char *str)
+{
+	log_buffer_size = sprintf (log_buffer, "%02dh %02dm %02ds %03dms: [%s] Camera %s (%s) ERROR 1 (%s): The command is not supported by the camera.\n\n", g_date_time_get_hour (current_time), g_date_time_get_minute (current_time), g_date_time_get_second (current_time), g_date_time_get_microsecond (current_time) / 1000, c_source_filename, ptz->name, ptz->ip_address, str);
+
+	fwrite (log_buffer, log_buffer_size, 1, main_log_file);
+	fwrite (log_buffer, log_buffer_size, 1, panasonic_log_file);
+	fwrite (log_buffer, log_buffer_size, 1, panasonic_errors_log_file);
+
+	if (fsync_log) F_SYNC (panasonic_errors_log_file);
+}
+
+void log_ptz_ER2 (const char *c_source_filename, GDateTime *current_time, ptz_t *ptz, const char *str)
+{
+	log_buffer_size = sprintf (log_buffer, "%02dh %02dm %02ds %03dms: [%s] Camera %s (%s) ERROR 2 (%s): The camera is in the busy status.\n\n", g_date_time_get_hour (current_time), g_date_time_get_minute (current_time), g_date_time_get_second (current_time), g_date_time_get_microsecond (current_time) / 1000, c_source_filename, ptz->name, ptz->ip_address, str);
+
+	fwrite (log_buffer, log_buffer_size, 1, main_log_file);
+	fwrite (log_buffer, log_buffer_size, 1, panasonic_log_file);
+	fwrite (log_buffer, log_buffer_size, 1, panasonic_errors_log_file);
+
+	if (fsync_log) F_SYNC (panasonic_errors_log_file);
+}
+
+void log_ptz_ER3 (const char *c_source_filename, GDateTime *current_time, ptz_t *ptz, const char *str)
+{
+	log_buffer_size = sprintf (log_buffer, "%02dh %02dm %02ds %03dms: [%s] Camera %s (%s) ERROR 3 (%s): The data value of the command is outside the acceptable range.\n\n", g_date_time_get_hour (current_time), g_date_time_get_minute (current_time), g_date_time_get_second (current_time), g_date_time_get_microsecond (current_time) / 1000, c_source_filename, ptz->name, ptz->ip_address, str);
+
+	fwrite (log_buffer, log_buffer_size, 1, main_log_file);
+	fwrite (log_buffer, log_buffer_size, 1, panasonic_log_file);
+	fwrite (log_buffer, log_buffer_size, 1, panasonic_errors_log_file);
+
+	if (fsync_log) F_SYNC (panasonic_errors_log_file);
 }
 
 void log_ptz_response (const char *c_source_filename, ptz_t *ptz, const char *response, int len)
 {
 	GDateTime *current_time;
-	int size;
+	int index;
 
 	current_time = g_date_time_new_now_local ();
 
-	size = sprintf (log_buffer, "%02dh %02dm %02ds %03dms: [%s] Receive response from camera %s (%s) <-- ", g_date_time_get_hour (current_time), g_date_time_get_minute (current_time), g_date_time_get_second (current_time), g_date_time_get_microsecond (current_time) / 1000, c_source_filename, ptz->name, ptz->ip_address);
+	log_buffer_size = sprintf (log_buffer, "%02dh %02dm %02ds %03dms: [%s] Receive response from camera %s (%s) <-- ", g_date_time_get_hour (current_time), g_date_time_get_minute (current_time), g_date_time_get_second (current_time), g_date_time_get_microsecond (current_time) / 1000, c_source_filename, ptz->name, ptz->ip_address);
 
-	memcpy (log_buffer + size, response, len);
-	size += len;
+	memcpy (log_buffer + log_buffer_size, response, len);
+	log_buffer_size += len;
 
-	log_buffer[size++] = '\n';
-	log_buffer[size++] = '\n';
+	log_buffer[log_buffer_size++] = '\n';
+	log_buffer[log_buffer_size++] = '\n';
 
-	fwrite (log_buffer, size, 1, main_log_file);
-	fwrite (log_buffer, size, 1, panasonic_log_file);
+	fwrite (log_buffer, log_buffer_size, 1, main_log_file);
+	fwrite (log_buffer, log_buffer_size, 1, panasonic_log_file);
 
-	if (fsync_log) {
-		F_SYNC (main_log_file);
-		F_SYNC (panasonic_log_file);
+	index = len - 1;
+	while (response[index] != '\n') index--;
+	index++;
+
+	if (((response[index] == 'e') || (response[index] == 'E')) && (response[index + 1] == 'R')) {
+		if (response[index + 2] == '1') log_ptz_ER1 (__FILE__, current_time, ptz, response + index);
+		else if (response[index + 2] == '2') log_ptz_ER2 (__FILE__, current_time, ptz, response + index);
+		else if (response[index + 2] == '3') log_ptz_ER3 (__FILE__, current_time, ptz, response + index); 
 	}
-
-	g_date_time_unref (current_time);
-}
-
-void log_controller_command (const char *c_source_filename, const char *cmd, int len)
-{
-	GDateTime *current_time;
-	int size;
-
-	current_time = g_date_time_new_now_local ();
-
-	size = sprintf (log_buffer, "%02dh %02dm %02ds %03dms: [%s] Send command to controller       --> ", g_date_time_get_hour (current_time), g_date_time_get_minute (current_time), g_date_time_get_second (current_time), g_date_time_get_microsecond (current_time) / 1000, c_source_filename);
-
-	memcpy (log_buffer + size, cmd, len);
-	size += len;
-
-	log_buffer[size++] = '\n';
-	log_buffer[size++] = '\n';
-
-	fwrite (log_buffer, size, 1, main_log_file);
-	fwrite (log_buffer, size, 1, panasonic_log_file);
-
-	if (fsync_log) {
-		F_SYNC (main_log_file);
-		F_SYNC (panasonic_log_file);
-	}
-
-	g_date_time_unref (current_time);
-}
-
-void log_controller_response (const char *c_source_filename, const char *response, int len)
-{
-	GDateTime *current_time;
-	int size;
-
-	current_time = g_date_time_new_now_local ();
-
-	size = sprintf (log_buffer, "%02dh %02dm %02ds %03dms: [%s] Receive response from controller <-- ", g_date_time_get_hour (current_time), g_date_time_get_minute (current_time), g_date_time_get_second (current_time), g_date_time_get_microsecond (current_time) / 1000, c_source_filename);
-
-	memcpy (log_buffer + size, response, len);
-	size += len;
-
-	log_buffer[size++] = '\n';
-	log_buffer[size++] = '\n';
-
-	fwrite (log_buffer, size, 1, main_log_file);
-	fwrite (log_buffer, size, 1, panasonic_log_file);
 
 	if (fsync_log) {
 		F_SYNC (main_log_file);
@@ -247,22 +234,93 @@ void log_controller_response (const char *c_source_filename, const char *respons
 void log_ptz_update_notification (const char *c_source_filename, const char *ip_address, const char *update_notification)
 {
 	GDateTime *current_time;
-	int size, len;
+	int len;
 
 	current_time = g_date_time_new_now_local ();
 
-	size = sprintf (log_buffer, "%02dh %02dm %02ds %03dms: [%s] Receive Update Notification from %s <-- ", g_date_time_get_hour (current_time), g_date_time_get_minute (current_time), g_date_time_get_second (current_time), g_date_time_get_microsecond (current_time) / 1000, c_source_filename, ip_address);
+	log_buffer_size = sprintf (log_buffer, "%02dh %02dm %02ds %03dms: [%s] Receive Update Notification from %s <-- ", g_date_time_get_hour (current_time), g_date_time_get_minute (current_time), g_date_time_get_second (current_time), g_date_time_get_microsecond (current_time) / 1000, c_source_filename, ip_address);
 
 	len = ((((int)((unsigned char *)update_notification)[22])) << 8) + ((unsigned char *)update_notification)[23] - 8;
 
-	memcpy (log_buffer + size, update_notification + 30, len);
-	size += len;
+	memcpy (log_buffer + log_buffer_size, update_notification + 30, len);
+	log_buffer_size += len;
 
-	log_buffer[size++] = '\n';
-	log_buffer[size++] = '\n';
+	log_buffer[log_buffer_size++] = '\n';
+	log_buffer[log_buffer_size++] = '\n';
 
-	fwrite (log_buffer, size, 1, main_log_file);
-	fwrite (log_buffer, size, 1, panasonic_log_file);
+	fwrite (log_buffer, log_buffer_size, 1, main_log_file);
+	fwrite (log_buffer, log_buffer_size, 1, panasonic_log_file);
+
+	if (fsync_log) {
+		F_SYNC (main_log_file);
+		F_SYNC (panasonic_log_file);
+	}
+
+	g_date_time_unref (current_time);
+}
+
+void log_ptz_error (const char *c_source_filename, ptz_t *ptz, const char *str)
+{
+	GDateTime *current_time;
+
+	current_time = g_date_time_new_now_local ();
+
+	log_buffer_size = sprintf (log_buffer, "%02dh %02dm %02ds %03dms: [%s] Camera %s (%s) %s (%02Xh)\n\n", g_date_time_get_hour (current_time), g_date_time_get_minute (current_time), g_date_time_get_second (current_time), g_date_time_get_microsecond (current_time) / 1000, c_source_filename, ptz->name, ptz->ip_address, str, ptz->error_code);
+
+	fwrite (log_buffer, log_buffer_size, 1, main_log_file);
+	fwrite (log_buffer, log_buffer_size, 1, panasonic_log_file);
+	fwrite (log_buffer, log_buffer_size, 1, panasonic_errors_log_file);
+
+	if (fsync_log) {
+		F_SYNC (main_log_file);
+		F_SYNC (panasonic_log_file);
+		F_SYNC (panasonic_errors_log_file);
+	}
+
+	g_date_time_unref (current_time);
+}
+
+void log_controller_command (const char *c_source_filename, const char *ip_address, const char *cmd, int len)
+{
+	GDateTime *current_time;
+
+	current_time = g_date_time_new_now_local ();
+
+	log_buffer_size = sprintf (log_buffer, "%02dh %02dm %02ds %03dms: [%s] Send command to controller (%s)       --> ", g_date_time_get_hour (current_time), g_date_time_get_minute (current_time), g_date_time_get_second (current_time), g_date_time_get_microsecond (current_time) / 1000, c_source_filename, ip_address);
+
+	memcpy (log_buffer + log_buffer_size, cmd, len);
+	log_buffer_size += len;
+
+	log_buffer[log_buffer_size++] = '\n';
+	log_buffer[log_buffer_size++] = '\n';
+
+	fwrite (log_buffer, log_buffer_size, 1, main_log_file);
+	fwrite (log_buffer, log_buffer_size, 1, panasonic_log_file);
+
+	if (fsync_log) {
+		F_SYNC (main_log_file);
+		F_SYNC (panasonic_log_file);
+	}
+
+	g_date_time_unref (current_time);
+}
+
+void log_controller_response (const char *c_source_filename, const char *ip_address, const char *response, int len)
+{
+	GDateTime *current_time;
+
+	current_time = g_date_time_new_now_local ();
+
+	log_buffer_size = sprintf (log_buffer, "%02dh %02dm %02ds %03dms: [%s] Receive response from controller (%s) <-- ", g_date_time_get_hour (current_time), g_date_time_get_minute (current_time), g_date_time_get_second (current_time), g_date_time_get_microsecond (current_time) / 1000, c_source_filename, ip_address);
+
+	memcpy (log_buffer + log_buffer_size, response, len);
+	log_buffer_size += len;
+
+	log_buffer[log_buffer_size++] = '\n';
+	log_buffer[log_buffer_size++] = '\n';
+
+	fwrite (log_buffer, log_buffer_size, 1, main_log_file);
+	fwrite (log_buffer, log_buffer_size, 1, panasonic_log_file);
 
 	if (fsync_log) {
 		F_SYNC (main_log_file);
@@ -275,22 +333,22 @@ void log_ptz_update_notification (const char *c_source_filename, const char *ip_
 void log_sw_p_08_outgoing_message (const char *c_source_filename, const char *ip_address, const char *sw_p_08_message, int len)
 {
 	GDateTime *current_time;
-	int size, i;
+	int i;
 
 	current_time = g_date_time_new_now_local ();
 
-	size = sprintf (log_buffer, "%02dh %02dm %02ds %03dms: [%s] Send SW-P-08 message to %s      -->", g_date_time_get_hour (current_time), g_date_time_get_minute (current_time), g_date_time_get_second (current_time), g_date_time_get_microsecond (current_time) / 1000, c_source_filename, ip_address);
+	log_buffer_size = sprintf (log_buffer, "%02dh %02dm %02ds %03dms: [%s] Send SW-P-08 message to %s      -->", g_date_time_get_hour (current_time), g_date_time_get_minute (current_time), g_date_time_get_second (current_time), g_date_time_get_microsecond (current_time) / 1000, c_source_filename, ip_address);
 
 	for (i = 0; i < len; i++) {
-		sprintf (log_buffer + size, " %02X", sw_p_08_message[i]);
-		size += 3;
+		sprintf (log_buffer + log_buffer_size, " %02X", sw_p_08_message[i]);
+		log_buffer_size += 3;
 	}
 
-	log_buffer[size++] = '\n';
-	log_buffer[size++] = '\n';
+	log_buffer[log_buffer_size++] = '\n';
+	log_buffer[log_buffer_size++] = '\n';
 
-	fwrite (log_buffer, size, 1, main_log_file);
-	fwrite (log_buffer, size, 1, sw_p_08_log_file);
+	fwrite (log_buffer, log_buffer_size, 1, main_log_file);
+	fwrite (log_buffer, log_buffer_size, 1, sw_p_08_log_file);
 
 	if (fsync_log) {
 		F_SYNC (main_log_file);
@@ -303,22 +361,22 @@ void log_sw_p_08_outgoing_message (const char *c_source_filename, const char *ip
 void log_sw_p_08_incomming_message (const char *c_source_filename, const char *ip_address, const char *sw_p_08_message, int len)
 {
 	GDateTime *current_time;
-	int size, i;
+	int i;
 
 	current_time = g_date_time_new_now_local ();
 
-	size = sprintf (log_buffer, "%02dh %02dm %02ds %03dms: [%s] Receive SW-P-08 message from %s <--", g_date_time_get_hour (current_time), g_date_time_get_minute (current_time), g_date_time_get_second (current_time), g_date_time_get_microsecond (current_time) / 1000, c_source_filename, ip_address);
+	log_buffer_size = sprintf (log_buffer, "%02dh %02dm %02ds %03dms: [%s] Receive SW-P-08 message from %s <--", g_date_time_get_hour (current_time), g_date_time_get_minute (current_time), g_date_time_get_second (current_time), g_date_time_get_microsecond (current_time) / 1000, c_source_filename, ip_address);
 
 	for (i = 0; i < len; i++) {
-		sprintf (log_buffer + size, " %02X", sw_p_08_message[i]);
-		size += 3;
+		sprintf (log_buffer + log_buffer_size, " %02X", sw_p_08_message[i]);
+		log_buffer_size += 3;
 	}
 
-	log_buffer[size++] = '\n';
-	log_buffer[size++] = '\n';
+	log_buffer[log_buffer_size++] = '\n';
+	log_buffer[log_buffer_size++] = '\n';
 
-	fwrite (log_buffer, size, 1, main_log_file);
-	fwrite (log_buffer, size, 1, sw_p_08_log_file);
+	fwrite (log_buffer, log_buffer_size, 1, main_log_file);
+	fwrite (log_buffer, log_buffer_size, 1, sw_p_08_log_file);
 
 	if (fsync_log) {
 		F_SYNC (main_log_file);
@@ -328,39 +386,50 @@ void log_sw_p_08_incomming_message (const char *c_source_filename, const char *i
 	g_date_time_unref (current_time);
 }
 
-void log_tsl_umd_v5_packet (tsl_umd_v5_packet_t *packet)
+void log_tsl_umd_v5_packet (const char *packet)
 {
 	GDateTime *current_time;
-	int size;
+	guint16 total_byte_count, length;
+	int ptr;
 
 	current_time = g_date_time_new_now_local ();
 
-	size = sprintf (log_buffer, "%02dh %02dm %02ds %03dms: [tsl_umd_v5.c] Receive TSL UMD V5 packet\n" \
+	total_byte_count = *((guint16 *)packet);
+	ptr = 6;
+
+	log_buffer_size = sprintf (log_buffer, "%02dh %02dm %02ds %03dms: [tsl_umd_v5.c] Receive TSL UMD V5 packet\n" \
 			"\tTotal byte count of following packet: %d\n" \
 			"\tMinor version number: %d\n" \
 			"\tFlags: 0x%02X\n" \
 			"\tPrimary index (screen): %d\n\n", \
-			g_date_time_get_hour (current_time), g_date_time_get_minute (current_time), g_date_time_get_second (current_time), g_date_time_get_microsecond (current_time) / 1000, packet->total_byte_count, packet->minor_version_number, packet->flags, packet->screen);
+			g_date_time_get_hour (current_time), g_date_time_get_minute (current_time), g_date_time_get_second (current_time), g_date_time_get_microsecond (current_time) / 1000, total_byte_count, *((guint8 *)(packet + 2)), *((guint8 *)(packet + 3)), *((guint16 *)(packet + 4)));
 
-	fwrite (log_buffer, size, 1, main_log_file);
-	fwrite (log_buffer, size, 1, tsl_umd_v5_log_file);
+	fwrite (log_buffer, log_buffer_size, 1, main_log_file);
+	fwrite (log_buffer, log_buffer_size, 1, tsl_umd_v5_log_file);
 
-	if (fsync_log) {
-		F_SYNC (main_log_file);
-		F_SYNC (tsl_umd_v5_log_file);
-	}
+	do {
+		length = *((guint16 *)(packet + ptr + 4));
 
-	packet->text[packet->length] = '\0';
+		log_buffer_size = sprintf (log_buffer, "\tDisplay Message\n" \
+				"\tDisplay index: %d\n" \
+				"\tTally data: 0x%04X\n" \
+				"\tByte count of following text: %d\n" \
+				"\tUMD text: ", \
+				*((guint16 *)(packet + ptr)), *((guint16 *)(packet + ptr + 2)), length);
 
-	size = sprintf (log_buffer, "\tDisplay Message\n" \
-			"\tDisplay index: %d\n" \
-			"\tTally data: 0x%04X\n" \
-			"\tByte count of following text: %d\n" \
-			"\tUMD text: %s\n\n", \
-			packet->index, packet->control, packet->length, packet->text);
+		fwrite (log_buffer, log_buffer_size, 1, main_log_file);
+		fwrite (log_buffer, log_buffer_size, 1, tsl_umd_v5_log_file);
 
-	fwrite (log_buffer, size, 1, main_log_file);
-	fwrite (log_buffer, size, 1, tsl_umd_v5_log_file);
+		if (length > 0) {
+			fwrite (packet + ptr + 6, length, 1, main_log_file);
+			fwrite (packet + ptr + 6, length, 1, tsl_umd_v5_log_file);
+		}
+
+		fwrite ("\n\n", 2, 1, main_log_file);
+		fwrite ("\n\n", 2, 1, tsl_umd_v5_log_file);
+
+		ptr += 6 + length;
+	} while (ptr <= total_byte_count - 6);
 
 	if (fsync_log) {
 		F_SYNC (main_log_file);
@@ -373,17 +442,16 @@ void log_tsl_umd_v5_packet (tsl_umd_v5_packet_t *packet)
 void log_ultimatte_command (const char *c_source_filename, const char *ip_address, const char *ultimatte_command, int len)
 {
 	GDateTime *current_time;
-	int size;
 
 	current_time = g_date_time_new_now_local ();
 
-	size = sprintf (log_buffer, "%02dh %02dm %02ds %03dms: [%s] Send Ultimatte command to %s --> ", g_date_time_get_hour (current_time), g_date_time_get_minute (current_time), g_date_time_get_second (current_time), g_date_time_get_microsecond (current_time) / 1000, c_source_filename, ip_address);
+	log_buffer_size = sprintf (log_buffer, "%02dh %02dm %02ds %03dms: [%s] Send Ultimatte command to %s --> ", g_date_time_get_hour (current_time), g_date_time_get_minute (current_time), g_date_time_get_second (current_time), g_date_time_get_microsecond (current_time) / 1000, c_source_filename, ip_address);
 
-	memcpy (log_buffer + size, ultimatte_command, len);
-	size += len;
+	memcpy (log_buffer + log_buffer_size, ultimatte_command, len);
+	log_buffer_size += len;
 
-	fwrite (log_buffer, size, 1, main_log_file);
-	fwrite (log_buffer, size, 1, ultimatte_log_file);
+	fwrite (log_buffer, log_buffer_size, 1, main_log_file);
+	fwrite (log_buffer, log_buffer_size, 1, ultimatte_log_file);
 
 	if (fsync_log) {
 		F_SYNC (main_log_file);
@@ -400,102 +468,138 @@ void log_ultimatte_message (const char *ultimatte_message, int len)
 	if (fsync_log) F_SYNC (ultimatte_log_file);
 }
 
-void log_free_d_message (const char *c_source_filename, const char *ip_address, const char *free_d_message, int len, gboolean in_out)
+void log_free_d_D1_message (const unsigned char *free_d_message)
 {
-	GDateTime *current_time;
-	int size, i;
 	gint32 value;
 	guint32 unsigned_value;
-	char checksum;
+
+	log_buffer[log_buffer_size++] = '\n';
+
+	log_buffer_size += sprintf (log_buffer + log_buffer_size, "Camera ID = %d, ", free_d_message[1]);
+
+	if (free_d_message[2] & 0x80) ((unsigned char *)&value)[3] = 0xFF;
+	else ((unsigned char *)&value)[3] = 0x00;
+	((unsigned char *)&value)[2] = free_d_message[2];
+	((unsigned char *)&value)[1] = free_d_message[3];
+	((unsigned char *)&value)[0] = free_d_message[4];
+
+	log_buffer_size += sprintf (log_buffer + log_buffer_size, "Pan = %+f, ", value / 32768.0);
+
+	if (free_d_message[5] & 0x80) ((unsigned char *)&value)[3] = 0xFF;
+	else ((unsigned char *)&value)[3] = 0x00;
+	((unsigned char *)&value)[2] = free_d_message[5];
+	((unsigned char *)&value)[1] = free_d_message[6];
+	((unsigned char *)&value)[0] = free_d_message[7];
+
+	log_buffer_size += sprintf (log_buffer + log_buffer_size, "Tilt = %+f, ", value / 32768.0);
+
+	if (free_d_message[8] & 0x80) ((unsigned char *)&value)[3] = 0xFF;
+	else ((unsigned char *)&value)[3] = 0x00;
+	((unsigned char *)&value)[2] = free_d_message[8];
+	((unsigned char *)&value)[1] = free_d_message[9];
+	((unsigned char *)&value)[0] = free_d_message[10];
+
+	log_buffer_size += sprintf (log_buffer + log_buffer_size, "Roll = %+f, ", value / 32768.0);
+
+	if (free_d_message[11] & 0x80) ((unsigned char *)&value)[3] = 0xFF;
+	else ((unsigned char *)&value)[3] = 0x00;
+	((unsigned char *)&value)[2] = free_d_message[11];
+	((unsigned char *)&value)[1] = free_d_message[12];
+	((unsigned char *)&value)[0] = free_d_message[13];
+
+	log_buffer_size += sprintf (log_buffer + log_buffer_size, "X = %+f, ", value / 64.0);
+
+	if (free_d_message[14] & 0x80) ((unsigned char *)&value)[3] = 0xFF;
+	else ((unsigned char *)&value)[3] = 0x00;
+	((unsigned char *)&value)[2] = free_d_message[14];
+	((unsigned char *)&value)[1] = free_d_message[15];
+	((unsigned char *)&value)[0] = free_d_message[16];
+
+	log_buffer_size += sprintf (log_buffer + log_buffer_size, "Y = %+f, ", value / 64.0);
+
+	if (free_d_message[17] & 0x80) ((unsigned char *)&value)[3] = 0xFF;
+	else ((unsigned char *)&value)[3] = 0x00;
+	((unsigned char *)&value)[2] = free_d_message[17];
+	((unsigned char *)&value)[1] = free_d_message[18];
+	((unsigned char *)&value)[0] = free_d_message[19];
+
+	log_buffer_size += sprintf (log_buffer + log_buffer_size, "Height = %+f, ", value / 64.0);
+
+	((unsigned char *)&unsigned_value)[3] = 0x00;
+	((unsigned char *)&unsigned_value)[2] = free_d_message[20];
+	((unsigned char *)&unsigned_value)[1] = free_d_message[21];
+	((unsigned char *)&unsigned_value)[0] = free_d_message[22];
+
+	log_buffer_size += sprintf (log_buffer + log_buffer_size, "Zoom = %u, ", unsigned_value);
+
+	((unsigned char *)&unsigned_value)[2] = free_d_message[23];
+	((unsigned char *)&unsigned_value)[1] = free_d_message[24];
+	((unsigned char *)&unsigned_value)[0] = free_d_message[25];
+
+	log_buffer_size += sprintf (log_buffer + log_buffer_size, "Focus = %u", unsigned_value);
+}
+
+void log_free_d_outgoing_message (const char *c_source_filename, const char *ip_address, const unsigned char *free_d_message, int len)
+{
+	GDateTime *current_time;
+	int i;
 
 	current_time = g_date_time_new_now_local ();
 
-	if (in_out) size = sprintf (log_buffer, "%02dh %02dm %02ds %03dms: [%s] Receive free-d message from %s <--", g_date_time_get_hour (current_time), g_date_time_get_minute (current_time), g_date_time_get_second (current_time), g_date_time_get_microsecond (current_time) / 1000, c_source_filename, ip_address);
-	else size = sprintf (log_buffer, "%02dh %02dm %02ds %03dms: [%s] Send free-d message to %s      -->", g_date_time_get_hour (current_time), g_date_time_get_minute (current_time), g_date_time_get_second (current_time), g_date_time_get_microsecond (current_time) / 1000, c_source_filename, ip_address);
+	log_buffer_size = sprintf (log_buffer, "%02dh %02dm %02ds %03dms: [%s] Send free-d message to %s      -->", g_date_time_get_hour (current_time), g_date_time_get_minute (current_time), g_date_time_get_second (current_time), g_date_time_get_microsecond (current_time) / 1000, c_source_filename, ip_address);
 
 	for (i = 0; i < len; i++) {
-		sprintf (log_buffer + size, " %02X", free_d_message[i]);
-		size += 3;
+		sprintf (log_buffer + log_buffer_size, " %02X", free_d_message[i]);
+		log_buffer_size += 3;
+	}
+
+	log_free_d_D1_message (free_d_message);
+
+	log_buffer[log_buffer_size++] = '\n';
+	log_buffer[log_buffer_size++] = '\n';
+
+	fwrite (log_buffer, log_buffer_size, 1, main_log_file);
+	fwrite (log_buffer, log_buffer_size, 1, free_d_log_file);
+
+	if (fsync_log) {
+		F_SYNC (main_log_file);
+		F_SYNC (free_d_log_file);
+	}
+
+	g_date_time_unref (current_time);
+}
+
+void log_free_d_incomming_message (const char *c_source_filename, const char *ip_address, const unsigned char *free_d_message, int len)
+{
+	GDateTime *current_time;
+	int i;
+	unsigned int checksum;
+
+	current_time = g_date_time_new_now_local ();
+
+	log_buffer_size = sprintf (log_buffer, "%02dh %02dm %02ds %03dms: [%s] Receive free-d message from %s <--", g_date_time_get_hour (current_time), g_date_time_get_minute (current_time), g_date_time_get_second (current_time), g_date_time_get_microsecond (current_time) / 1000, c_source_filename, ip_address);
+
+	for (i = 0; i < len; i++) {
+		sprintf (log_buffer + log_buffer_size, " %02X", free_d_message[i]);
+		log_buffer_size += 3;
 	}
 
 	if (len >= 29) {
-		log_buffer[size++] = '\n';
+		log_free_d_D1_message (free_d_message);
 
-		size += sprintf (log_buffer + size, "Camera ID = %d, ", free_d_message[1]);
+		for (checksum = 0x40, i = 0; i < 28; i++) {
+			checksum -= free_d_message[i];
+//			if (checksum < 0) checksum += 256;
+		}
 
-		if (free_d_message[2] & 0x80) ((char *)&value)[3] = 0xFF;
-		else ((char *)&value)[3] = 0x00;
-		((char *)&value)[2] = free_d_message[2];
-		((char *)&value)[1] = free_d_message[3];
-		((char *)&value)[0] = free_d_message[4];
-
-		size += sprintf (log_buffer + size, "Pan = %+f, ", value / 32768.0);
-
-		if (free_d_message[5] & 0x80) ((char *)&value)[3] = 0xFF;
-		else ((char *)&value)[3] = 0x00;
-		((char *)&value)[2] = free_d_message[5];
-		((char *)&value)[1] = free_d_message[6];
-		((char *)&value)[0] = free_d_message[7];
-
-		size += sprintf (log_buffer + size, "Tilt = %+f, ", value / 32768.0);
-
-
-		if (free_d_message[8] & 0x80) ((char *)&value)[3] = 0xFF;
-		else ((char *)&value)[3] = 0x00;
-		((char *)&value)[2] = free_d_message[8];
-		((char *)&value)[1] = free_d_message[9];
-		((char *)&value)[0] = free_d_message[10];
-
-		size += sprintf (log_buffer + size, "Roll = %+f, ", value / 32768.0);
-
-		if (free_d_message[11] & 0x80) ((char *)&value)[3] = 0xFF;
-		else ((char *)&value)[3] = 0x00;
-		((char *)&value)[2] = free_d_message[11];
-		((char *)&value)[1] = free_d_message[12];
-		((char *)&value)[0] = free_d_message[13];
-
-		size += sprintf (log_buffer + size, "X = %+f, ", value / 64.0);
-
-		if (free_d_message[14] & 0x80) ((char *)&value)[3] = 0xFF;
-		else ((char *)&value)[3] = 0x00;
-		((char *)&value)[2] = free_d_message[14];
-		((char *)&value)[1] = free_d_message[15];
-		((char *)&value)[0] = free_d_message[16];
-
-		size += sprintf (log_buffer + size, "Y = %+f, ", value / 64.0);
-
-		if (free_d_message[17] & 0x80) ((char *)&value)[3] = 0xFF;
-		else ((char *)&value)[3] = 0x00;
-		((char *)&value)[2] = free_d_message[17];
-		((char *)&value)[1] = free_d_message[18];
-		((char *)&value)[0] = free_d_message[19];
-
-		size += sprintf (log_buffer + size, "Height = %+f, ", value / 64.0);
-
-		((char *)&unsigned_value)[3] = 0x00;
-		((char *)&unsigned_value)[2] = free_d_message[20];
-		((char *)&unsigned_value)[1] = free_d_message[21];
-		((char *)&unsigned_value)[0] = free_d_message[22];
-
-		size += sprintf (log_buffer + size, "Zoom = %u, ", unsigned_value);
-
-		((char *)&unsigned_value)[2] = free_d_message[23];
-		((char *)&unsigned_value)[1] = free_d_message[24];
-		((char *)&unsigned_value)[0] = free_d_message[25];
-
-		size += sprintf (log_buffer + size, "Focus = %u", unsigned_value);
-
-		checksum = 0x40;
-		for (i = 0; i < 28; i++) checksum -= free_d_message[i];
-		
-		if (checksum != free_d_message[28]) size += sprintf (log_buffer + size, ", checksum ERROR");
+		if ((checksum % 256) != free_d_message[28]) log_buffer_size += sprintf (log_buffer + log_buffer_size, ", checksum ERROR");
 	}
 
-	log_buffer[size++] = '\n';
-	log_buffer[size++] = '\n';
+	log_buffer[log_buffer_size++] = '\n';
+	log_buffer[log_buffer_size++] = '\n';
 
-	fwrite (log_buffer, size, 1, main_log_file);
-	fwrite (log_buffer, size, 1, free_d_log_file);
+	fwrite (log_buffer, log_buffer_size, 1, main_log_file);
+	fwrite (log_buffer, log_buffer_size, 1, free_d_log_file);
 
 	if (fsync_log) {
 		F_SYNC (main_log_file);
@@ -515,7 +619,8 @@ void init_logging (void)
 void start_logging (void)
 {
 	GDateTime *current_time;
-	char log_file_name[40];
+	int year, month, day;
+	char log_file_name[56];
 
 	g_mutex_lock (&logging_mutex);
 
@@ -523,31 +628,38 @@ void start_logging (void)
 
 	current_time = g_date_time_new_now_local ();
 
-	sprintf (log_file_name, "%04d-%02d-%02d_PTZ-Memory.log", g_date_time_get_year (current_time), g_date_time_get_month (current_time), g_date_time_get_day_of_month (current_time));
+	year = g_date_time_get_year (current_time);
+	month = g_date_time_get_month (current_time);
+	day = g_date_time_get_day_of_month (current_time);
+
+	sprintf (log_file_name, "%04d-%02d-%02d_PTZ-Memory.log", year, month, day);
 	main_log_file = fopen (log_file_name, "a");
 
 	if (log_panasonic) {
-		sprintf (log_file_name, "%04d-%02d-%02d_PTZ-Memory_Panasonic.log", g_date_time_get_year (current_time), g_date_time_get_month (current_time), g_date_time_get_day_of_month (current_time));
+		sprintf (log_file_name, "%04d-%02d-%02d_PTZ-Memory_Panasonic.log", year, month, day);
 		panasonic_log_file = fopen (log_file_name, "a");
+
+		sprintf (log_file_name, "%04d-%02d-%02d_PTZ-Memory_Panasonic_errors.log", year, month, day);
+		panasonic_errors_log_file = fopen (log_file_name, "a");
 	}
 
 	if (log_sw_p_08) {
-		sprintf (log_file_name, "%04d-%02d-%02d_PTZ-Memory_SW-P-08.log", g_date_time_get_year (current_time), g_date_time_get_month (current_time), g_date_time_get_day_of_month (current_time));
+		sprintf (log_file_name, "%04d-%02d-%02d_PTZ-Memory_SW-P-08.log", year, month, day);
 		sw_p_08_log_file = fopen (log_file_name, "a");
 	}
 
 	if (log_tsl_umd_v5) {
-		sprintf (log_file_name, "%04d-%02d-%02d_PTZ-Memory_TSL-UMD-V5.log", g_date_time_get_year (current_time), g_date_time_get_month (current_time), g_date_time_get_day_of_month (current_time));
+		sprintf (log_file_name, "%04d-%02d-%02d_PTZ-Memory_TSL-UMD-V5.log", year, month, day);
 		tsl_umd_v5_log_file = fopen (log_file_name, "a");
 	}
 
 	if (log_ultimatte) {
-		sprintf (log_file_name, "%04d-%02d-%02d_PTZ-Memory_Ultimatte.log", g_date_time_get_year (current_time), g_date_time_get_month (current_time), g_date_time_get_day_of_month (current_time));
+		sprintf (log_file_name, "%04d-%02d-%02d_PTZ-Memory_Ultimatte.log", year, month, day);
 		ultimatte_log_file = fopen (log_file_name, "a");
 	}
 
 	if (log_free_d) {
-		sprintf (log_file_name, "%04d-%02d-%02d_PTZ-Memory_Free-d.log", g_date_time_get_year (current_time), g_date_time_get_month (current_time), g_date_time_get_day_of_month (current_time));
+		sprintf (log_file_name, "%04d-%02d-%02d_PTZ-Memory_Free-d.log", year, month, day);
 		free_d_log_file = fopen (log_file_name, "a");
 	}
 
@@ -561,6 +673,7 @@ void start_logging (void)
 void start_panasonic_log (void)
 {
 	GDateTime *current_time;
+	int year, month, day;
 	char log_file_name[56];
 
 	g_mutex_lock (&logging_mutex);
@@ -568,7 +681,14 @@ void start_panasonic_log (void)
 	if (logging) {
 		current_time = g_date_time_new_now_local ();
 
-		sprintf (log_file_name, "%04d-%02d-%02d_PTZ-Memory_Panasonic.log", g_date_time_get_year (current_time), g_date_time_get_month (current_time), g_date_time_get_day_of_month (current_time));
+		year = g_date_time_get_year (current_time);
+		month = g_date_time_get_month (current_time);
+		day = g_date_time_get_day_of_month (current_time);
+
+		sprintf (log_file_name, "%04d-%02d-%02d_PTZ-Memory_Panasonic.log", year, month, day);
+		panasonic_log_file = fopen (log_file_name, "a");
+
+		sprintf (log_file_name, "%04d-%02d-%02d_PTZ-Memory_Panasonic_errors.log", year, month, day);
 		panasonic_log_file = fopen (log_file_name, "a");
 
 		g_date_time_unref (current_time);
@@ -673,7 +793,10 @@ void stop_logging (void)
 	if (log_ultimatte) fclose (ultimatte_log_file);
 	if (log_tsl_umd_v5) fclose (tsl_umd_v5_log_file);
 	if (log_sw_p_08) fclose (sw_p_08_log_file);
-	if (log_panasonic) fclose (panasonic_log_file);
+	if (log_panasonic) {
+		fclose (panasonic_errors_log_file);
+		fclose (panasonic_log_file);
+	}
 
 	fclose (main_log_file);
 
@@ -688,7 +811,10 @@ void stop_panasonic_log (void)
 
 	log_panasonic = FALSE;
 
-	if (logging) fclose (panasonic_log_file);
+	if (logging) {
+		fclose (panasonic_errors_log_file);
+		fclose (panasonic_log_file);
+	}
 
 	g_mutex_unlock (&logging_mutex);
 }
