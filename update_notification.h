@@ -21,11 +21,7 @@
 #define __UPDATE_NOTIFICATION_H
 
 
-#ifdef _WIN32
-	#include <winsock2.h>
-#elif defined (__linux)
-	#include <sys/socket.h>
-#endif
+#include "network_header.h"
 
 
 #define UPDATE_NOTIFICATION_TCP_PORT 31004

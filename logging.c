@@ -689,7 +689,7 @@ void start_panasonic_log (void)
 		panasonic_log_file = fopen (log_file_name, "a");
 
 		sprintf (log_file_name, "%04d-%02d-%02d_PTZ-Memory_Panasonic_errors.log", year, month, day);
-		panasonic_log_file = fopen (log_file_name, "a");
+		panasonic_errors_log_file = fopen (log_file_name, "a");
 
 		g_date_time_unref (current_time);
 	}

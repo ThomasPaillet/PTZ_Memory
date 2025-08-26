@@ -26,6 +26,8 @@
 
 	#define SHUT_RD SD_RECEIVE
 
+	typedef int socklen_t;
+
 	void WSAInit (void);
 
 #elif defined (__linux)

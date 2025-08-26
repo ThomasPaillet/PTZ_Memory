@@ -663,10 +663,10 @@ int main (int argc, char** argv)
 		if (!cameras_set_itr->layout.show_linked_memories_names_entries) gtk_widget_hide (cameras_set_itr->linked_memories_names_entries);
 
 		if (cameras_set_itr->layout.dont_show_not_active_cameras) {
-			inactive_cameras_at_begining = FALSE;
 			ptz = cameras_set_itr->cameras[0];
 
-			if (!ptz->active) {
+			if (ptz->active) inactive_cameras_at_begining = FALSE;
+			else {
 				gtk_widget_hide (ptz->name_grid);
 				gtk_widget_hide (ptz->memories_grid);
 
@@ -751,11 +751,13 @@ int main (int argc, char** argv)
 
 	for (cameras_set_itr = cameras_sets; cameras_set_itr != NULL; cameras_set_itr = cameras_set_itr->next) {
 		for (i = 0; i < cameras_set_itr->number_of_cameras; i++) {
-			ultimatte = cameras_set_itr->cameras[i]->ultimatte;
-
-			if ((ultimatte != NULL) && (ultimatte->connected)) disconnect_ultimatte (ultimatte);
+			ptz = cameras_set_itr->cameras[i];
 
 			ptz->monitor_pan_tilt = FALSE;
+
+			ultimatte = ptz->ultimatte;
+
+			if ((ultimatte != NULL) && (ultimatte->connected)) disconnect_ultimatte (ultimatte);
 		}
 
 		pango_font_description_free (cameras_set_itr->layout.ptz_name_font_description);

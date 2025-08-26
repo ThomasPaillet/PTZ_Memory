@@ -39,15 +39,11 @@ GThread *update_notification_thread;
 
 gpointer receive_update_notification (void)
 {
-#ifdef _WIN32
-	int addrlen;
-#elif defined (__linux)
 	socklen_t addrlen;
-#endif
-	char buffer[556];
 	struct sockaddr_in src_addr;
 	struct in_addr *src_in_addr;
 	SOCKET src_socket;
+	char buffer[556];
 	cameras_set_t *cameras_set_itr;
 	int i, response;
 	ptz_t *ptz, *other_ptz;
@@ -347,7 +343,7 @@ gpointer receive_update_notification (void)
 			}
 
 			g_mutex_unlock (&cameras_sets_mutex);
-		} else if ((buffer[30] == 'O') && (buffer[31] == 'A') && (buffer[32] == 'F')) { 	//OAF:	//Auto focus_position
+		} else if ((buffer[30] == 'O') && (buffer[31] == 'A') && (buffer[32] == 'F')) { 	//OAF:	//Auto focus position
 			g_mutex_lock (&cameras_sets_mutex);
 
 			for (cameras_set_itr = cameras_sets; cameras_set_itr != NULL; cameras_set_itr = cameras_set_itr->next) {
@@ -500,9 +496,9 @@ void stop_update_notification (void)
 
 	for (cameras_set_itr = cameras_sets; cameras_set_itr != NULL; cameras_set_itr = cameras_set_itr->next) {
 		for (i = 0; i < cameras_set_itr->number_of_cameras; i++) {
-			if (cameras_set_itr->cameras[i]->ip_address_is_valid && (cameras_set_itr->cameras[i]->error_code != CAMERA_IS_UNREACHABLE_ERROR)) {
-				ptz = cameras_set_itr->cameras[i];
+			ptz = cameras_set_itr->cameras[i];
 
+			if (ptz->ip_address_is_valid && (ptz->error_code != CAMERA_IS_UNREACHABLE_ERROR)) {
 				if (ptz->is_on) send_ptz_control_command (ptz, "#LPC0", TRUE);
 
 				send_update_stop_cmd (ptz);

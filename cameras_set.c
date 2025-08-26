@@ -1743,6 +1743,9 @@ cameras_set->page_box (horizontal)
 void add_cameras_set_to_main_window_notebook (cameras_set_t *cameras_set)
 {
 	GtkWidget *widget = gtk_label_new (cameras_set->name);
+	ptz_t *ptz;
+	gboolean inactive_cameras_at_begining;
+	int i;
 
 	cameras_set->page = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
 
@@ -1754,6 +1757,37 @@ void add_cameras_set_to_main_window_notebook (cameras_set_t *cameras_set)
 	gtk_widget_show_all (cameras_set->page);
 
 	if (!cameras_set->layout.show_linked_memories_names_entries) gtk_widget_hide (cameras_set->linked_memories_names_entries);
+
+	if (cameras_set->layout.dont_show_not_active_cameras) {
+		ptz = cameras_set->cameras[0];
+
+		if (ptz->active) inactive_cameras_at_begining = FALSE;
+		else {
+			gtk_widget_hide (ptz->name_grid);
+			gtk_widget_hide (ptz->memories_grid);
+
+			inactive_cameras_at_begining = TRUE;
+		}
+
+		for (i = 1; i < cameras_set->number_of_cameras; i++) {
+			ptz = cameras_set->cameras[i];
+
+			if (!ptz->active) {
+				gtk_widget_hide (ptz->name_separator);
+				gtk_widget_hide (ptz->name_grid);
+				gtk_widget_hide (ptz->memories_separator);
+				gtk_widget_hide (ptz->memories_grid);
+			} else {
+				if (inactive_cameras_at_begining) {
+					gtk_widget_hide (ptz->name_separator);
+					gtk_widget_hide (ptz->memories_separator);
+
+					inactive_cameras_at_begining = FALSE;
+				}
+			}
+		}
+	}
+
 	if (!cameras_set->layout.show_linked_memories_names_labels) gtk_widget_hide (cameras_set->linked_memories_names_labels);
 }
 
