@@ -103,7 +103,7 @@ void show_about_window (void)
 		gtk_label_set_markup (GTK_LABEL (widget), "<b>Mémoires Pan Tilt Zoom pour caméras PTZ Panasonic</b>");
 		gtk_box_pack_start (GTK_BOX (box), widget, FALSE, FALSE, 0);
 
-		widget = gtk_label_new ("Version 2.1");
+		widget = gtk_label_new ("Version 2.2");
 		gtk_box_pack_start (GTK_BOX (box), widget, FALSE, FALSE, 0);
 #ifdef _WIN32
 		widget = gtk_image_new_from_pixbuf (pixbuf_logo);
@@ -223,6 +223,9 @@ void settings_list_box_row_selected (GtkListBox *list_box, GtkListBoxRow *row)
 	if (row != NULL) {
 		gtk_widget_set_sensitive (settings_configuration_button, TRUE);
 		gtk_widget_set_sensitive (settings_delete_button, TRUE);
+
+		if (inhibit_main_window_notebook_switch_page) inhibit_main_window_notebook_switch_page = FALSE;
+		else gtk_notebook_set_current_page (GTK_NOTEBOOK (main_window_notebook), gtk_list_box_row_get_index (row));
 	} else {
 		gtk_widget_set_sensitive (settings_configuration_button, FALSE);
 		gtk_widget_set_sensitive (settings_delete_button, FALSE);
@@ -324,8 +327,8 @@ void update_notification_tcp_port_entry_activate (GtkEntry *entry, GtkEntryBuffe
 {
 	int port_sscanf;
 	guint16 port;
-	cameras_set_t *cameras_set_itr;
-	int i;
+	GSList *slist_itr;
+	ptz_t *ptz;
 
 	stop_update_notification ();
 
@@ -339,11 +342,10 @@ void update_notification_tcp_port_entry_activate (GtkEntry *entry, GtkEntryBuffe
 
 	start_update_notification ();
 
-	for (cameras_set_itr = cameras_sets; cameras_set_itr != NULL; cameras_set_itr = cameras_set_itr->next) {
-		for (i = 0; i < cameras_set_itr->number_of_cameras; i++) {
-			if ((cameras_set_itr->cameras[i]->ip_address_is_valid) && (cameras_set_itr->cameras[i]->error_code != CAMERA_IS_UNREACHABLE_ERROR))
-				send_update_start_cmd (cameras_set_itr->cameras[i]);
-		}
+	for (slist_itr = ptz_slist; slist_itr != NULL; slist_itr = slist_itr->next) {
+		ptz = slist_itr->data;
+
+		if (ptz->error_code != CAMERA_IS_UNREACHABLE_ERROR) send_update_start_cmd (ptz);
 	}
 
 	backup_needed = TRUE;
@@ -1032,7 +1034,8 @@ void load_config_file (void)
 	FILE *config_file;
 	int i, j, k, index;
 	cameras_set_t *cameras_set_tmp, *first_cameras_set;
-	ptz_t *ptz;
+	ptz_t *ptz, *first_ptz, *other_ptz;
+	GSList *slist_itr1, *slist_itr2;
 	char memories_name[MAX_MEMORIES][MEMORIES_NAME_LENGTH * 4 + 1];
 	int pixbuf_rowstride;
 	gsize pixbuf_byte_length;
@@ -1048,8 +1051,7 @@ void load_config_file (void)
 	if ((number_of_cameras_sets < 0) || (number_of_cameras_sets > MAX_CAMERAS_SET)) number_of_cameras_sets = 0;
 
 	if (number_of_cameras_sets != 0) {
-		for (i = 0; i < number_of_cameras_sets; i++)
-		{
+		for (i = 0; i < number_of_cameras_sets; i++) {
 			cameras_set_tmp = g_malloc (sizeof (cameras_set_t));
 
 			cameras_set_tmp->next = cameras_sets;
@@ -1126,6 +1128,9 @@ void load_config_file (void)
 					if (interface_default.orientation) create_ptz_widgets_horizontal (ptz);
 					else create_ptz_widgets_vertical (ptz);
 
+					gtk_widget_set_sensitive (ptz->name_grid, FALSE);
+					gtk_widget_set_sensitive (ptz->memories_grid, FALSE);
+
 					fread (ptz->ip_address, sizeof (char), 16, config_file);
 					ptz->ip_address[15] = '\0';
 
@@ -1134,8 +1139,30 @@ void load_config_file (void)
 					if (ptz->address.sin_addr.s_addr == INADDR_NONE) {
 						ptz->ip_address_is_valid = FALSE;
 						ptz->ip_address[0] = '\0';
+
 						cameras_set_with_error = cameras_set_tmp;
-					} else ptz->ip_address_is_valid = TRUE;
+					} else {
+						ptz->ip_address_is_valid = TRUE;
+
+						for (slist_itr1 = ptz_slist; slist_itr1 != NULL; slist_itr1 = slist_itr1->next) {
+							first_ptz = slist_itr1->data;
+
+							if (ptz->address.sin_addr.s_addr == first_ptz->address.sin_addr.s_addr) {
+								for (slist_itr2 = first_ptz->other_ptz_slist; slist_itr2 != NULL; slist_itr2 = slist_itr2->next) {
+									other_ptz = slist_itr2->data;
+
+									ptz->other_ptz_slist = g_slist_prepend (ptz->other_ptz_slist, other_ptz);
+									other_ptz->other_ptz_slist = g_slist_prepend (other_ptz->other_ptz_slist, ptz);
+								}
+
+								ptz->other_ptz_slist = g_slist_prepend (ptz->other_ptz_slist, first_ptz);
+								first_ptz->other_ptz_slist = g_slist_prepend (first_ptz->other_ptz_slist, ptz);
+
+								break;
+							}
+						}
+						if (slist_itr1 == NULL) ptz_slist = g_slist_prepend (ptz_slist, ptz);
+					}
 
 					fread (&ptz->number_of_memories, sizeof (int), 1, config_file);
 					if ((ptz->number_of_memories < 0) || (ptz->number_of_memories > MAX_MEMORIES)) ptz->number_of_memories = 0;
@@ -1334,8 +1361,7 @@ void save_config_file (void)
 
 	fwrite (&number_of_cameras_sets, sizeof (int), 1, config_file);
 
-	for (i = 0; i < number_of_cameras_sets; i++)
-	{
+	for (i = 0; i < number_of_cameras_sets; i++) {
 		cameras_set_itr = cameras_sets;
 		while (cameras_set_itr->page_num != i) cameras_set_itr = cameras_set_itr->next;
 

@@ -66,6 +66,8 @@ gboolean memory_name_and_outline_draw (GtkWidget *widget, cairo_t *cr, memory_t 
 
 void create_memory_name_window (void);
 
+void destroy_memory_name_window (void);
+
 
 #endif
 

@@ -19,7 +19,6 @@
 
 #include "logging.h"
 
-#include <stdio.h>
 #include "f_sync.h"
 
 

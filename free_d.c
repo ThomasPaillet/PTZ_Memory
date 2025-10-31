@@ -43,7 +43,6 @@ GThread *outgoing_free_d_thread = NULL;
 GThread *incomming_free_d_thread = NULL;
 
 
-
 void init_free_d (void)
 {
 	memset (&free_d_output_address, 0, sizeof (struct sockaddr_in));
@@ -62,7 +61,6 @@ gpointer send_free_d_message (void)
 {
 	gint64 last_time, current_time, elapsed_time;
 	unsigned char free_d_message[29];
-	cameras_set_t *cameras_set_itr;
 	int i, j;
 	unsigned int checksum;
 	ptz_t *ptz;
@@ -78,9 +76,9 @@ gpointer send_free_d_message (void)
 	do {
 		g_mutex_lock (&cameras_sets_mutex);
 
-		for (cameras_set_itr = cameras_sets; cameras_set_itr != NULL; cameras_set_itr = cameras_set_itr->next) {
-			for (i = 0; i < cameras_set_itr->number_of_cameras; i++) {
-				ptz = cameras_set_itr->cameras[i];
+		if (current_cameras_set != NULL) {
+			for (i = 0; i < current_cameras_set->number_of_cameras; i++) {
+				ptz = current_cameras_set->cameras[i];
 
 				if (ptz->is_on) {
 					g_mutex_lock (&ptz->free_d_mutex);
@@ -179,7 +177,10 @@ void start_outgoing_freed_d (void)
 				if (ptz->model == AW_HE130) {
 					g_mutex_lock (&ptz->free_d_mutex);
 
-					if (ptz->monitor_pan_tilt_thread == NULL) ptz->monitor_pan_tilt_thread = g_thread_new (NULL, (GThreadFunc)monitor_ptz_pan_tilt_position, ptz);
+					if (ptz->monitor_pan_tilt_thread == NULL) {
+						ptz->monitor_pan_tilt = TRUE;
+						ptz->monitor_pan_tilt_thread = g_thread_new (NULL, (GThreadFunc)monitor_ptz_pan_tilt_position, ptz);
+					}
 
 					g_mutex_unlock (&ptz->free_d_mutex);
 				}
@@ -205,7 +206,6 @@ void stop_outgoing_freed_d (void)
 				g_mutex_lock (&ptz->free_d_mutex);
 
 				ptz->monitor_pan_tilt = FALSE;
-
 //				g_thread_join (ptz->monitor_pan_tilt_thread);
 				ptz->monitor_pan_tilt_thread = NULL;
 

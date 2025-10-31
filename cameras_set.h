@@ -68,9 +68,9 @@ typedef struct cameras_set_s {
 } cameras_set_t;
 
 
-extern const char cameras_label[];
-
 extern GMutex cameras_sets_mutex;
+
+extern GSList *ptz_slist;
 
 extern int number_of_cameras_sets;
 

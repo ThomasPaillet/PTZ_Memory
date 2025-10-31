@@ -72,6 +72,8 @@ void show_interface_settings_window (void);
 
 void create_interface_settings_window (void);
 
+void destroy_interface_settings_window (void);
+
 
 #endif
 

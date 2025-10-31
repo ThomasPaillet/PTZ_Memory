@@ -34,6 +34,8 @@ extern GtkWidget *main_event_box;
 extern gulong main_event_box_motion_notify_handler_id;
 extern GtkWidget *main_window_notebook;
 
+extern gboolean inhibit_main_window_notebook_switch_page;
+
 extern GtkWidget *interface_button;
 
 extern GtkWidget *store_toggle_button;

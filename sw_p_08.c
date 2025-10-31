@@ -96,8 +96,6 @@ gboolean g_source_show_control_window (ptz_t *ptz)
 {
 	show_control_window (ptz, GTK_WIN_POS_CENTER);
 
-//	if (trackball != NULL) gdk_window_get_device_position_double (ptz->control_window.gdk_window, trackball, &ptz->control_window.x, &ptz->control_window.y, NULL);
-
 	return G_SOURCE_REMOVE;
 }
 
@@ -333,6 +331,21 @@ gboolean remote_device_disconnect (remote_device_t *remote_device)
 	return G_SOURCE_REMOVE;
 }
 
+void send_sw_p_08_buffer (void)
+{
+	if (remote_devices[0].src_socket != INVALID_SOCKET) {
+		send (remote_devices[0].src_socket, sw_p_08_buffer, sw_p_08_buffer_len, 0);
+
+		LOG_SW_P_08_OUTGOING_MESSAGE(inet_ntoa (remote_devices[0].src_addr.sin_addr),sw_p_08_buffer,sw_p_08_buffer_len)
+	}
+
+	if (remote_devices[1].src_socket != INVALID_SOCKET) {
+		send (remote_devices[1].src_socket, sw_p_08_buffer, sw_p_08_buffer_len, 0);
+
+		LOG_SW_P_08_OUTGOING_MESSAGE(inet_ntoa (remote_devices[1].src_addr.sin_addr),sw_p_08_buffer,sw_p_08_buffer_len)
+	}
+}
+
 void tell_cameras_set_is_selected (gint page_num)
 {
 	g_mutex_lock (&sw_p_08_mutex);
@@ -352,37 +365,15 @@ void tell_cameras_set_is_selected (gint page_num)
 		sw_p_08_buffer[10] = DLE;
 //		sw_p_08_buffer[11] = ETX;
 		sw_p_08_buffer_len = 12;
-
-		if (remote_devices[0].src_socket != INVALID_SOCKET) {
-			send (remote_devices[0].src_socket, sw_p_08_buffer, 12, 0);
-
-			LOG_SW_P_08_OUTGOING_MESSAGE(inet_ntoa (remote_devices[0].src_addr.sin_addr),sw_p_08_buffer,12)
-		}
-
-		if (remote_devices[1].src_socket != INVALID_SOCKET) {
-			send (remote_devices[1].src_socket, sw_p_08_buffer, 12, 0);
-
-			LOG_SW_P_08_OUTGOING_MESSAGE(inet_ntoa (remote_devices[1].src_addr.sin_addr),sw_p_08_buffer,12)
-		}
 	} else {
 		sw_p_08_buffer[7] = 5;
 		sw_p_08_buffer[8] = -9 - tally_cameras_set;
 		sw_p_08_buffer[9] = DLE;
 		sw_p_08_buffer[10] = ETX;
 		sw_p_08_buffer_len = 11;
-
-		if (remote_devices[0].src_socket != INVALID_SOCKET) {
-			send (remote_devices[0].src_socket, sw_p_08_buffer, 11, 0);
-
-			LOG_SW_P_08_OUTGOING_MESSAGE(inet_ntoa (remote_devices[0].src_addr.sin_addr),sw_p_08_buffer,11)
-		}
-
-		if (remote_devices[1].src_socket != INVALID_SOCKET) {
-			send (remote_devices[1].src_socket, sw_p_08_buffer, 11, 0);
-
-			LOG_SW_P_08_OUTGOING_MESSAGE(inet_ntoa (remote_devices[1].src_addr.sin_addr),sw_p_08_buffer,11)
-		}
 	}
+
+	send_sw_p_08_buffer ();
 
 	g_mutex_unlock (&sw_p_08_mutex);
 }
@@ -399,43 +390,22 @@ void ask_to_connect_pgm_to_ctrl_opv (void)
 	sw_p_08_buffer[5] = 1;				//Dest	"2: PTZ"
 	sw_p_08_buffer[6] = MAX_MEMORIES;	//Src   "Echap"
 #if MAX_MEMORIES == DLE
-	sw_p_08_buffer[7] = DLE;
-	sw_p_08_buffer[8] = 5;
-	sw_p_08_buffer[9] = -26;
-	sw_p_08_buffer[10] = DLE;
-//	sw_p_08_buffer[11] = ETX;
-	sw_p_08_buffer_len = 12;
-
-		if (remote_devices[0].src_socket != INVALID_SOCKET) {
-			send (remote_devices[0].src_socket, sw_p_08_buffer, 12, 0);
-
-			LOG_SW_P_08_OUTGOING_MESSAGE(inet_ntoa (remote_devices[0].src_addr.sin_addr),sw_p_08_buffer,12)
-		}
-
-		if (remote_devices[1].src_socket != INVALID_SOCKET) {
-			send (remote_devices[1].src_socket, sw_p_08_buffer, 12, 0);
-
-			LOG_SW_P_08_OUTGOING_MESSAGE(inet_ntoa (remote_devices[1].src_addr.sin_addr),sw_p_08_buffer,12)
-		}
+		sw_p_08_buffer[7] = DLE;
+		sw_p_08_buffer[8] = 5;
+		sw_p_08_buffer[9] = -26;
+		sw_p_08_buffer[10] = DLE;
+//		sw_p_08_buffer[11] = ETX;
+		sw_p_08_buffer_len = 12;
 #else
-	sw_p_08_buffer[7] = 5;
-	sw_p_08_buffer[8] = -10 - MAX_MEMORIES;
-	sw_p_08_buffer[9] = DLE;
-	sw_p_08_buffer[10] = ETX;
-	sw_p_08_buffer_len = 11;
-
-		if (remote_devices[0].src_socket != INVALID_SOCKET) {
-			send (remote_devices[0].src_socket, sw_p_08_buffer, 11, 0);
-
-			LOG_SW_P_08_OUTGOING_MESSAGE(inet_ntoa (remote_devices[0].src_addr.sin_addr),sw_p_08_buffer,11)
-		}
-
-		if (remote_devices[1].src_socket != INVALID_SOCKET) {
-			send (remote_devices[1].src_socket, sw_p_08_buffer, 11, 0);
-
-			LOG_SW_P_08_OUTGOING_MESSAGE(inet_ntoa (remote_devices[1].src_addr.sin_addr),sw_p_08_buffer,11)
-		}
+		sw_p_08_buffer[7] = 5;
+		sw_p_08_buffer[8] = -10 - MAX_MEMORIES;
+		sw_p_08_buffer[9] = DLE;
+		sw_p_08_buffer[10] = ETX;
+		sw_p_08_buffer_len = 11;
 #endif
+
+	send_sw_p_08_buffer ();
+
 	g_mutex_unlock (&sw_p_08_mutex);
 }
 
@@ -458,37 +428,15 @@ void ask_to_connect_ptz_to_ctrl_opv (ptz_t *ptz)
 		sw_p_08_buffer[10] = DLE;
 //		sw_p_08_buffer[11] = ETX;
 		sw_p_08_buffer_len = 12;
-
-		if (remote_devices[0].src_socket != INVALID_SOCKET) {
-			send (remote_devices[0].src_socket, sw_p_08_buffer, 12, 0);
-
-			LOG_SW_P_08_OUTGOING_MESSAGE(inet_ntoa (remote_devices[0].src_addr.sin_addr),sw_p_08_buffer,12)
-		}
-
-		if (remote_devices[1].src_socket != INVALID_SOCKET) {
-			send (remote_devices[1].src_socket, sw_p_08_buffer, 12, 0);
-
-			LOG_SW_P_08_OUTGOING_MESSAGE(inet_ntoa (remote_devices[1].src_addr.sin_addr),sw_p_08_buffer,12)
-		}
 	} else {
 		sw_p_08_buffer[7] = 5;
 		sw_p_08_buffer[8] = -10 - tally_ptz;
 		sw_p_08_buffer[9] = DLE;
 		sw_p_08_buffer[10] = ETX;
 		sw_p_08_buffer_len = 11;
-
-		if (remote_devices[0].src_socket != INVALID_SOCKET) {
-			send (remote_devices[0].src_socket, sw_p_08_buffer, 11, 0);
-
-			LOG_SW_P_08_OUTGOING_MESSAGE(inet_ntoa (remote_devices[0].src_addr.sin_addr),sw_p_08_buffer,11)
-		}
-
-		if (remote_devices[1].src_socket != INVALID_SOCKET) {
-			send (remote_devices[1].src_socket, sw_p_08_buffer, 11, 0);
-
-			LOG_SW_P_08_OUTGOING_MESSAGE(inet_ntoa (remote_devices[1].src_addr.sin_addr),sw_p_08_buffer,11)
-		}
 	}
+
+	send_sw_p_08_buffer ();
 
 	g_mutex_unlock (&sw_p_08_mutex);
 }
@@ -512,37 +460,15 @@ void tell_memory_is_selected (int index)
 		sw_p_08_buffer[10] = DLE;
 //		sw_p_08_buffer[11] = ETX;
 		sw_p_08_buffer_len = 12;
-
-		if (remote_devices[0].src_socket != INVALID_SOCKET) {
-			send (remote_devices[0].src_socket, sw_p_08_buffer, 12, 0);
-
-			LOG_SW_P_08_OUTGOING_MESSAGE(inet_ntoa (remote_devices[0].src_addr.sin_addr),sw_p_08_buffer,12)
-		}
-
-		if (remote_devices[1].src_socket != INVALID_SOCKET) {
-			send (remote_devices[1].src_socket, sw_p_08_buffer, 12, 0);
-
-			LOG_SW_P_08_OUTGOING_MESSAGE(inet_ntoa (remote_devices[1].src_addr.sin_addr),sw_p_08_buffer,12)
-		}
 	} else {
 		sw_p_08_buffer[7] = 5;
 		sw_p_08_buffer[8] = -11 - tally_memory;
 		sw_p_08_buffer[9] = DLE;
 		sw_p_08_buffer[10] = ETX;
 		sw_p_08_buffer_len = 11;
-
-		if (remote_devices[0].src_socket != INVALID_SOCKET) {
-			send (remote_devices[0].src_socket, sw_p_08_buffer, 11, 0);
-
-			LOG_SW_P_08_OUTGOING_MESSAGE(inet_ntoa (remote_devices[0].src_addr.sin_addr),sw_p_08_buffer,11)
-		}
-
-		if (remote_devices[1].src_socket != INVALID_SOCKET) {
-			send (remote_devices[1].src_socket, sw_p_08_buffer, 11, 0);
-
-			LOG_SW_P_08_OUTGOING_MESSAGE(inet_ntoa (remote_devices[1].src_addr.sin_addr),sw_p_08_buffer,11)
-		}
 	}
+
+	send_sw_p_08_buffer ();
 
 	g_mutex_unlock (&sw_p_08_mutex);
 }
@@ -556,13 +482,13 @@ void send_ok_plus_crosspoint_tally_message (remote_device_t *remote_device, char
 	else if (dest == 2) src = tally_memory;
 	else src = MAX_MEMORIES + 1;
 
-	full_sw_p_08_buffer[4] = 0x03;	//CROSSPOINT TALLY Message
+	full_sw_p_08_buffer[4] = 0x03;		//CROSSPOINT TALLY Message
 	full_sw_p_08_buffer[5] = 0x00;
 	full_sw_p_08_buffer[6] = 0x00;
-	full_sw_p_08_buffer[7] = dest;
+	full_sw_p_08_buffer[7] = dest;		//Dest
 
 	if (src == DLE) {
-		full_sw_p_08_buffer[8] = DLE;
+		full_sw_p_08_buffer[8] = DLE;	//Src
 		full_sw_p_08_buffer[9] = DLE;
 		full_sw_p_08_buffer[10] = 5;
 		full_sw_p_08_buffer[11] = -24 - dest;
@@ -572,7 +498,7 @@ void send_ok_plus_crosspoint_tally_message (remote_device_t *remote_device, char
 
 		send (remote_device->src_socket, full_sw_p_08_buffer, 14, 0);
 	} else {
-		full_sw_p_08_buffer[8] = src;
+		full_sw_p_08_buffer[8] = src;	//Src
 		full_sw_p_08_buffer[9] = 5;
 		full_sw_p_08_buffer[10] = -8 - dest - src;
 		full_sw_p_08_buffer[11] = DLE;
@@ -587,13 +513,13 @@ void send_ok_plus_crosspoint_tally_message (remote_device_t *remote_device, char
 
 void send_crosspoint_connected_message (remote_device_t *remote_device, char dest, char src)
 {
-	sw_p_08_buffer[2] = 0x04;	//CROSSPOINT CONNECTED Message
+	sw_p_08_buffer[2] = 0x04;		//CROSSPOINT CONNECTED Message
 	sw_p_08_buffer[3] = 0;
 	sw_p_08_buffer[4] = 0;
-	sw_p_08_buffer[5] = dest;
+	sw_p_08_buffer[5] = dest;		//Dest
 
 	if (src == DLE) {
-		sw_p_08_buffer[6] = DLE;
+		sw_p_08_buffer[6] = DLE;	//Src
 		sw_p_08_buffer[7] = DLE;
 		sw_p_08_buffer[8] = 5;
 		sw_p_08_buffer[9] = -25 - dest;
@@ -603,7 +529,7 @@ void send_crosspoint_connected_message (remote_device_t *remote_device, char des
 
 		send (remote_device->src_socket, sw_p_08_buffer, 12, 0);
 	} else {
-		sw_p_08_buffer[6] = src;
+		sw_p_08_buffer[6] = src;	//Src
 		sw_p_08_buffer[7] = 5;
 		sw_p_08_buffer[8] = -9 - dest - src;
 		sw_p_08_buffer[9] = DLE;

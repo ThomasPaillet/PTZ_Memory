@@ -111,7 +111,7 @@ gpointer save_memory (memory_thread_t *memory_thread)
 		ptz->previous_loaded_memory = NULL;
 	}
 
-	if ((ptz->ultimatte != NULL) && (ptz->ultimatte->connected)) {
+	if ((ptz->ultimatte != NULL) && ptz->ultimatte->connected) {
 		len = sprintf (buf, "FILE:\nSave: %s %s %d\n\n", current_cameras_set->name, ptz->name, memory->index);
 		send (ptz->ultimatte->socket, buf, len, 0);
 
@@ -170,7 +170,7 @@ gpointer load_memory (memory_thread_t *memory_thread)
 		ptz->previous_loaded_memory = memory;
 	}
 
-	if ((ptz->ultimatte != NULL) && (ptz->ultimatte->connected)) {
+	if ((ptz->ultimatte != NULL) && ptz->ultimatte->connected) {
 		len = sprintf (buf, "FILE:\nLoad: %s %s %d\n\n", current_cameras_set->name, ptz->name, memory->index);
 		send (ptz->ultimatte->socket, buf, len, 0);
 
@@ -241,7 +241,7 @@ gpointer load_other_memory (memory_thread_t *memory_thread)
 		ptz->previous_loaded_memory = memory;
 	}
 
-	if ((ptz->ultimatte != NULL) && (ptz->ultimatte->connected)) {
+	if ((ptz->ultimatte != NULL) && ptz->ultimatte->connected) {
 		len = sprintf (buf, "FILE:\nLoad: %s %s %d\n\n", current_cameras_set->name, ptz->name, memory->index);
 		send (ptz->ultimatte->socket, buf, len, 0);
 
@@ -322,7 +322,7 @@ gboolean memory_button_button_press_event (GtkButton *button, GdkEventButton *ev
 			g_object_unref (G_OBJECT (memory->full_pixbuf));
 			if (interface_default.thumbnail_width != 320) g_object_unref (G_OBJECT (memory->scaled_pixbuf));
 
-			if ((ptz->ultimatte != NULL) && (ptz->ultimatte->connected)) {
+			if ((ptz->ultimatte != NULL) && ptz->ultimatte->connected) {
 				len = sprintf (buf, "FILE:\nDelete: %s %s %d\n\n", current_cameras_set->name, ptz->name, memory->index);
 				send (ptz->ultimatte->socket, buf, len, 0);
 
@@ -475,5 +475,10 @@ void create_memory_name_window (void)
 		g_signal_connect (G_OBJECT (memory_name_entry), "activate", G_CALLBACK (memory_name_entry_activate), NULL);
 		memory_name_entry_buffer = gtk_entry_get_buffer (GTK_ENTRY (memory_name_entry));
 	gtk_container_add (GTK_CONTAINER (memory_name_window), memory_name_entry);
+}
+
+void destroy_memory_name_window (void)
+{
+	gtk_widget_destroy (memory_name_window);
 }
 

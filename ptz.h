@@ -52,6 +52,8 @@ typedef struct {
 
 	struct sockaddr_in address;
 
+	GSList *other_ptz_slist;	//with_the_same_ip_address;
+
 	int model;
 
 	int jpeg_page;
@@ -64,9 +66,28 @@ typedef struct {
 	gint64 last_time;
 	GMutex cmd_mutex;
 
+	int error_code;
+
+	guint16 tally_data;
+	double tally_brightness;
+	gboolean tally_1_is_on;
+
 	memory_t memories[MAX_MEMORIES];
 	int number_of_memories;
 	memory_t *previous_loaded_memory;
+
+	GtkWidget *name_separator;
+	GtkWidget *name_grid;
+	GtkWidget *name_drawing_area;
+	gboolean enter_notify_name_drawing_area;
+	gboolean enter_notify_ultimatte_picto;
+	GtkWidget *error_drawing_area;
+	gchar *error_drawing_area_tooltip;
+	GtkWidget *memories_separator;
+	GtkWidget *memories_grid;
+	GtkWidget *tally[6];
+
+	GtkWidget *ghost_body;
 
 	gboolean auto_focus;
 
@@ -77,24 +98,6 @@ typedef struct {
 	char focus_position_cmd[8];
 
 	GMutex lens_information_mutex;
-
-	GtkWidget *name_separator;
-	GtkWidget *name_grid;
-	GtkWidget *name_drawing_area;
-	gboolean enter_notify_name_drawing_area;
-	gboolean enter_notify_ultimatte_picto;
-	GtkWidget *memories_separator;
-	GtkWidget *memories_grid;
-	GtkWidget *tally[6];
-
-	guint16 tally_data;
-	double tally_brightness;
-	gboolean tally_1_is_on;
-
-	GtkWidget *error_drawing_area;
-	int error_code;
-
-	GtkWidget *ghost_body;
 
 	gint32 free_d_Pan;
 	gint32 free_d_Tilt;
@@ -111,10 +114,10 @@ typedef struct {
 	gint32 incomming_free_d_Z;
 	gint32 incomming_free_d_Pan;
 
-	GMutex free_d_mutex;
-
 	gboolean monitor_pan_tilt;
 	GThread *monitor_pan_tilt_thread;
+
+	GMutex free_d_mutex;
 
 	ultimatte_t *ultimatte;
 } ptz_t;
@@ -130,8 +133,6 @@ extern gint32 ptz_optical_axis_height[];
 
 
 void init_ptz (ptz_t *ptz);
-
-void check_ptz_model (ptz_t *ptz);
 
 gboolean ptz_is_on (ptz_t *ptz);
 

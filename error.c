@@ -27,33 +27,30 @@
 
 #define PTZ_ERROR(f,c,s) gboolean f (struct in_addr *src_in_addr) \
 { \
-	ptz_t *ptz; \
-	cameras_set_t *cameras_set_itr; \
-	int i; \
+	GSList *slist_itr1, *slist_itr2; \
+	ptz_t *ptz, *other_ptz; \
  \
-	ptz = NULL; \
+	for (slist_itr1 = ptz_slist; slist_itr1 != NULL; slist_itr1 = slist_itr1->next) { \
+		ptz = slist_itr1->data; \
  \
-	g_mutex_lock (&cameras_sets_mutex); \
+		if (ptz->address.sin_addr.s_addr == src_in_addr->s_addr) { \
+			LOG_PTZ_ERROR(s); \
  \
-	for (cameras_set_itr = cameras_sets; cameras_set_itr != NULL; cameras_set_itr = cameras_set_itr->next) { \
-		for (i = 0; i < cameras_set_itr->number_of_cameras; i++) { \
-			if (cameras_set_itr->cameras[i]->address.sin_addr.s_addr == src_in_addr->s_addr) { \
-				if (ptz == NULL) { \
-					ptz = cameras_set_itr->cameras[i]; \
+			ptz->error_code = c; \
+			gtk_widget_queue_draw (ptz->error_drawing_area); \
+			gtk_widget_set_tooltip_text (ptz->error_drawing_area, s); \
  \
-					LOG_PTZ_ERROR(s); \
-				} else ptz = cameras_set_itr->cameras[i]; \
+			for (slist_itr2 = ptz->other_ptz_slist; slist_itr2 != NULL; slist_itr2 = slist_itr2->next) { \
+				other_ptz = slist_itr2->data; \
  \
-				ptz->error_code = c; \
-				gtk_widget_queue_draw (ptz->error_drawing_area); \
-				gtk_widget_set_tooltip_text (ptz->error_drawing_area, s); \
- \
-				break; \
+				other_ptz->error_code = c; \
+				gtk_widget_queue_draw (other_ptz->error_drawing_area); \
+				gtk_widget_set_tooltip_text (other_ptz->error_drawing_area, s); \
 			} \
+ \
+			break; \
 		} \
 	} \
- \
-	g_mutex_unlock (&cameras_sets_mutex); \
  \
 	g_free (src_in_addr); \
  \
@@ -63,6 +60,9 @@
 
 gboolean camera_is_unreachable (ptz_t *ptz)
 {
+	ptz_t *other_ptz;
+	GSList *slist_itr;
+
 	ptz_is_off (ptz);
 
 	gtk_widget_queue_draw (ptz->error_drawing_area);
@@ -70,38 +70,56 @@ gboolean camera_is_unreachable (ptz_t *ptz)
 
 	LOG_PTZ_STRING("is not connected physically")
 
+	for (slist_itr = ptz->other_ptz_slist; slist_itr != NULL; slist_itr = slist_itr->next) {
+		other_ptz = slist_itr->data;
+
+		other_ptz->error_code = CAMERA_IS_UNREACHABLE_ERROR;
+
+		ptz_is_off (other_ptz);
+
+		gtk_widget_queue_draw (other_ptz->error_drawing_area);
+		gtk_widget_set_tooltip_text (other_ptz->error_drawing_area, "La caméra n'est pas connectée au réseau");
+	}
+
 	return G_SOURCE_REMOVE;
 }
 
 gboolean clear_ptz_error (struct in_addr *src_in_addr)
 {
-	ptz_t *ptz;
-	cameras_set_t *cameras_set_itr;
-	int i;
+	GSList *slist_itr1, *slist_itr2;
+	ptz_t *ptz, *other_ptz;
 
-	ptz = NULL;
+	for (slist_itr1 = ptz_slist; slist_itr1 != NULL; slist_itr1 = slist_itr1->next) {
+		ptz = slist_itr1->data;
 
-	g_mutex_lock (&cameras_sets_mutex);
+		if (ptz->address.sin_addr.s_addr == src_in_addr->s_addr) {
+			LOG_PTZ_STRING("Normal");
 
-	for (cameras_set_itr = cameras_sets; cameras_set_itr != NULL; cameras_set_itr = cameras_set_itr->next) {
-		for (i = 0; i < cameras_set_itr->number_of_cameras; i++) {
-			if (cameras_set_itr->cameras[i]->address.sin_addr.s_addr == src_in_addr->s_addr) {
-				if (ptz == NULL) {
-					ptz = cameras_set_itr->cameras[i];
+			ptz->error_code = 0x00;
+			gtk_widget_queue_draw (ptz->error_drawing_area);
+			gtk_widget_set_tooltip_text (ptz->error_drawing_area, NULL);
 
-					LOG_PTZ_STRING("Normal");
-				} else ptz = cameras_set_itr->cameras[i];
-
-				ptz->error_code = 0x00;
-				gtk_widget_queue_draw (ptz->error_drawing_area);
-				gtk_widget_set_tooltip_text (ptz->error_drawing_area, NULL);
-
-				break;
+			if (ptz->error_drawing_area_tooltip != NULL ) {
+				g_free (ptz->error_drawing_area_tooltip);
+				ptz->error_drawing_area_tooltip = NULL;
 			}
+
+			for (slist_itr2 = ptz->other_ptz_slist; slist_itr2 != NULL; slist_itr2 = slist_itr2->next) {
+				other_ptz = slist_itr2->data;
+
+				other_ptz->error_code = 0x00;
+				gtk_widget_queue_draw (other_ptz->error_drawing_area);
+				gtk_widget_set_tooltip_text (other_ptz->error_drawing_area, NULL);
+
+				if (other_ptz->error_drawing_area_tooltip != NULL ) {
+					g_free (other_ptz->error_drawing_area_tooltip);
+					other_ptz->error_drawing_area_tooltip = NULL;
+				}
+			}
+
+			break;
 		}
 	}
-
-	g_mutex_unlock (&cameras_sets_mutex);
 
 	g_free (src_in_addr);
 

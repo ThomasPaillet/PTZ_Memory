@@ -17,7 +17,7 @@ $(PROG): Linux/gresources.o $(OBJS)
 Linux/gresources.o: Linux/gresources.xml
 	@(cd Linux && $(MAKE) gresources.o)
 
-cameras_set.o: main_window.h memory.h protocol.h settings.h ultimatte.h
+cameras_set.o: main_window.h memory.h protocol.h settings.h tally.h ultimatte.h
 
 control_window.o: cameras_set.h controller.h free_d.h main_window.h memory.h protocol.h ptz.h sw_p_08.h tally.h trackball.h
 
@@ -29,7 +29,7 @@ free_d.o: cameras_set.h logging.h network_header.h protocol.h
 
 interface.o: cameras_set.h main_window.h memory.h ptz.h settings.h
 
-logging.o: f_sync.h tally.h
+logging.o: f_sync.h
 
 main_window.o: cameras_set.h control_window.h controller.h free_d.h interface.h logging.h memory.h protocol.h ptz.h settings.h sw_p_08.h tally.h trackball.h ultimatte.h update_notification.h
 

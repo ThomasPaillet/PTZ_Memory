@@ -676,3 +676,8 @@ void create_interface_settings_window (void)
 	gtk_container_add (GTK_CONTAINER (interface_settings_window), box1);
 }
 
+void destroy_interface_settings_window (void)
+{
+	gtk_widget_destroy (interface_settings_window);
+}
+

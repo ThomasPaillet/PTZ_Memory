@@ -1433,7 +1433,6 @@ void show_control_window (ptz_t *ptz, GtkWindowPosition position)
 				g_mutex_lock (&current_ptz->free_d_mutex);
 
 				current_ptz->monitor_pan_tilt = FALSE;
-
 //				g_thread_join (current_ptz->monitor_pan_tilt_thread);
 				current_ptz->monitor_pan_tilt_thread = NULL;
 
@@ -1465,7 +1464,10 @@ void show_control_window (ptz_t *ptz, GtkWindowPosition position)
 	if (!outgoing_free_d_started && (ptz->model == AW_HE130)) {
 		g_mutex_lock (&ptz->free_d_mutex);
 
-		if (ptz->monitor_pan_tilt_thread == NULL) ptz->monitor_pan_tilt_thread = g_thread_new (NULL, (GThreadFunc)monitor_ptz_pan_tilt_position, ptz);
+		if (ptz->monitor_pan_tilt_thread == NULL) {
+			ptz->monitor_pan_tilt = TRUE;
+			ptz->monitor_pan_tilt_thread = g_thread_new (NULL, (GThreadFunc)monitor_ptz_pan_tilt_position, ptz);
+		}
 
 		g_mutex_unlock (&ptz->free_d_mutex);
 	}
@@ -1482,7 +1484,6 @@ gboolean hide_control_window (void)
 		g_mutex_lock (&current_ptz->free_d_mutex);
 
 		current_ptz->monitor_pan_tilt = FALSE;
-
 //		g_thread_join (current_ptz->monitor_pan_tilt_thread);
 		current_ptz->monitor_pan_tilt_thread = NULL;
 

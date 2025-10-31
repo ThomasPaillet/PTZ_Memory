@@ -22,7 +22,8 @@
 
 
 #include "ptz.h"
-#include "tally.h"
+
+#include <stdio.h>
 
 
 #define LOG_PANASONIC_INT(i) if (logging && log_panasonic) { \
