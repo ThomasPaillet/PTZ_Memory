@@ -53,6 +53,7 @@ gulong main_event_box_motion_notify_handler_id;
 gboolean inhibit_main_window_notebook_switch_page = FALSE;
 
 GtkWidget *interface_button;
+GtkWidget *controller_toggle_button;
 GtkWidget *store_toggle_button, *delete_toggle_button, *link_toggle_button;
 GtkWidget *switch_cameras_on_button, *switch_cameras_off_button;
 
@@ -95,7 +96,7 @@ gboolean exit_confirmation_window_key_press (GtkWidget *confirmation_window, Gdk
 
 gboolean show_exit_confirmation_window (void)
 {
-	GtkWidget *confirmation_window, *box2, *box3, *widget;
+	GtkWidget *confirmation_window, *box1, *box2, *widget;
 
 	confirmation_window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_title (GTK_WINDOW (confirmation_window), warning_txt);
@@ -108,29 +109,34 @@ gboolean show_exit_confirmation_window (void)
 	gtk_window_set_position (GTK_WINDOW (confirmation_window), GTK_WIN_POS_CENTER_ON_PARENT);
 	g_signal_connect (G_OBJECT (confirmation_window), "key-press-event", G_CALLBACK (exit_confirmation_window_key_press), NULL);
 
-	box2 = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
-	gtk_container_set_border_width (GTK_CONTAINER (box2), MARGIN_VALUE);
+	box1 = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
+	gtk_container_set_border_width (GTK_CONTAINER (box1), MARGIN_VALUE);
 		widget = gtk_label_new ("Etes-vous sûr de vouloir quitter le logiciel ?");
-		gtk_box_pack_start (GTK_BOX (box2), widget, FALSE, FALSE, 0);
+	gtk_box_pack_start (GTK_BOX (box1), widget, FALSE, FALSE, 0);
 
-		box3 = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
-		gtk_widget_set_halign (box3, GTK_ALIGN_CENTER);
-		gtk_widget_set_margin_top (box3, MARGIN_VALUE);
-		gtk_box_set_spacing (GTK_BOX (box3), MARGIN_VALUE);
-		gtk_box_set_homogeneous (GTK_BOX (box3), TRUE);
+		box2 = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
+		gtk_widget_set_halign (box2, GTK_ALIGN_CENTER);
+		gtk_widget_set_margin_top (box2, MARGIN_VALUE);
+		gtk_box_set_spacing (GTK_BOX (box2), MARGIN_VALUE);
+		gtk_box_set_homogeneous (GTK_BOX (box2), TRUE);
 			widget = gtk_button_new_with_label ("OUI");
 			g_signal_connect_swapped (G_OBJECT (widget), "clicked", G_CALLBACK (ptz_main_quit), confirmation_window);
-			gtk_box_pack_start (GTK_BOX (box3), widget, TRUE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (box2), widget, TRUE, TRUE, 0);
 
 			widget = gtk_button_new_with_label ("NON");
 			g_signal_connect_swapped (G_OBJECT (widget), "clicked", G_CALLBACK (gtk_widget_destroy), confirmation_window);
-			gtk_box_pack_start (GTK_BOX (box3), widget, FALSE, FALSE, 0);
-		gtk_box_pack_start (GTK_BOX (box2), box3, FALSE, FALSE, 0);
-	gtk_container_add (GTK_CONTAINER (confirmation_window), box2);
+		gtk_box_pack_start (GTK_BOX (box2), widget, FALSE, FALSE, 0);
+	gtk_box_pack_start (GTK_BOX (box1), box2, FALSE, FALSE, 0);
+	gtk_container_add (GTK_CONTAINER (confirmation_window), box1);
 
 	gtk_widget_show_all (confirmation_window);
 
 	return GDK_EVENT_STOP;
+}
+
+void controller_toggle_button_clicked (GtkToggleButton *button)
+{
+	controller_is_used = gtk_toggle_button_get_active (button);
 }
 
 void store_toggle_button_clicked (GtkToggleButton *button)
@@ -171,11 +177,71 @@ void switch_cameras_off (void)
 	}
 }
 
+gboolean switch_cameras_off_confirmation_window_key_press (GtkWidget *confirmation_window, GdkEventKey *event)
+{
+	if ((event->keyval == GDK_KEY_n) || (event->keyval == GDK_KEY_N) || (event->keyval == GDK_KEY_Escape))
+		gtk_widget_destroy (confirmation_window);
+	else if ((event->keyval == GDK_KEY_o) || (event->keyval == GDK_KEY_O)|| (event->keyval == GDK_KEY_Return)) {
+		switch_cameras_off ();
+
+		gtk_widget_destroy (confirmation_window);
+	}
+
+	return GDK_EVENT_PROPAGATE;
+}
+
+void show_switch_cameras_off_confirmation_window (void)
+{
+	GtkWidget *confirmation_window, *box1, *box2, *widget;
+
+	confirmation_window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+	gtk_window_set_title (GTK_WINDOW (confirmation_window), warning_txt);
+	gtk_window_set_type_hint (GTK_WINDOW (confirmation_window), GDK_WINDOW_TYPE_HINT_DIALOG);
+	gtk_window_set_modal (GTK_WINDOW (confirmation_window), TRUE);
+	gtk_window_set_transient_for (GTK_WINDOW (confirmation_window), GTK_WINDOW (main_window));
+	gtk_window_set_skip_taskbar_hint (GTK_WINDOW (confirmation_window), FALSE);
+	gtk_window_set_skip_pager_hint (GTK_WINDOW (confirmation_window), FALSE);
+	gtk_window_set_resizable (GTK_WINDOW (confirmation_window), FALSE);
+	gtk_window_set_position (GTK_WINDOW (confirmation_window), GTK_WIN_POS_CENTER_ON_PARENT);
+	g_signal_connect (G_OBJECT (confirmation_window), "key-press-event", G_CALLBACK (switch_cameras_off_confirmation_window_key_press), NULL);
+
+	box1 = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
+	gtk_container_set_border_width (GTK_CONTAINER (box1), MARGIN_VALUE);
+		box2 = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
+			widget = gtk_label_new ("Etes-vous sûr de vouloir éteindre les caméras de l'ensemble \"");
+		gtk_box_pack_start (GTK_BOX (box2), widget, FALSE, FALSE, 0);
+
+			widget = gtk_label_new (current_cameras_set->name);
+		gtk_box_pack_start (GTK_BOX (box2), widget, FALSE, FALSE, 0);
+
+			widget = gtk_label_new ("\" ?");
+		gtk_box_pack_start (GTK_BOX (box2), widget, FALSE, FALSE, 0);
+	gtk_box_pack_start (GTK_BOX (box1), box2, FALSE, FALSE, 0);
+
+		box2 = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
+		gtk_widget_set_halign (box2, GTK_ALIGN_CENTER);
+		gtk_widget_set_margin_top (box2, MARGIN_VALUE);
+		gtk_box_set_spacing (GTK_BOX (box2), MARGIN_VALUE);
+		gtk_box_set_homogeneous (GTK_BOX (box2), TRUE);
+			widget = gtk_button_new_with_label ("OUI");
+			g_signal_connect (G_OBJECT (widget), "clicked", G_CALLBACK (switch_cameras_off), NULL);
+			g_signal_connect_swapped (G_OBJECT (widget), "clicked", G_CALLBACK (gtk_widget_destroy), confirmation_window);
+		gtk_box_pack_start (GTK_BOX (box2), widget, TRUE, TRUE, 0);
+
+			widget = gtk_button_new_with_label ("NON");
+			g_signal_connect_swapped (G_OBJECT (widget), "clicked", G_CALLBACK (gtk_widget_destroy), confirmation_window);
+		gtk_box_pack_start (GTK_BOX (box2), widget, FALSE, FALSE, 0);
+	gtk_box_pack_start (GTK_BOX (box1), box2, FALSE, FALSE, 0);
+	gtk_container_add (GTK_CONTAINER (confirmation_window), box1);
+
+	gtk_widget_show_all (confirmation_window);
+}
+
 gpointer get_camera_screen_shot (ptz_thread_t *ptz_thread)
 {
 	send_jpeg_image_request_cmd (ptz_thread->ptz);
 
-	g_idle_add ((GSourceFunc)free_ptz_thread, ptz_thread);
+	g_idle_add_full (G_PRIORITY_LOW, (GSourceFunc)free_ptz_thread, ptz_thread, NULL);
 
 	return NULL;
 }
@@ -242,6 +308,8 @@ void main_window_notebook_switch_page (GtkNotebook *notebook, GtkWidget *page, g
 			}
 		}
 
+		while (i < MAX_CAMERAS) tallies[i++] = FALSE;
+
 		if (settings_window != NULL) gtk_list_box_select_row (GTK_LIST_BOX (settings_list_box), GTK_LIST_BOX_ROW (current_cameras_set->list_box_row));
 	}
 
@@ -270,7 +338,7 @@ gboolean main_window_key_press (GtkWidget *widget, GdkEventKey *event)
 	int i;
 	ptz_t *ptz;
 	gdouble adjustment_value;
-	ptz_thread_t *ptz_thread[MAX_CAMERAS];
+	ptz_thread_t *ptz_thread;
 	ptz_thread_t *controller_thread;
 
 	if (event->keyval == GDK_KEY_Escape) {
@@ -287,7 +355,7 @@ gboolean main_window_key_press (GtkWidget *widget, GdkEventKey *event)
 				if (ptz->active && gtk_widget_get_sensitive (ptz->name_grid)) {
 					show_control_window (ptz, GTK_WIN_POS_CENTER);
 
-					if (controller_is_used && controller_ip_address_is_valid) {
+					if (controller_is_used) {
 						controller_thread = g_malloc (sizeof (ptz_thread_t));
 						controller_thread->ptz = ptz;
 						controller_thread->thread = g_thread_new (NULL, (GThreadFunc)controller_switch_ptz, controller_thread);
@@ -315,20 +383,17 @@ gboolean main_window_key_press (GtkWidget *widget, GdkEventKey *event)
 				for (i = 0; i < current_cameras_set->number_of_cameras; i++) {
 					ptz = current_cameras_set->cameras[i];
 
-					if (ptz->active && gtk_widget_get_sensitive (ptz->name_grid)) {
-						ptz_thread[i] = g_malloc (sizeof (ptz_thread_t));
-						ptz_thread[i]->ptz = ptz;
-					} else ptz_thread[i] = NULL;
-				}
-
-				for (i = 0; i < current_cameras_set->number_of_cameras; i++) {
-					if (ptz_thread[i] != NULL) ptz_thread[i]->thread = g_thread_new (NULL, (GThreadFunc)get_camera_screen_shot, ptz_thread[i]);
+					if (ptz->is_on) {
+						ptz_thread = g_malloc (sizeof (ptz_thread_t));
+						ptz_thread->ptz = ptz;
+						ptz_thread->thread = g_thread_new (NULL, (GThreadFunc)get_camera_screen_shot, ptz_thread);
+					}
 				}
 			}
 
 			return GDK_EVENT_STOP;
 		}
-	} else if (current_cameras_set != NULL) {
+	} else if ((current_cameras_set != NULL) && !interface_default.disable_kinetic_scrolling) {
 		if (event->keyval == GDK_KEY_Left) {
 			if (interface_default.orientation) {
 				adjustment_value = gtk_adjustment_get_value (current_cameras_set->memories_scrolled_window_adjustment) - 50;
@@ -387,7 +452,7 @@ gboolean main_window_scroll (GtkWidget *widget, GdkEventScroll *event)
 {
 	gdouble adjustment_value;
 
-	if (current_cameras_set != NULL) {
+	if ((current_cameras_set != NULL) && !interface_default.disable_kinetic_scrolling) {
 		if (event->direction == GDK_SCROLL_LEFT) {
 			if (interface_default.orientation) {
 				adjustment_value = gtk_adjustment_get_value (current_cameras_set->memories_scrolled_window_adjustment) - 50;
@@ -505,6 +570,14 @@ void create_main_window (void)
 		gtk_box_pack_start (GTK_BOX (box2), interface_button, FALSE, FALSE, 0);
 
 			box3 = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
+				controller_toggle_button = gtk_toggle_button_new_with_label ("AW-_RPxxx");
+				gtk_style_context_add_provider (gtk_widget_get_style_context (controller_toggle_button), GTK_STYLE_PROVIDER (css_provider_toggle_button_blue), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+				gtk_button_set_use_underline (GTK_BUTTON (controller_toggle_button), TRUE);
+				g_signal_connect (G_OBJECT (controller_toggle_button), "toggled", G_CALLBACK (controller_toggle_button_clicked), NULL);
+			gtk_box_set_center_widget (GTK_BOX (box3), controller_toggle_button);
+		gtk_box_pack_start (GTK_BOX (box2), box3, TRUE, TRUE, 0);
+
+			box3 = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
 				store_toggle_button = gtk_toggle_button_new_with_label ("_Enregister");
 				gtk_widget_set_margin_start (store_toggle_button, BUTTON_MARGIN_VALUE);
 				gtk_style_context_add_provider (gtk_widget_get_style_context (store_toggle_button), GTK_STYLE_PROVIDER (css_provider_toggle_button_red), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
@@ -545,7 +618,7 @@ void create_main_window (void)
 					switch_cameras_off_button = gtk_button_new_with_label ("Tout éteindre");
 					gtk_widget_set_margin_start (switch_cameras_off_button, BUTTON_MARGIN_VALUE / 2);
 					gtk_style_context_add_provider (gtk_widget_get_style_context (switch_cameras_off_button), GTK_STYLE_PROVIDER (css_provider_button), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
-					g_signal_connect (G_OBJECT (switch_cameras_off_button), "clicked", G_CALLBACK (switch_cameras_off), NULL);
+					g_signal_connect (G_OBJECT (switch_cameras_off_button), "clicked", G_CALLBACK (show_switch_cameras_off_confirmation_window), NULL);
 				gtk_box_pack_start (GTK_BOX (box4), switch_cameras_off_button, FALSE, FALSE, 0);
 			gtk_box_set_center_widget (GTK_BOX (box3), box4);
 		gtk_box_pack_end (GTK_BOX (box2), box3, TRUE, TRUE, 0);
@@ -559,6 +632,52 @@ void create_main_window (void)
 
 	gtk_container_add (GTK_CONTAINER (main_event_box), box1);
 	gtk_container_add (GTK_CONTAINER (main_window), main_event_box);
+}
+
+gboolean show_update_notification_port_error_window (GtkWidget *transient_window)
+{
+	GtkWidget *warning_window, *box1, *box2, *widget;
+	char text[8];
+
+	warning_window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+	gtk_window_set_title (GTK_WINDOW (warning_window), warning_txt);
+	gtk_window_set_type_hint (GTK_WINDOW (warning_window), GDK_WINDOW_TYPE_HINT_DIALOG);
+	gtk_window_set_modal (GTK_WINDOW (warning_window), TRUE);
+	gtk_window_set_transient_for (GTK_WINDOW (warning_window), GTK_WINDOW (transient_window));
+	gtk_window_set_skip_taskbar_hint (GTK_WINDOW (warning_window), FALSE);
+	gtk_window_set_skip_pager_hint (GTK_WINDOW (warning_window), FALSE);
+	gtk_window_set_resizable (GTK_WINDOW (warning_window), FALSE);
+	gtk_window_set_position (GTK_WINDOW (warning_window), GTK_WIN_POS_CENTER_ON_PARENT);
+
+	box1 = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
+	gtk_container_set_border_width (GTK_CONTAINER (box1), MARGIN_VALUE);
+		box2 = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
+			widget = gtk_label_new ("Impossible d'ouvrir le port TCP n°");
+		gtk_box_pack_start (GTK_BOX (box2), widget, FALSE, FALSE, 0);
+
+			sprintf (text, "%d", ntohs (update_notification_address.sin_port));
+			widget = gtk_label_new (text);
+		gtk_box_pack_start (GTK_BOX (box2), widget, FALSE, FALSE, 0);
+
+			widget = gtk_label_new (" pour recevoir les valeurs de zoom et de focus via les \"Update Notifications\".");
+		gtk_box_pack_start (GTK_BOX (box2), widget, FALSE, FALSE, 0);
+	gtk_box_pack_start (GTK_BOX (box1), box2, FALSE, FALSE, 0);
+
+		widget = gtk_label_new ("Typiquement une instance de PTZ-Memory (ou RCP-Virtuel) est déjà en cours d'exécution.");
+	gtk_box_pack_start (GTK_BOX (box1), widget, FALSE, FALSE, 0);
+
+		box2 = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
+		gtk_widget_set_halign (box2, GTK_ALIGN_CENTER);
+		gtk_widget_set_margin_top (box2, MARGIN_VALUE);
+			widget = gtk_button_new_with_label ("OK");
+			g_signal_connect_swapped (G_OBJECT (widget), "clicked", G_CALLBACK (gtk_widget_destroy), warning_window);
+		gtk_box_set_center_widget (GTK_BOX (box2), widget);
+	gtk_box_pack_start (GTK_BOX (box1), box2, FALSE, FALSE, 0);
+	gtk_container_add (GTK_CONTAINER (warning_window), box1);
+
+	gtk_widget_show_all (warning_window);
+
+	return GDK_EVENT_STOP;
 }
 
 #ifdef _WIN32
@@ -649,6 +768,10 @@ int main (int argc, char** argv)
 	gtk_widget_show_all (main_window);
 	gtk_window_set_focus (GTK_WINDOW (main_window), NULL);
 
+	if (controller_ip_address_is_valid) {
+		if (controller_is_used) gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (controller_toggle_button), TRUE);
+	} else gtk_widget_hide (controller_toggle_button);
+
 	for (cameras_set_itr = cameras_sets; cameras_set_itr != NULL; cameras_set_itr = cameras_set_itr->next) {
 		if (!cameras_set_itr->layout.show_linked_memories_names_entries) gtk_widget_hide (cameras_set_itr->linked_memories_names_entries);
 
@@ -683,18 +806,24 @@ int main (int argc, char** argv)
 		}
 
 		if (!cameras_set_itr->layout.show_linked_memories_names_labels) gtk_widget_hide (cameras_set_itr->linked_memories_names_labels);
+
+		if (cameras_set_itr->layout.disable_kinetic_scrolling) {
+			gtk_scrolled_window_set_kinetic_scrolling (GTK_SCROLLED_WINDOW (cameras_set_itr->scrolled_window), FALSE);
+			gtk_scrolled_window_set_kinetic_scrolling (GTK_SCROLLED_WINDOW (cameras_set_itr->memories_scrolled_window), FALSE);
+			gtk_widget_hide (cameras_set_itr->memories_scrollbar);
+		}
 	}
 
-	if (number_of_cameras_sets == 0) {
-		show_settings_window ();
-		add_cameras_set ();
-	} else if (cameras_set_with_error != NULL) {
-		gtk_notebook_set_current_page (GTK_NOTEBOOK (main_window_notebook), cameras_set_with_error->page_num);
-		show_settings_window ();
-		show_cameras_set_configuration_window ();
-	}
-
-	start_update_notification ();
+	if (start_update_notification ()) {
+		if (number_of_cameras_sets == 0) {
+			show_settings_window ();
+			add_cameras_set ();
+		} else if (cameras_set_with_error != NULL) {
+			gtk_notebook_set_current_page (GTK_NOTEBOOK (main_window_notebook), cameras_set_with_error->page_num);
+			show_settings_window ();
+			show_cameras_set_configuration_window ();
+		}
+	} else show_update_notification_port_error_window (main_window);
 
 	for (slist_itr = ptz_slist; slist_itr != NULL; slist_itr = slist_itr->next) {
 		ptz_thread = g_malloc (sizeof (ptz_thread_t));
@@ -709,7 +838,6 @@ int main (int argc, char** argv)
 	start_incomming_free_d ();
 
 	if (free_d_output_ip_address_is_valid) start_outgoing_freed_d ();
-
 
 	gtk_main ();
 
@@ -737,8 +865,6 @@ int main (int argc, char** argv)
 	for (cameras_set_itr = cameras_sets; cameras_set_itr != NULL; cameras_set_itr = cameras_set_itr->next) {
 		for (i = 0; i < cameras_set_itr->number_of_cameras; i++) {
 			ptz = cameras_set_itr->cameras[i];
-
-			ptz->monitor_pan_tilt = FALSE;
 
 			if ((ptz->ultimatte != NULL) && ptz->ultimatte->connected) disconnect_ultimatte (ptz->ultimatte);
 		}

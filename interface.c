@@ -24,7 +24,7 @@
 #include "settings.h"
 
 
-interface_param_t interface_default = { TRUE, TRUE, TRUE, FALSE, 1.0, 320, 180, "FreeMono Bold 110px", "FreeMono Bold 80px", "FreeMono 24px", "FreeMono Bold 32px", NULL, NULL, NULL, NULL, 0, 0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.2 };
+interface_param_t interface_default = { TRUE, TRUE, TRUE, FALSE, FALSE, 1.0, 320, 180, "FreeMono Bold 110px", "FreeMono Bold 80px", "FreeMono 24px", "FreeMono Bold 32px", NULL, NULL, NULL, NULL, 0, 0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.2 };
 
 gdouble ultimatte_picto_x = 158;
 gdouble ultimatte_picto_y = 30;
@@ -39,6 +39,7 @@ GtkWidget *orientation_check_button;
 GtkWidget *show_linked_memories_names_entries_check_button;
 GtkWidget *show_linked_memories_names_labels_check_button;
 GtkWidget *dont_show_not_active_cameras_check_button;
+GtkWidget *disable_kinetic_scrolling_check_button;
 GtkWidget *thumbnail_size_scale;
 GtkWidget *memories_button_vertical_margins_scale, *vertical_margins_label;
 GtkWidget *memories_button_horizontal_margins_scale, *horizontal_margins_label;
@@ -47,6 +48,7 @@ gulong orientation_check_button_handler_id;
 gulong show_linked_memories_names_entries_check_button_handler_id;
 gulong show_linked_memories_names_labels_check_button_handler_id;
 gulong dont_show_not_active_cameras_check_button_handler_id;
+gulong disable_kinetic_scrolling_check_button_handler_id;
 gulong thumbnail_size_scale_handler_id;
 gulong memories_button_vertical_margins_scale_handler_id;
 gulong memories_button_horizontal_margins_scale_handler_id;
@@ -151,6 +153,12 @@ void orientation_check_button_toggled (GtkToggleButton *togglebutton)
 
 	if (!interface_default.show_linked_memories_names_labels) gtk_widget_hide (current_cameras_set->linked_memories_names_labels);
 
+	if (interface_default.disable_kinetic_scrolling) {
+		gtk_scrolled_window_set_kinetic_scrolling (GTK_SCROLLED_WINDOW (current_cameras_set->scrolled_window), FALSE);
+		gtk_scrolled_window_set_kinetic_scrolling (GTK_SCROLLED_WINDOW (current_cameras_set->memories_scrolled_window), FALSE);
+		gtk_widget_hide (current_cameras_set->memories_scrollbar);
+	}
+
 	backup_needed = TRUE;
 }
 
@@ -238,6 +246,23 @@ void dont_show_not_active_cameras_check_button_toggled (GtkToggleButton *toggleb
 				}
 			}
 		}
+	}
+
+	backup_needed = TRUE;
+}
+
+void disable_kinetic_scrolling_check_button_toggled (GtkToggleButton *togglebutton)
+{
+	current_cameras_set->layout.disable_kinetic_scrolling = interface_default.disable_kinetic_scrolling = gtk_toggle_button_get_active (togglebutton);
+
+	if (interface_default.disable_kinetic_scrolling) {
+		gtk_scrolled_window_set_kinetic_scrolling (GTK_SCROLLED_WINDOW (current_cameras_set->scrolled_window), FALSE);
+		gtk_scrolled_window_set_kinetic_scrolling (GTK_SCROLLED_WINDOW (current_cameras_set->memories_scrolled_window), FALSE);
+		gtk_widget_hide (current_cameras_set->memories_scrollbar);
+	} else {
+		gtk_widget_show (current_cameras_set->memories_scrollbar);
+		gtk_scrolled_window_set_kinetic_scrolling (GTK_SCROLLED_WINDOW (current_cameras_set->memories_scrolled_window), TRUE);
+		gtk_scrolled_window_set_kinetic_scrolling (GTK_SCROLLED_WINDOW (current_cameras_set->scrolled_window), TRUE);
 	}
 
 	backup_needed = TRUE;
@@ -397,6 +422,8 @@ void show_interface_settings_window (void)
 	UPDATE_INTERFACE_CHECK_BUTTON(show_linked_memories_names_labels)
 
 	UPDATE_INTERFACE_CHECK_BUTTON(dont_show_not_active_cameras)
+
+	UPDATE_INTERFACE_CHECK_BUTTON(disable_kinetic_scrolling)
 
 	g_signal_handler_block (thumbnail_size_scale, thumbnail_size_scale_handler_id);
 	gtk_range_set_value (GTK_RANGE (thumbnail_size_scale), interface_default.thumbnail_size * 100.0);
@@ -566,6 +593,20 @@ void create_interface_settings_window (void)
 					dont_show_not_active_cameras_check_button_handler_id = g_signal_connect (G_OBJECT (dont_show_not_active_cameras_check_button), "toggled", G_CALLBACK (dont_show_not_active_cameras_check_button_toggled), NULL);
 					gtk_widget_set_margin_start (dont_show_not_active_cameras_check_button, MARGIN_VALUE);
 				gtk_box_pack_end (GTK_BOX (box3), dont_show_not_active_cameras_check_button, FALSE, FALSE, 0);
+			gtk_box_pack_start (GTK_BOX (box2), box3, FALSE, FALSE, 0);
+
+				box3 = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
+				gtk_widget_set_margin_top (box3, MARGIN_VALUE);
+				gtk_widget_set_margin_start (box3, MARGIN_VALUE);
+				gtk_widget_set_margin_end (box3, MARGIN_VALUE);
+				gtk_widget_set_margin_bottom (box3, MARGIN_VALUE);
+					widget =  gtk_label_new ("Verrouiller le défilement des vignettes mémoires :");
+				gtk_box_pack_start (GTK_BOX (box3), widget, FALSE, FALSE, 0);
+
+					disable_kinetic_scrolling_check_button = gtk_check_button_new ();
+					disable_kinetic_scrolling_check_button_handler_id = g_signal_connect (G_OBJECT (disable_kinetic_scrolling_check_button), "toggled", G_CALLBACK (disable_kinetic_scrolling_check_button_toggled), NULL);
+					gtk_widget_set_margin_start (disable_kinetic_scrolling_check_button, MARGIN_VALUE);
+				gtk_box_pack_end (GTK_BOX (box3), disable_kinetic_scrolling_check_button, FALSE, FALSE, 0);
 			gtk_box_pack_start (GTK_BOX (box2), box3, FALSE, FALSE, 0);
 
 				box3 = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);

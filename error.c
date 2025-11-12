@@ -40,6 +40,8 @@
 			gtk_widget_queue_draw (ptz->error_drawing_area); \
 			gtk_widget_set_tooltip_text (ptz->error_drawing_area, s); \
  \
+			g_mutex_lock (&ptz->other_ptz_mutex); \
+ \
 			for (slist_itr2 = ptz->other_ptz_slist; slist_itr2 != NULL; slist_itr2 = slist_itr2->next) { \
 				other_ptz = slist_itr2->data; \
  \
@@ -47,6 +49,8 @@
 				gtk_widget_queue_draw (other_ptz->error_drawing_area); \
 				gtk_widget_set_tooltip_text (other_ptz->error_drawing_area, s); \
 			} \
+ \
+			g_mutex_unlock (&ptz->other_ptz_mutex); \
  \
 			break; \
 		} \
@@ -70,6 +74,8 @@ gboolean camera_is_unreachable (ptz_t *ptz)
 
 	LOG_PTZ_STRING("is not connected physically")
 
+	g_mutex_lock (&ptz->other_ptz_mutex);
+
 	for (slist_itr = ptz->other_ptz_slist; slist_itr != NULL; slist_itr = slist_itr->next) {
 		other_ptz = slist_itr->data;
 
@@ -80,6 +86,8 @@ gboolean camera_is_unreachable (ptz_t *ptz)
 		gtk_widget_queue_draw (other_ptz->error_drawing_area);
 		gtk_widget_set_tooltip_text (other_ptz->error_drawing_area, "La caméra n'est pas connectée au réseau");
 	}
+
+	g_mutex_unlock (&ptz->other_ptz_mutex);
 
 	return G_SOURCE_REMOVE;
 }
@@ -104,6 +112,8 @@ gboolean clear_ptz_error (struct in_addr *src_in_addr)
 				ptz->error_drawing_area_tooltip = NULL;
 			}
 
+			g_mutex_lock (&ptz->other_ptz_mutex);
+
 			for (slist_itr2 = ptz->other_ptz_slist; slist_itr2 != NULL; slist_itr2 = slist_itr2->next) {
 				other_ptz = slist_itr2->data;
 
@@ -116,6 +126,8 @@ gboolean clear_ptz_error (struct in_addr *src_in_addr)
 					other_ptz->error_drawing_area_tooltip = NULL;
 				}
 			}
+
+			g_mutex_unlock (&ptz->other_ptz_mutex);
 
 			break;
 		}

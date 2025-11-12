@@ -49,10 +49,14 @@ void init_ptz (ptz_t *ptz)
 	ptz->ip_address_is_valid = FALSE;
 
 	ptz->other_ptz_slist = NULL;
+	g_mutex_init (&ptz->other_ptz_mutex);
 
 	ptz->model = AW_UE150;
 
 	init_ptz_cmd (ptz);
+
+	ptz->last_time = NULL;
+	ptz->cmd_mutex = NULL;
 
 	ptz->error_code = 0x00;
 
@@ -124,7 +128,6 @@ void init_ptz (ptz_t *ptz)
 	ptz->incomming_free_d_Pan = 0x00;
 
 	ptz->monitor_pan_tilt = FALSE;
-	ptz->monitor_pan_tilt_thread = NULL;
 
 	g_mutex_init (&ptz->free_d_mutex);
 
@@ -184,8 +187,17 @@ gboolean ptz_is_off (ptz_t *ptz)
 	return G_SOURCE_REMOVE;
 }
 
-gpointer monitor_ptz_pan_tilt_position (ptz_t *ptz)
+gboolean free_ptz_thread (ptz_thread_t *ptz_thread)
 {
+	g_thread_join (ptz_thread->thread);
+	g_free (ptz_thread);
+
+	return G_SOURCE_REMOVE;
+}
+
+gpointer monitor_ptz_pan_tilt_position (ptz_thread_t *ptz_thread)
+{
+	ptz_t *ptz = ptz_thread->ptz;
 	char buffer[64];
 	gint32 pan, tilt;
 	GSList *slist_itr;
@@ -194,15 +206,15 @@ gpointer monitor_ptz_pan_tilt_position (ptz_t *ptz)
 
 	while (ptz->monitor_pan_tilt) {
 		if (ptz == current_ptz) {
-			g_mutex_lock (&ptz->cmd_mutex);
+			g_mutex_lock (ptz->cmd_mutex);
 
 			if ((control_window_focus_timeout_id != 0) || (control_window_pan_tilt_timeout_id != 0) || (control_window_zoom_timeout_id != 0)) {
-				g_mutex_unlock (&ptz->cmd_mutex);
+				g_mutex_unlock (ptz->cmd_mutex);
 
 				usleep (130000);
 
 				continue;
-			} else g_mutex_unlock (&ptz->cmd_mutex);
+			} else g_mutex_unlock (ptz->cmd_mutex);
 		}
 
 		send_ptz_request_command_string (ptz, "#APC", buffer);
@@ -238,6 +250,8 @@ gpointer monitor_ptz_pan_tilt_position (ptz_t *ptz)
 
 		if (ptz == current_ptz) gtk_widget_queue_draw (control_window_pan_tilt_label);
 
+		g_mutex_lock (&ptz->other_ptz_mutex);
+
 		for (slist_itr = ptz->other_ptz_slist; slist_itr != NULL; slist_itr = slist_itr->next) {
 			other_ptz = slist_itr->data;
 
@@ -251,23 +265,19 @@ gpointer monitor_ptz_pan_tilt_position (ptz_t *ptz)
 			if (other_ptz == current_ptz) gtk_widget_queue_draw (control_window_pan_tilt_label);
 		}
 
-		g_mutex_lock (&ptz->cmd_mutex);
+		g_mutex_unlock (&ptz->other_ptz_mutex);
+
+		g_mutex_lock (ptz->cmd_mutex);
 		current_time = g_get_monotonic_time ();
-		elapsed_time = current_time - ptz->last_time;
-		g_mutex_unlock (&ptz->cmd_mutex);
+		elapsed_time = current_time - *ptz->last_time;
+		g_mutex_unlock (ptz->cmd_mutex);
 
 		if (elapsed_time < 130000) usleep (130000 - elapsed_time);
 	}
 
+	g_idle_add_full (G_PRIORITY_LOW, (GSourceFunc)free_ptz_thread, ptz_thread, NULL);
+
 	return NULL;
-}
-
-gboolean free_ptz_thread (ptz_thread_t *ptz_thread)
-{
-	g_thread_join (ptz_thread->thread);
-	g_free (ptz_thread);
-
-	return G_SOURCE_REMOVE;
 }
 
 gpointer start_ptz (ptz_thread_t *ptz_thread)
@@ -279,7 +289,8 @@ gpointer start_ptz (ptz_thread_t *ptz_thread)
 	gboolean auto_focus;
 	guint32 zoom, focus;
 	gint32 free_d_optical_axis_height;
-
+	ptz_thread_t *monitor_ptz_thread;
+printf ("start_ptz %s (%s)\n", ptz->name, ptz->ip_address);
 	send_update_start_cmd (ptz);
 
 	if (ptz->error_code != CAMERA_IS_UNREACHABLE_ERROR) {
@@ -346,7 +357,7 @@ gpointer start_ptz (ptz_thread_t *ptz_thread)
 
 			g_idle_add ((GSourceFunc)ptz_is_on, ptz);
 
-			g_mutex_lock (&cameras_sets_mutex);
+			g_mutex_lock (&ptz->other_ptz_mutex);
 
 			for (slist_itr = ptz->other_ptz_slist; slist_itr != NULL; slist_itr = slist_itr->next) {
 				other_ptz = slist_itr->data;
@@ -379,31 +390,32 @@ gpointer start_ptz (ptz_thread_t *ptz_thread)
 				g_idle_add ((GSourceFunc)ptz_is_on, other_ptz);
 			}
 
-			g_mutex_unlock (&cameras_sets_mutex);
+			g_mutex_unlock (&ptz->other_ptz_mutex);
 
 			if (outgoing_free_d_started && (ptz->model == AW_HE130)) {
 				g_mutex_lock (&ptz->free_d_mutex);
 
-				if (ptz->monitor_pan_tilt_thread == NULL) {
-					ptz->monitor_pan_tilt = TRUE;
-					ptz->monitor_pan_tilt_thread = g_thread_new (NULL, (GThreadFunc)monitor_ptz_pan_tilt_position, ptz);
-				}
+				ptz->monitor_pan_tilt = TRUE;
+
+				monitor_ptz_thread = g_malloc (sizeof (ptz_thread_t));
+				monitor_ptz_thread->ptz = ptz;
+				monitor_ptz_thread->thread = g_thread_new (NULL, (GThreadFunc)monitor_ptz_pan_tilt_position, monitor_ptz_thread);
 
 				g_mutex_unlock (&ptz->free_d_mutex);
 			}
 		} else {
 			g_idle_add ((GSourceFunc)ptz_is_off, ptz);
 
-			g_mutex_lock (&cameras_sets_mutex);
+			g_mutex_lock (&ptz->other_ptz_mutex);
 
 			for (slist_itr = ptz->other_ptz_slist; slist_itr != NULL; slist_itr = slist_itr->next)
 				g_idle_add ((GSourceFunc)ptz_is_off, slist_itr->data);
 
-			g_mutex_unlock (&cameras_sets_mutex);
+			g_mutex_unlock (&ptz->other_ptz_mutex);
 		}
 	}
 
-	g_idle_add ((GSourceFunc)free_ptz_thread, ptz_thread);
+	g_idle_add_full (G_PRIORITY_LOW, (GSourceFunc)free_ptz_thread, ptz_thread, NULL);
 
 	return NULL;
 }
@@ -416,7 +428,7 @@ gpointer switch_ptz_on (ptz_thread_t *ptz_thread)
 
 	if (ptz->error_code != CAMERA_IS_UNREACHABLE_ERROR) send_ptz_control_command (ptz, "#O1", TRUE);
 
-	g_idle_add ((GSourceFunc)free_ptz_thread, ptz_thread);
+	g_idle_add_full (G_PRIORITY_LOW, (GSourceFunc)free_ptz_thread, ptz_thread, NULL);
 
 	return NULL;
 }
@@ -425,21 +437,15 @@ gpointer switch_ptz_off (ptz_thread_t *ptz_thread)
 {
 	ptz_t *ptz = ptz_thread->ptz;
 
-	if (ptz->monitor_pan_tilt) {
-		g_mutex_lock (&ptz->free_d_mutex);
-
-		ptz->monitor_pan_tilt = FALSE;
-//		g_thread_join (ptz->monitor_pan_tilt_thread);
-		ptz->monitor_pan_tilt_thread = NULL;
-
-		g_mutex_unlock (&ptz->free_d_mutex);
-	}
+	g_mutex_lock (&ptz->free_d_mutex);
+	ptz->monitor_pan_tilt = FALSE;
+	g_mutex_unlock (&ptz->free_d_mutex);
 
 	if (ptz->error_code == CAMERA_IS_UNREACHABLE_ERROR) send_update_start_cmd (ptz);
 
 	if (ptz->error_code != CAMERA_IS_UNREACHABLE_ERROR) send_ptz_control_command (ptz, "#O0", TRUE);
 
-	g_idle_add ((GSourceFunc)free_ptz_thread, ptz_thread);
+	g_idle_add_full (G_PRIORITY_LOW, (GSourceFunc)free_ptz_thread, ptz_thread, NULL);
 
 	return NULL;
 }
@@ -461,7 +467,7 @@ gboolean name_drawing_area_button_press_event (GtkButton *widget, GdkEventButton
 
 			ask_to_connect_ptz_to_ctrl_opv (ptz);
 
-			if (controller_is_used && controller_ip_address_is_valid) {
+			if (controller_is_used) {
 				controller_thread = g_malloc (sizeof (ptz_thread_t));
 				controller_thread->ptz = ptz;
 				controller_thread->thread = g_thread_new (NULL, (GThreadFunc)controller_switch_ptz, controller_thread);

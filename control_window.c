@@ -176,7 +176,7 @@ gboolean control_window_key_press (GtkWidget *window, GdkEventKey *event)
 				if (new_ptz->active && gtk_widget_get_sensitive (new_ptz->name_grid)) {
 					show_control_window (new_ptz, GTK_WIN_POS_NONE);
 
-					if (controller_is_used && controller_ip_address_is_valid) {
+					if (controller_is_used) {
 						controller_thread = g_malloc (sizeof (ptz_thread_t));
 						controller_thread->ptz = new_ptz;
 						controller_thread->thread = g_thread_new (NULL, (GThreadFunc)controller_switch_ptz, controller_thread);
@@ -281,9 +281,9 @@ gboolean pan_tilt_speed_cmd_delayed (ptz_t *ptz)
 	pan_tilt_speed_cmd[6] = '0' + (control_window_tilt_speed / 10);
 	pan_tilt_speed_cmd[7] = '0' + (control_window_tilt_speed % 10);
 
-	g_mutex_lock (&ptz->cmd_mutex);
-	ptz->last_time = g_get_monotonic_time ();
-	g_mutex_unlock (&ptz->cmd_mutex);
+	g_mutex_lock (ptz->cmd_mutex);
+	*ptz->last_time = g_get_monotonic_time ();
+	g_mutex_unlock (ptz->cmd_mutex);
 
 	send_ptz_control_command (ptz, pan_tilt_speed_cmd, FALSE);
 
@@ -331,10 +331,10 @@ gboolean control_window_motion_notify (GtkWidget *window, GdkEventMotion *event)
 			control_window_pan_speed = pan_speed;
 			control_window_tilt_speed = tilt_speed;
 
-			g_mutex_lock (&current_ptz->cmd_mutex);
+			g_mutex_lock (current_ptz->cmd_mutex);
 
 			current_time = g_get_monotonic_time ();
-			elapsed_time = current_time - current_ptz->last_time;
+			elapsed_time = current_time - *current_ptz->last_time;
 
 			if (elapsed_time < 130000) {
 				if (control_window_pan_tilt_timeout_id == 0) {
@@ -343,7 +343,7 @@ gboolean control_window_motion_notify (GtkWidget *window, GdkEventMotion *event)
 					else control_window_pan_tilt_timeout_id = g_timeout_add ((260000 - elapsed_time) / 1000, (GSourceFunc)pan_tilt_speed_cmd_delayed, current_ptz);
 				}
 
-				g_mutex_unlock (&current_ptz->cmd_mutex);
+				g_mutex_unlock (current_ptz->cmd_mutex);
 			} else {
 				if (control_window_pan_tilt_timeout_id != 0) {
 					g_source_remove (control_window_pan_tilt_timeout_id);
@@ -357,8 +357,8 @@ gboolean control_window_motion_notify (GtkWidget *window, GdkEventMotion *event)
 					pan_tilt_speed_cmd[6] = '0' + (tilt_speed / 10);
 					pan_tilt_speed_cmd[7] = '0' + (tilt_speed % 10);
 
-					current_ptz->last_time = current_time;
-					g_mutex_unlock (&current_ptz->cmd_mutex);
+					*current_ptz->last_time = current_time;
+					g_mutex_unlock (current_ptz->cmd_mutex);
 
 					send_ptz_control_command (current_ptz, pan_tilt_speed_cmd, FALSE);
 
@@ -366,7 +366,7 @@ gboolean control_window_motion_notify (GtkWidget *window, GdkEventMotion *event)
 				} else {
 					control_window_pan_tilt_timeout_id = g_timeout_add (130, (GSourceFunc)pan_tilt_speed_cmd_delayed, current_ptz);
 
-					g_mutex_unlock (&current_ptz->cmd_mutex);
+					g_mutex_unlock (current_ptz->cmd_mutex);
 				}
 			}
 		}
@@ -397,9 +397,9 @@ gboolean one_touch_auto_focus_button_pressed (void)
 
 gboolean ptz_focus_far_delayed (ptz_t *ptz)
 {
-	g_mutex_lock (&ptz->cmd_mutex);
-	ptz->last_time = g_get_monotonic_time ();
-	g_mutex_unlock (&ptz->cmd_mutex);
+	g_mutex_lock (ptz->cmd_mutex);
+	*ptz->last_time = g_get_monotonic_time ();
+	g_mutex_unlock (ptz->cmd_mutex);
 
 	send_ptz_control_command (ptz, focus_far_speed_cmd, FALSE);
 
@@ -412,9 +412,9 @@ gboolean ptz_focus_far_delayed (ptz_t *ptz)
 
 gboolean pts_focus_near_delayed (ptz_t *ptz)
 {
-	g_mutex_lock (&ptz->cmd_mutex);
-	ptz->last_time = g_get_monotonic_time ();
-	g_mutex_unlock (&ptz->cmd_mutex);
+	g_mutex_lock (ptz->cmd_mutex);
+	*ptz->last_time = g_get_monotonic_time ();
+	g_mutex_unlock (ptz->cmd_mutex);
 
 	send_ptz_control_command (ptz, focus_near_speed_cmd, FALSE);
 
@@ -429,7 +429,7 @@ gboolean focus_far_button_pressed (GtkButton *button, GdkEventButton *event)
 {
 	gint64 current_time, elapsed_time;
 
-	g_mutex_lock (&current_ptz->cmd_mutex);
+	g_mutex_lock (current_ptz->cmd_mutex);
 
 	if (control_window_focus_timeout_id != 0) {
 		g_source_remove (control_window_focus_timeout_id);
@@ -437,7 +437,7 @@ gboolean focus_far_button_pressed (GtkButton *button, GdkEventButton *event)
 	}
 
 	current_time = g_get_monotonic_time ();
-	elapsed_time = current_time - current_ptz->last_time;
+	elapsed_time = current_time - *current_ptz->last_time;
 
 
 	if (event->button == GDK_BUTTON_SECONDARY) {
@@ -448,11 +448,11 @@ gboolean focus_far_button_pressed (GtkButton *button, GdkEventButton *event)
 				control_window_focus_timeout_id = g_timeout_add ((130000 - elapsed_time) / 1000, (GSourceFunc)pts_focus_near_delayed, current_ptz);
 			else control_window_focus_timeout_id = g_timeout_add ((260000 - elapsed_time) / 1000, (GSourceFunc)pts_focus_near_delayed, current_ptz);
 
-			g_mutex_unlock (&current_ptz->cmd_mutex);
+			g_mutex_unlock (current_ptz->cmd_mutex);
 		} else {
 			if (control_window_pan_tilt_timeout_id == 0) {
-				current_ptz->last_time = current_time;
-				g_mutex_unlock (&current_ptz->cmd_mutex);
+				*current_ptz->last_time = current_time;
+				g_mutex_unlock (current_ptz->cmd_mutex);
 
 				send_ptz_control_command (current_ptz, focus_near_speed_cmd, FALSE);
 
@@ -460,7 +460,7 @@ gboolean focus_far_button_pressed (GtkButton *button, GdkEventButton *event)
 			} else {
 				control_window_focus_timeout_id = g_timeout_add (130, (GSourceFunc)pts_focus_near_delayed, current_ptz);
 
-				g_mutex_unlock (&current_ptz->cmd_mutex);
+				g_mutex_unlock (current_ptz->cmd_mutex);
 			}
 		}
 	} else {
@@ -469,11 +469,11 @@ gboolean focus_far_button_pressed (GtkButton *button, GdkEventButton *event)
 				control_window_focus_timeout_id = g_timeout_add ((130000 - elapsed_time) / 1000, (GSourceFunc)ptz_focus_far_delayed, current_ptz);
 			else control_window_focus_timeout_id = g_timeout_add ((260000 - elapsed_time) / 1000, (GSourceFunc)ptz_focus_far_delayed, current_ptz);
 
-			g_mutex_unlock (&current_ptz->cmd_mutex);
+			g_mutex_unlock (current_ptz->cmd_mutex);
 		} else {
 			if (control_window_pan_tilt_timeout_id == 0) {
-				current_ptz->last_time = current_time;
-				g_mutex_unlock (&current_ptz->cmd_mutex);
+				*current_ptz->last_time = current_time;
+				g_mutex_unlock (current_ptz->cmd_mutex);
 
 				send_ptz_control_command (current_ptz, focus_far_speed_cmd, FALSE);
 
@@ -481,7 +481,7 @@ gboolean focus_far_button_pressed (GtkButton *button, GdkEventButton *event)
 			} else {
 				control_window_focus_timeout_id = g_timeout_add (130, (GSourceFunc)ptz_focus_far_delayed, current_ptz);
 
-				g_mutex_unlock (&current_ptz->cmd_mutex);
+				g_mutex_unlock (current_ptz->cmd_mutex);
 			}
 		}
 	}
@@ -493,7 +493,7 @@ gboolean focus_near_button_pressed (GtkButton *button, GdkEventButton *event)
 {
 	gint64 current_time, elapsed_time;
 
-	g_mutex_lock (&current_ptz->cmd_mutex);
+	g_mutex_lock (current_ptz->cmd_mutex);
 
 	if (control_window_focus_timeout_id != 0) {
 		g_source_remove (control_window_focus_timeout_id);
@@ -501,7 +501,7 @@ gboolean focus_near_button_pressed (GtkButton *button, GdkEventButton *event)
 	}
 
 	current_time = g_get_monotonic_time ();
-	elapsed_time = current_time - current_ptz->last_time;
+	elapsed_time = current_time - *current_ptz->last_time;
 
 
 	if (event->button == GDK_BUTTON_SECONDARY) {
@@ -512,11 +512,11 @@ gboolean focus_near_button_pressed (GtkButton *button, GdkEventButton *event)
 				control_window_focus_timeout_id = g_timeout_add ((130000 - elapsed_time) / 1000, (GSourceFunc)ptz_focus_far_delayed, current_ptz);
 			else control_window_focus_timeout_id = g_timeout_add ((260000 - elapsed_time) / 1000, (GSourceFunc)ptz_focus_far_delayed, current_ptz);
 
-			g_mutex_unlock (&current_ptz->cmd_mutex);
+			g_mutex_unlock (current_ptz->cmd_mutex);
 		} else {
 			if (control_window_pan_tilt_timeout_id == 0) {
-				current_ptz->last_time = current_time;
-				g_mutex_unlock (&current_ptz->cmd_mutex);
+				*current_ptz->last_time = current_time;
+				g_mutex_unlock (current_ptz->cmd_mutex);
 
 				send_ptz_control_command (current_ptz, focus_far_speed_cmd, FALSE);
 
@@ -524,7 +524,7 @@ gboolean focus_near_button_pressed (GtkButton *button, GdkEventButton *event)
 			} else {
 				control_window_focus_timeout_id = g_timeout_add (130, (GSourceFunc)ptz_focus_far_delayed, current_ptz);
 
-				g_mutex_unlock (&current_ptz->cmd_mutex);
+				g_mutex_unlock (current_ptz->cmd_mutex);
 			}
 		}
 	} else {
@@ -533,11 +533,11 @@ gboolean focus_near_button_pressed (GtkButton *button, GdkEventButton *event)
 				control_window_focus_timeout_id = g_timeout_add ((130000 - elapsed_time) / 1000, (GSourceFunc)pts_focus_near_delayed, current_ptz);
 			else control_window_focus_timeout_id = g_timeout_add ((260000 - elapsed_time) / 1000, (GSourceFunc)pts_focus_near_delayed, current_ptz);
 
-			g_mutex_unlock (&current_ptz->cmd_mutex);
+			g_mutex_unlock (current_ptz->cmd_mutex);
 		} else {
 			if (control_window_pan_tilt_timeout_id == 0) {
-				current_ptz->last_time = current_time;
-				g_mutex_unlock (&current_ptz->cmd_mutex);
+				*current_ptz->last_time = current_time;
+				g_mutex_unlock (current_ptz->cmd_mutex);
 
 				send_ptz_control_command (current_ptz, focus_near_speed_cmd, FALSE);
 
@@ -545,7 +545,7 @@ gboolean focus_near_button_pressed (GtkButton *button, GdkEventButton *event)
 			} else {
 				control_window_focus_timeout_id = g_timeout_add (130, (GSourceFunc)pts_focus_near_delayed, current_ptz);
 
-				g_mutex_unlock (&current_ptz->cmd_mutex);
+				g_mutex_unlock (current_ptz->cmd_mutex);
 			}
 		}
 	}
@@ -555,9 +555,9 @@ gboolean focus_near_button_pressed (GtkButton *button, GdkEventButton *event)
 
 gboolean ptz_focus_stop_delayed (ptz_t *ptz)
 {
-	g_mutex_lock (&ptz->cmd_mutex);
-	ptz->last_time = g_get_monotonic_time ();
-	g_mutex_unlock (&ptz->cmd_mutex);
+	g_mutex_lock (ptz->cmd_mutex);
+	*ptz->last_time = g_get_monotonic_time ();
+	g_mutex_unlock (ptz->cmd_mutex);
 
 	send_ptz_control_command (ptz, focus_stop_cmd, FALSE);
 
@@ -574,7 +574,7 @@ gboolean focus_speed_button_released (GtkButton *button, GdkEventButton *event)
 
 	gtk_widget_unset_state_flags (GTK_WIDGET (button), GTK_STATE_FLAG_ACTIVE);
 
-	g_mutex_lock (&current_ptz->cmd_mutex);
+	g_mutex_lock (current_ptz->cmd_mutex);
 
 	if (control_window_focus_timeout_id != 0) {
 		g_source_remove (control_window_focus_timeout_id);
@@ -582,18 +582,18 @@ gboolean focus_speed_button_released (GtkButton *button, GdkEventButton *event)
 	}
 
 	current_time = g_get_monotonic_time ();
-	elapsed_time = current_time - current_ptz->last_time;
+	elapsed_time = current_time - *current_ptz->last_time;
 
 	if (elapsed_time < 130000) {
 		if (control_window_pan_tilt_timeout_id == 0)
 			control_window_focus_timeout_id = g_timeout_add ((130000 - elapsed_time) / 1000, (GSourceFunc)ptz_focus_stop_delayed, current_ptz);
 		else control_window_focus_timeout_id = g_timeout_add ((260000 - elapsed_time) / 1000, (GSourceFunc)ptz_focus_stop_delayed, current_ptz);
 
-		g_mutex_unlock (&current_ptz->cmd_mutex);
+		g_mutex_unlock (current_ptz->cmd_mutex);
 	} else {
 		if (control_window_pan_tilt_timeout_id == 0) {
-			current_ptz->last_time = current_time;
-			g_mutex_unlock (&current_ptz->cmd_mutex);
+			*current_ptz->last_time = current_time;
+			g_mutex_unlock (current_ptz->cmd_mutex);
 
 			send_ptz_control_command (current_ptz, focus_stop_cmd, FALSE);
 
@@ -601,7 +601,7 @@ gboolean focus_speed_button_released (GtkButton *button, GdkEventButton *event)
 		} else {
 			control_window_focus_timeout_id = g_timeout_add (130, (GSourceFunc)ptz_focus_stop_delayed, current_ptz);
 
-			g_mutex_unlock (&current_ptz->cmd_mutex);
+			g_mutex_unlock (current_ptz->cmd_mutex);
 		}
 	}
 
@@ -877,10 +877,10 @@ gboolean pad_motion_notify (GtkWidget *widget, GdkEventMotion *event)
 		control_window_pan_speed = pan_speed;
 		control_window_tilt_speed = tilt_speed;
 
-		g_mutex_lock (&current_ptz->cmd_mutex);
+		g_mutex_lock (current_ptz->cmd_mutex);
 
 		current_time = g_get_monotonic_time ();
-		elapsed_time = current_time - current_ptz->last_time;
+		elapsed_time = current_time - *current_ptz->last_time;
 
 		if (elapsed_time < 130000) {
 			if (control_window_pan_tilt_timeout_id == 0) {
@@ -889,7 +889,7 @@ gboolean pad_motion_notify (GtkWidget *widget, GdkEventMotion *event)
 				else control_window_pan_tilt_timeout_id = g_timeout_add ((260000 - elapsed_time) / 1000, (GSourceFunc)pan_tilt_speed_cmd_delayed, current_ptz);
 			}
 
-			g_mutex_unlock (&current_ptz->cmd_mutex);
+			g_mutex_unlock (current_ptz->cmd_mutex);
 		} else {
 			if (control_window_pan_tilt_timeout_id != 0) {
 				g_source_remove (control_window_pan_tilt_timeout_id);
@@ -903,8 +903,8 @@ gboolean pad_motion_notify (GtkWidget *widget, GdkEventMotion *event)
 				pan_tilt_speed_cmd[6] = '0' + (tilt_speed / 10);
 				pan_tilt_speed_cmd[7] = '0' + (tilt_speed % 10);
 
-				current_ptz->last_time = current_time;
-				g_mutex_unlock (&current_ptz->cmd_mutex);
+				*current_ptz->last_time = current_time;
+				g_mutex_unlock (current_ptz->cmd_mutex);
 
 				send_ptz_control_command (current_ptz, pan_tilt_speed_cmd, FALSE);
 
@@ -912,7 +912,7 @@ gboolean pad_motion_notify (GtkWidget *widget, GdkEventMotion *event)
 			} else {
 				control_window_pan_tilt_timeout_id = g_timeout_add (130, (GSourceFunc)pan_tilt_speed_cmd_delayed, current_ptz);
 
-				g_mutex_unlock (&current_ptz->cmd_mutex);
+				g_mutex_unlock (current_ptz->cmd_mutex);
 			}
 		}
 	}
@@ -923,14 +923,14 @@ gboolean pad_motion_notify (GtkWidget *widget, GdkEventMotion *event)
 gboolean pad_button_release (GtkWidget *widget, GdkEventButton *event)
 {
 	if ((event->button == 1) && (gdk_event_get_source_device ((GdkEvent *)event) != trackball)) {
-		g_mutex_lock (&current_ptz->cmd_mutex);
+		g_mutex_lock (current_ptz->cmd_mutex);
 
 		if (control_window_pan_tilt_timeout_id != 0) {
 			g_source_remove (control_window_pan_tilt_timeout_id);
 			control_window_pan_tilt_timeout_id = 0;
 		}
 
-		g_mutex_unlock (&current_ptz->cmd_mutex);
+		g_mutex_unlock (current_ptz->cmd_mutex);
 
 		if (pan_tilt_is_moving) {
 			send_ptz_control_command (current_ptz, pan_tilt_stop_cmd, TRUE);
@@ -1191,9 +1191,9 @@ gboolean zoom_level_bar_draw (GtkWidget *widget, cairo_t *cr)
 
 gboolean ptz_zoom_tele_delayed (ptz_t *ptz)
 {
-	g_mutex_lock (&ptz->cmd_mutex);
-	ptz->last_time = g_get_monotonic_time ();
-	g_mutex_unlock (&ptz->cmd_mutex);
+	g_mutex_lock (ptz->cmd_mutex);
+	*ptz->last_time = g_get_monotonic_time ();
+	g_mutex_unlock (ptz->cmd_mutex);
 
 	send_ptz_control_command (ptz, zoom_tele_speed_cmd, FALSE);
 
@@ -1206,9 +1206,9 @@ gboolean ptz_zoom_tele_delayed (ptz_t *ptz)
 
 gboolean ptz_zoom_wide_delayed (ptz_t *ptz)
 {
-	g_mutex_lock (&ptz->cmd_mutex);
-	ptz->last_time = g_get_monotonic_time ();
-	g_mutex_unlock (&ptz->cmd_mutex);
+	g_mutex_lock (ptz->cmd_mutex);
+	*ptz->last_time = g_get_monotonic_time ();
+	g_mutex_unlock (ptz->cmd_mutex);
 
 	send_ptz_control_command (ptz, zoom_wide_speed_cmd, FALSE);
 
@@ -1223,7 +1223,7 @@ gboolean zoom_tele_button_pressed (GtkButton *button, GdkEventButton *event)
 {
 	gint64 current_time, elapsed_time;
 
-	g_mutex_lock (&current_ptz->cmd_mutex);
+	g_mutex_lock (current_ptz->cmd_mutex);
 
 	if (control_window_zoom_timeout_id != 0) {
 		g_source_remove (control_window_zoom_timeout_id);
@@ -1231,7 +1231,7 @@ gboolean zoom_tele_button_pressed (GtkButton *button, GdkEventButton *event)
 	}
 
 	current_time = g_get_monotonic_time ();
-	elapsed_time = current_time - current_ptz->last_time;
+	elapsed_time = current_time - *current_ptz->last_time;
 
 	if (event->button == GDK_BUTTON_SECONDARY) {
 		gtk_widget_set_state_flags (GTK_WIDGET (button), GTK_STATE_FLAG_ACTIVE, FALSE);
@@ -1241,11 +1241,11 @@ gboolean zoom_tele_button_pressed (GtkButton *button, GdkEventButton *event)
 				control_window_zoom_timeout_id = g_timeout_add ((130000 - elapsed_time) / 1000, (GSourceFunc)ptz_zoom_wide_delayed, current_ptz);
 			else control_window_zoom_timeout_id = g_timeout_add ((260000 - elapsed_time) / 1000, (GSourceFunc)ptz_zoom_wide_delayed, current_ptz);
 
-			g_mutex_unlock (&current_ptz->cmd_mutex);
+			g_mutex_unlock (current_ptz->cmd_mutex);
 		} else {
 			if (control_window_pan_tilt_timeout_id == 0) {
-				current_ptz->last_time = current_time;
-				g_mutex_unlock (&current_ptz->cmd_mutex);
+				*current_ptz->last_time = current_time;
+				g_mutex_unlock (current_ptz->cmd_mutex);
 
 				send_ptz_control_command (current_ptz, zoom_wide_speed_cmd, FALSE);
 
@@ -1253,7 +1253,7 @@ gboolean zoom_tele_button_pressed (GtkButton *button, GdkEventButton *event)
 			} else {
 				control_window_zoom_timeout_id = g_timeout_add (130, (GSourceFunc)ptz_zoom_wide_delayed, current_ptz);
 
-				g_mutex_unlock (&current_ptz->cmd_mutex);
+				g_mutex_unlock (current_ptz->cmd_mutex);
 			}
 		}
 	} else {
@@ -1262,11 +1262,11 @@ gboolean zoom_tele_button_pressed (GtkButton *button, GdkEventButton *event)
 				control_window_zoom_timeout_id = g_timeout_add ((130000 - elapsed_time) / 1000, (GSourceFunc)ptz_zoom_tele_delayed, current_ptz);
 			else control_window_zoom_timeout_id = g_timeout_add ((260000 - elapsed_time) / 1000, (GSourceFunc)ptz_zoom_tele_delayed, current_ptz);
 
-			g_mutex_unlock (&current_ptz->cmd_mutex);
+			g_mutex_unlock (current_ptz->cmd_mutex);
 		} else {
 			if (control_window_pan_tilt_timeout_id == 0) {
-				current_ptz->last_time = current_time;
-				g_mutex_unlock (&current_ptz->cmd_mutex);
+				*current_ptz->last_time = current_time;
+				g_mutex_unlock (current_ptz->cmd_mutex);
 
 				send_ptz_control_command (current_ptz, zoom_tele_speed_cmd, FALSE);
 
@@ -1274,7 +1274,7 @@ gboolean zoom_tele_button_pressed (GtkButton *button, GdkEventButton *event)
 			} else {
 				control_window_zoom_timeout_id = g_timeout_add (130, (GSourceFunc)ptz_zoom_tele_delayed, current_ptz);
 
-				g_mutex_unlock (&current_ptz->cmd_mutex);
+				g_mutex_unlock (current_ptz->cmd_mutex);
 			}
 		}
 	}
@@ -1286,7 +1286,7 @@ gboolean zoom_wide_button_pressed (GtkButton *button, GdkEventButton *event)
 {
 	gint64 current_time, elapsed_time;
 
-	g_mutex_lock (&current_ptz->cmd_mutex);
+	g_mutex_lock (current_ptz->cmd_mutex);
 
 	if (control_window_zoom_timeout_id != 0) {
 		g_source_remove (control_window_zoom_timeout_id);
@@ -1294,7 +1294,7 @@ gboolean zoom_wide_button_pressed (GtkButton *button, GdkEventButton *event)
 	}
 
 	current_time = g_get_monotonic_time ();
-	elapsed_time = current_time - current_ptz->last_time;
+	elapsed_time = current_time - *current_ptz->last_time;
 
 	if (event->button == GDK_BUTTON_SECONDARY) {
 		gtk_widget_set_state_flags (GTK_WIDGET (button), GTK_STATE_FLAG_ACTIVE, FALSE);
@@ -1304,11 +1304,11 @@ gboolean zoom_wide_button_pressed (GtkButton *button, GdkEventButton *event)
 				control_window_zoom_timeout_id = g_timeout_add ((130000 - elapsed_time) / 1000, (GSourceFunc)ptz_zoom_tele_delayed, current_ptz);
 			else control_window_zoom_timeout_id = g_timeout_add ((260000 - elapsed_time) / 1000, (GSourceFunc)ptz_zoom_tele_delayed, current_ptz);
 
-			g_mutex_unlock (&current_ptz->cmd_mutex);
+			g_mutex_unlock (current_ptz->cmd_mutex);
 		} else {
 			if (control_window_pan_tilt_timeout_id == 0) {
-				current_ptz->last_time = current_time;
-				g_mutex_unlock (&current_ptz->cmd_mutex);
+				*current_ptz->last_time = current_time;
+				g_mutex_unlock (current_ptz->cmd_mutex);
 
 				send_ptz_control_command (current_ptz, zoom_tele_speed_cmd, FALSE);
 
@@ -1316,7 +1316,7 @@ gboolean zoom_wide_button_pressed (GtkButton *button, GdkEventButton *event)
 			} else {
 				control_window_zoom_timeout_id = g_timeout_add (130, (GSourceFunc)ptz_zoom_tele_delayed, current_ptz);
 
-				g_mutex_unlock (&current_ptz->cmd_mutex);
+				g_mutex_unlock (current_ptz->cmd_mutex);
 			}
 		}
 	} else {
@@ -1325,11 +1325,11 @@ gboolean zoom_wide_button_pressed (GtkButton *button, GdkEventButton *event)
 				control_window_zoom_timeout_id = g_timeout_add ((130000 - elapsed_time) / 1000, (GSourceFunc)ptz_zoom_wide_delayed, current_ptz);
 			else control_window_zoom_timeout_id = g_timeout_add ((260000 - elapsed_time) / 1000, (GSourceFunc)ptz_zoom_wide_delayed, current_ptz);
 
-			g_mutex_unlock (&current_ptz->cmd_mutex);
+			g_mutex_unlock (current_ptz->cmd_mutex);
 		} else {
 			if (control_window_pan_tilt_timeout_id == 0) {
-				current_ptz->last_time = current_time;
-				g_mutex_unlock (&current_ptz->cmd_mutex);
+				*current_ptz->last_time = current_time;
+				g_mutex_unlock (current_ptz->cmd_mutex);
 
 				send_ptz_control_command (current_ptz, zoom_wide_speed_cmd, FALSE);
 
@@ -1337,7 +1337,7 @@ gboolean zoom_wide_button_pressed (GtkButton *button, GdkEventButton *event)
 			} else {
 				control_window_zoom_timeout_id = g_timeout_add (130, (GSourceFunc)ptz_zoom_wide_delayed, current_ptz);
 
-				g_mutex_unlock (&current_ptz->cmd_mutex);
+				g_mutex_unlock (current_ptz->cmd_mutex);
 			}
 		}
 	}
@@ -1347,9 +1347,9 @@ gboolean zoom_wide_button_pressed (GtkButton *button, GdkEventButton *event)
 
 gboolean ptz_zoom_stop_delayed (ptz_t *ptz)
 {
-	g_mutex_lock (&ptz->cmd_mutex);
-	ptz->last_time = g_get_monotonic_time ();
-	g_mutex_unlock (&ptz->cmd_mutex);
+	g_mutex_lock (ptz->cmd_mutex);
+	*ptz->last_time = g_get_monotonic_time ();
+	g_mutex_unlock (ptz->cmd_mutex);
 
 	send_ptz_control_command (ptz, zoom_stop_cmd, FALSE);
 
@@ -1366,7 +1366,7 @@ gboolean zoom_speed_button_released (GtkButton *button, GdkEventButton *event)
 
 	gtk_widget_unset_state_flags (GTK_WIDGET (button), GTK_STATE_FLAG_ACTIVE);
 
-	g_mutex_lock (&current_ptz->cmd_mutex);
+	g_mutex_lock (current_ptz->cmd_mutex);
 
 	if (control_window_zoom_timeout_id != 0) {
 		g_source_remove (control_window_zoom_timeout_id);
@@ -1374,18 +1374,18 @@ gboolean zoom_speed_button_released (GtkButton *button, GdkEventButton *event)
 	}
 
 	current_time = g_get_monotonic_time ();
-	elapsed_time = current_time - current_ptz->last_time;
+	elapsed_time = current_time - *current_ptz->last_time;
 
 	if (elapsed_time < 130000) {
 		if (control_window_pan_tilt_timeout_id == 0)
 			control_window_zoom_timeout_id = g_timeout_add ((130000 - elapsed_time) / 1000, (GSourceFunc)ptz_zoom_stop_delayed, current_ptz);
 		else control_window_zoom_timeout_id = g_timeout_add ((260000 - elapsed_time) / 1000, (GSourceFunc)ptz_zoom_stop_delayed, current_ptz);
 
-		g_mutex_unlock (&current_ptz->cmd_mutex);
+		g_mutex_unlock (current_ptz->cmd_mutex);
 	} else {
 		if (control_window_pan_tilt_timeout_id == 0) {
-			current_ptz->last_time = current_time;
-			g_mutex_unlock (&current_ptz->cmd_mutex);
+			*current_ptz->last_time = current_time;
+			g_mutex_unlock (current_ptz->cmd_mutex);
 
 			send_ptz_control_command (current_ptz, zoom_stop_cmd, FALSE);
 
@@ -1393,7 +1393,7 @@ gboolean zoom_speed_button_released (GtkButton *button, GdkEventButton *event)
 		} else {
 			control_window_zoom_timeout_id = g_timeout_add (130, (GSourceFunc)ptz_zoom_stop_delayed, current_ptz);
 
-			g_mutex_unlock (&current_ptz->cmd_mutex);
+			g_mutex_unlock (current_ptz->cmd_mutex);
 		}
 	}
 
@@ -1423,21 +1423,16 @@ void update_control_window_tally (void)
 void show_control_window (ptz_t *ptz, GtkWindowPosition position)
 {
 	gboolean control_window_is_hidden;
+	ptz_thread_t *monitor_ptz_thread;
 
 	if (current_ptz == NULL) control_window_is_hidden = TRUE;
 	else {
 		control_window_is_hidden = FALSE;
 
 		if (!outgoing_free_d_started) {
-			if (current_ptz->monitor_pan_tilt) {
-				g_mutex_lock (&current_ptz->free_d_mutex);
-
-				current_ptz->monitor_pan_tilt = FALSE;
-//				g_thread_join (current_ptz->monitor_pan_tilt_thread);
-				current_ptz->monitor_pan_tilt_thread = NULL;
-
-				g_mutex_unlock (&current_ptz->free_d_mutex);
-			}
+			g_mutex_lock (&current_ptz->free_d_mutex);
+			current_ptz->monitor_pan_tilt = FALSE;
+			g_mutex_unlock (&current_ptz->free_d_mutex);
 		}
 	}
 
@@ -1464,10 +1459,11 @@ void show_control_window (ptz_t *ptz, GtkWindowPosition position)
 	if (!outgoing_free_d_started && (ptz->model == AW_HE130)) {
 		g_mutex_lock (&ptz->free_d_mutex);
 
-		if (ptz->monitor_pan_tilt_thread == NULL) {
-			ptz->monitor_pan_tilt = TRUE;
-			ptz->monitor_pan_tilt_thread = g_thread_new (NULL, (GThreadFunc)monitor_ptz_pan_tilt_position, ptz);
-		}
+		ptz->monitor_pan_tilt = TRUE;
+
+		monitor_ptz_thread = g_malloc (sizeof (ptz_thread_t));
+		monitor_ptz_thread->ptz = ptz;
+		monitor_ptz_thread->thread = g_thread_new (NULL, (GThreadFunc)monitor_ptz_pan_tilt_position, monitor_ptz_thread);
 
 		g_mutex_unlock (&ptz->free_d_mutex);
 	}
@@ -1480,13 +1476,9 @@ gboolean hide_control_window (void)
 
 	gtk_widget_hide (control_window_gtk_window);
 
-	if (!outgoing_free_d_started && current_ptz->monitor_pan_tilt) {
+	if (!outgoing_free_d_started) {
 		g_mutex_lock (&current_ptz->free_d_mutex);
-
 		current_ptz->monitor_pan_tilt = FALSE;
-//		g_thread_join (current_ptz->monitor_pan_tilt_thread);
-		current_ptz->monitor_pan_tilt_thread = NULL;
-
 		g_mutex_unlock (&current_ptz->free_d_mutex);
 	}
 

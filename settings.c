@@ -103,7 +103,7 @@ void show_about_window (void)
 		gtk_label_set_markup (GTK_LABEL (widget), "<b>Mémoires Pan Tilt Zoom pour caméras PTZ Panasonic</b>");
 		gtk_box_pack_start (GTK_BOX (box), widget, FALSE, FALSE, 0);
 
-		widget = gtk_label_new ("Version 2.2");
+		widget = gtk_label_new ("Version 2.3");
 		gtk_box_pack_start (GTK_BOX (box), widget, FALSE, FALSE, 0);
 #ifdef _WIN32
 		widget = gtk_image_new_from_pixbuf (pixbuf_logo);
@@ -251,45 +251,6 @@ gboolean settings_window_key_press (GtkWidget *window, GdkEventKey *event)
 	return GDK_EVENT_PROPAGATE;
 }
 
-void controller_switch_activated (GtkSwitch *controller_switch, GParamSpec *pspec, GtkWidget *controller_ip_address_box)
-{
-	controller_is_used = gtk_switch_get_active (controller_switch);
-
-	gtk_widget_set_sensitive (controller_ip_address_box, controller_is_used);
-
-	backup_needed = TRUE;
-}
-
-void check_controller_ip_address (void)
-{
-	int i, j, k;
-
-	for (i = 0, k = 0; i < 3; i++) {
-		j = gtk_entry_buffer_get_bytes (controller_ip_entry_buffer[i]);
-		memcpy (controller_ip_address + k, gtk_entry_buffer_get_text (controller_ip_entry_buffer[i]), j);
-		k += j;
-		controller_ip_address[k] = '.';
-		k++;
-	}
-	j = gtk_entry_buffer_get_bytes (controller_ip_entry_buffer[i]);
-	memcpy (controller_ip_address + k, gtk_entry_buffer_get_text (controller_ip_entry_buffer[3]), j);
-	controller_ip_address[k + j] = '\0';
-
-	controller_address.sin_addr.s_addr = inet_addr (controller_ip_address);
-
-	if (controller_address.sin_addr.s_addr == INADDR_NONE) {
-		controller_ip_address_is_valid = FALSE;
-		controller_ip_address[0] = '\0';
-
-		gtk_entry_buffer_set_text (controller_ip_entry_buffer[0], network_address[0], network_address_len[0]);
-		gtk_entry_buffer_set_text (controller_ip_entry_buffer[1], network_address[1], network_address_len[1]);
-		gtk_entry_buffer_set_text (controller_ip_entry_buffer[2], network_address[2], network_address_len[2]);
-		gtk_entry_buffer_delete_text (controller_ip_entry_buffer[3], 0, -1);
-	} else controller_ip_address_is_valid = TRUE;
-
-	backup_needed = TRUE;
-}
-
 void focus_speed_changed (GtkRange *focus_speed_scale)
 {
 	focus_speed = (int)gtk_range_get_value (focus_speed_scale);
@@ -340,12 +301,54 @@ void update_notification_tcp_port_entry_activate (GtkEntry *entry, GtkEntryBuffe
 		gtk_entry_buffer_set_text (entry_buffer, "31004", 5);
 	} else update_notification_address.sin_port = htons (port);
 
-	start_update_notification ();
+	if (!start_update_notification ()) show_update_notification_port_error_window (settings_window);
+
+	g_mutex_lock (&cameras_sets_mutex);
 
 	for (slist_itr = ptz_slist; slist_itr != NULL; slist_itr = slist_itr->next) {
 		ptz = slist_itr->data;
 
 		if (ptz->error_code != CAMERA_IS_UNREACHABLE_ERROR) send_update_start_cmd (ptz);
+	}
+
+	g_mutex_unlock (&cameras_sets_mutex);
+
+	backup_needed = TRUE;
+}
+
+void check_controller_ip_address (void)
+{
+	int i, j, k;
+
+	for (i = 0, k = 0; i < 3; i++) {
+		j = gtk_entry_buffer_get_bytes (controller_ip_entry_buffer[i]);
+		memcpy (controller_ip_address + k, gtk_entry_buffer_get_text (controller_ip_entry_buffer[i]), j);
+		k += j;
+		controller_ip_address[k] = '.';
+		k++;
+	}
+	j = gtk_entry_buffer_get_bytes (controller_ip_entry_buffer[3]);
+	memcpy (controller_ip_address + k, gtk_entry_buffer_get_text (controller_ip_entry_buffer[3]), j);
+	controller_ip_address[k + j] = '\0';
+
+	controller_address.sin_addr.s_addr = inet_addr (controller_ip_address);
+
+	if (controller_address.sin_addr.s_addr == INADDR_NONE) {
+		controller_ip_address_is_valid = FALSE;
+		controller_ip_address[0] = '\0';
+
+		gtk_entry_buffer_set_text (controller_ip_entry_buffer[0], network_address[0], network_address_len[0]);
+		gtk_entry_buffer_set_text (controller_ip_entry_buffer[1], network_address[1], network_address_len[1]);
+		gtk_entry_buffer_set_text (controller_ip_entry_buffer[2], network_address[2], network_address_len[2]);
+		gtk_entry_buffer_delete_text (controller_ip_entry_buffer[3], 0, -1);
+
+		controller_is_used = FALSE;
+		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (controller_toggle_button), FALSE);
+		gtk_widget_hide (controller_toggle_button);
+	} else {
+		controller_ip_address_is_valid = TRUE;
+
+		gtk_widget_show (controller_toggle_button);
 	}
 
 	backup_needed = TRUE;
@@ -530,7 +533,7 @@ gboolean destroy_settings_window (void)
 
 void show_settings_window (void)
 {
-	GtkWidget *box1, *frame, *box2, *box3, *box4, *widget, *controller_ip_address_box;
+	GtkWidget *box1, *frame, *box2, *box3, *box4, *widget;
 	cameras_set_t *cameras_set_itr;
 	gint current_page;
 	int i, l, k;
@@ -614,93 +617,6 @@ void show_settings_window (void)
 		gtk_container_add (GTK_CONTAINER (frame), box2);
 	gtk_box_pack_start (GTK_BOX (box1), frame, FALSE, FALSE, 0);
 
-		frame = gtk_frame_new ("Pupitre Panasonic");
-		gtk_frame_set_label_align (GTK_FRAME (frame), 0.5, 0.5);
-		gtk_container_set_border_width (GTK_CONTAINER (frame), MARGIN_VALUE);
-			box3 = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
-			gtk_container_set_border_width (GTK_CONTAINER (box3), MARGIN_VALUE);;
-				controller_ip_address_box = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
-
-					if (controller_ip_address_is_valid) {
-						for (l = 1; controller_ip_address[l] != '.'; l++) {}
-						controller_ip_entry_buffer[0] = gtk_entry_buffer_new (controller_ip_address, l);
-						k = l + 1;
-
-						for (l = 1; controller_ip_address[k + l] != '.'; l++) {}
-						controller_ip_entry_buffer[1] = gtk_entry_buffer_new (controller_ip_address + k, l);
-						k += l + 1;
-
-						for (l = 1; controller_ip_address[k + l] != '.'; l++) {}
-						controller_ip_entry_buffer[2] = gtk_entry_buffer_new (controller_ip_address + k, l);
-						k += l + 1;
-
-						for (l = 1; controller_ip_address[k + l] != '.'; l++) {}
-						controller_ip_entry_buffer[3] = gtk_entry_buffer_new (controller_ip_address + k, l);
-					} else {
-						controller_ip_entry_buffer[0] = gtk_entry_buffer_new (network_address[0], network_address_len[0]);
-						controller_ip_entry_buffer[1] = gtk_entry_buffer_new (network_address[1], network_address_len[1]);
-						controller_ip_entry_buffer[2] = gtk_entry_buffer_new (network_address[2], network_address_len[2]);
-						controller_ip_entry_buffer[3] = gtk_entry_buffer_new (NULL, -1);
-					}
-
-					widget = gtk_entry_new_with_buffer (controller_ip_entry_buffer[0]);
-					gtk_entry_set_input_purpose (GTK_ENTRY (widget), GTK_INPUT_PURPOSE_DIGITS);
-					g_signal_connect (G_OBJECT (widget), "key-press-event", G_CALLBACK (digit_key_press), NULL);
-					gtk_entry_set_max_length (GTK_ENTRY (widget), 3);
-					gtk_entry_set_width_chars (GTK_ENTRY (widget), 3);
-					gtk_entry_set_alignment (GTK_ENTRY (widget), 0.5);
-				gtk_box_pack_start (GTK_BOX (controller_ip_address_box), widget, FALSE, FALSE, 0);
-
-					widget = gtk_label_new (".");
-					gtk_widget_set_margin_start (widget, 2);
-					gtk_widget_set_margin_end (widget, 2);
-				gtk_box_pack_start (GTK_BOX (controller_ip_address_box), widget, FALSE, FALSE, 0);
-
-					widget = gtk_entry_new_with_buffer (controller_ip_entry_buffer[1]);
-					gtk_entry_set_input_purpose (GTK_ENTRY (widget), GTK_INPUT_PURPOSE_DIGITS);
-					g_signal_connect (G_OBJECT (widget), "key-press-event", G_CALLBACK (digit_key_press), NULL);
-					gtk_entry_set_max_length (GTK_ENTRY (widget), 3);
-					gtk_entry_set_width_chars (GTK_ENTRY (widget), 3);
-					gtk_entry_set_alignment (GTK_ENTRY (widget), 0.5);
-				gtk_box_pack_start (GTK_BOX (controller_ip_address_box), widget, FALSE, FALSE, 0);
-
-					widget = gtk_label_new (".");
-					gtk_widget_set_margin_start (widget, 2);
-					gtk_widget_set_margin_end (widget, 2);
-				gtk_box_pack_start (GTK_BOX (controller_ip_address_box), widget, FALSE, FALSE, 0);
-
-					widget = gtk_entry_new_with_buffer (controller_ip_entry_buffer[2]);
-					gtk_entry_set_input_purpose (GTK_ENTRY (widget), GTK_INPUT_PURPOSE_DIGITS);
-					g_signal_connect (G_OBJECT (widget), "key-press-event", G_CALLBACK (digit_key_press), NULL);
-					gtk_entry_set_max_length (GTK_ENTRY (widget), 3);
-					gtk_entry_set_width_chars (GTK_ENTRY (widget), 3);
-					gtk_entry_set_alignment (GTK_ENTRY (widget), 0.5);
-				gtk_box_pack_start (GTK_BOX (controller_ip_address_box), widget, FALSE, FALSE, 0);
-
-					widget = gtk_label_new (".");
-					gtk_widget_set_margin_start (widget, 2);
-					gtk_widget_set_margin_end (widget, 2);
-				gtk_box_pack_start (GTK_BOX (controller_ip_address_box), widget, FALSE, FALSE, 0);
-
-					widget = gtk_entry_new_with_buffer (controller_ip_entry_buffer[3]);
-					gtk_entry_set_input_purpose (GTK_ENTRY (widget), GTK_INPUT_PURPOSE_DIGITS);
-					g_signal_connect (G_OBJECT (widget), "key-press-event", G_CALLBACK (digit_key_press), NULL);
-					g_signal_connect (G_OBJECT (widget), "activate", G_CALLBACK (check_controller_ip_address), NULL);
-					gtk_entry_set_max_length (GTK_ENTRY (widget), 3);
-					gtk_entry_set_width_chars (GTK_ENTRY (widget), 3);
-					gtk_entry_set_alignment (GTK_ENTRY (widget), 0.5);
-				gtk_box_pack_start (GTK_BOX (controller_ip_address_box), widget, FALSE, FALSE, 0);
-				gtk_widget_set_sensitive (controller_ip_address_box, controller_is_used);
-			gtk_box_pack_end (GTK_BOX (box3), controller_ip_address_box, FALSE, FALSE, 0);
-
-				widget = gtk_switch_new ();
-				gtk_widget_set_margin_end (widget, MARGIN_VALUE);
-				gtk_switch_set_active (GTK_SWITCH (widget), controller_is_used);
-				g_signal_connect (widget, "notify::active", G_CALLBACK (controller_switch_activated), controller_ip_address_box);
-			gtk_box_pack_start (GTK_BOX (box3), widget, FALSE, FALSE, 0);
-		gtk_container_add (GTK_CONTAINER (frame), box3);
-	gtk_box_pack_start (GTK_BOX (box1), frame, FALSE, FALSE, 0);
-
 		frame = gtk_frame_new ("Réglages communs à toutes les caméras");
 		gtk_frame_set_label_align (GTK_FRAME (frame), 0.5, 0.5);
 		gtk_container_set_border_width (GTK_CONTAINER (frame), MARGIN_VALUE);
@@ -768,6 +684,91 @@ void show_settings_window (void)
 					gtk_widget_set_margin_start (widget, MARGIN_VALUE);
 				gtk_box_pack_end (GTK_BOX (box3), widget, FALSE, FALSE, 0);
 			gtk_box_pack_start (GTK_BOX (box2), box3, FALSE, FALSE, 0);
+		gtk_container_add (GTK_CONTAINER (frame), box2);
+	gtk_box_pack_start (GTK_BOX (box1), frame, FALSE, FALSE, 0);
+
+		frame = gtk_frame_new ("Pupitre Panasonic AW-RPxxx");
+		gtk_frame_set_label_align (GTK_FRAME (frame), 0.5, 0.5);
+		gtk_container_set_border_width (GTK_CONTAINER (frame), MARGIN_VALUE);
+			box2 = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
+			gtk_container_set_border_width (GTK_CONTAINER (box2), MARGIN_VALUE);;
+				widget = gtk_label_new ("Adresse IP :");
+//				gtk_widget_set_margin_end (widget, MARGIN_VALUE);
+			gtk_box_pack_start (GTK_BOX (box2), widget, FALSE, FALSE, 0);
+
+				if (controller_ip_address_is_valid) {
+					l = 1;
+					while (controller_ip_address[l] != '.') l++;
+					controller_ip_entry_buffer[0] = gtk_entry_buffer_new (controller_ip_address, l);
+					k = l + 1;
+
+					l = 1;
+					while (controller_ip_address[k + l] != '.') l++;
+					controller_ip_entry_buffer[1] = gtk_entry_buffer_new (controller_ip_address + k, l);
+					k += l + 1;
+
+					l = 1;
+					while (controller_ip_address[k + l] != '.') l++;
+					controller_ip_entry_buffer[2] = gtk_entry_buffer_new (controller_ip_address + k, l);
+					k += l + 1;
+
+					l = 1;
+					while (controller_ip_address[k + l] != '\0') l++;
+					controller_ip_entry_buffer[3] = gtk_entry_buffer_new (controller_ip_address + k, l);
+				} else {
+					controller_ip_entry_buffer[0] = gtk_entry_buffer_new (network_address[0], network_address_len[0]);
+					controller_ip_entry_buffer[1] = gtk_entry_buffer_new (network_address[1], network_address_len[1]);
+					controller_ip_entry_buffer[2] = gtk_entry_buffer_new (network_address[2], network_address_len[2]);
+					controller_ip_entry_buffer[3] = gtk_entry_buffer_new (NULL, -1);
+				}
+
+				widget = gtk_entry_new_with_buffer (controller_ip_entry_buffer[3]);
+				gtk_entry_set_input_purpose (GTK_ENTRY (widget), GTK_INPUT_PURPOSE_DIGITS);
+				g_signal_connect (G_OBJECT (widget), "key-press-event", G_CALLBACK (digit_key_press), NULL);
+				g_signal_connect (G_OBJECT (widget), "activate", G_CALLBACK (check_controller_ip_address), NULL);
+				gtk_entry_set_max_length (GTK_ENTRY (widget), 3);
+				gtk_entry_set_width_chars (GTK_ENTRY (widget), 3);
+				gtk_entry_set_alignment (GTK_ENTRY (widget), 0.5);
+			gtk_box_pack_end (GTK_BOX (box2), widget, FALSE, FALSE, 0);
+
+				widget = gtk_label_new (".");
+				gtk_widget_set_margin_start (widget, 2);
+				gtk_widget_set_margin_end (widget, 2);
+			gtk_box_pack_end (GTK_BOX (box2), widget, FALSE, FALSE, 0);
+
+				widget = gtk_entry_new_with_buffer (controller_ip_entry_buffer[2]);
+				gtk_entry_set_input_purpose (GTK_ENTRY (widget), GTK_INPUT_PURPOSE_DIGITS);
+				g_signal_connect (G_OBJECT (widget), "key-press-event", G_CALLBACK (digit_key_press), NULL);
+				gtk_entry_set_max_length (GTK_ENTRY (widget), 3);
+				gtk_entry_set_width_chars (GTK_ENTRY (widget), 3);
+				gtk_entry_set_alignment (GTK_ENTRY (widget), 0.5);
+			gtk_box_pack_end (GTK_BOX (box2), widget, FALSE, FALSE, 0);
+
+				widget = gtk_label_new (".");
+				gtk_widget_set_margin_start (widget, 2);
+				gtk_widget_set_margin_end (widget, 2);
+			gtk_box_pack_end (GTK_BOX (box2), widget, FALSE, FALSE, 0);
+
+				widget = gtk_entry_new_with_buffer (controller_ip_entry_buffer[1]);
+				gtk_entry_set_input_purpose (GTK_ENTRY (widget), GTK_INPUT_PURPOSE_DIGITS);
+				g_signal_connect (G_OBJECT (widget), "key-press-event", G_CALLBACK (digit_key_press), NULL);
+				gtk_entry_set_max_length (GTK_ENTRY (widget), 3);
+				gtk_entry_set_width_chars (GTK_ENTRY (widget), 3);
+				gtk_entry_set_alignment (GTK_ENTRY (widget), 0.5);
+			gtk_box_pack_end (GTK_BOX (box2), widget, FALSE, FALSE, 0);
+
+				widget = gtk_label_new (".");
+				gtk_widget_set_margin_start (widget, 2);
+				gtk_widget_set_margin_end (widget, 2);
+			gtk_box_pack_end (GTK_BOX (box2), widget, FALSE, FALSE, 0);
+
+				widget = gtk_entry_new_with_buffer (controller_ip_entry_buffer[0]);
+				gtk_entry_set_input_purpose (GTK_ENTRY (widget), GTK_INPUT_PURPOSE_DIGITS);
+				g_signal_connect (G_OBJECT (widget), "key-press-event", G_CALLBACK (digit_key_press), NULL);
+				gtk_entry_set_max_length (GTK_ENTRY (widget), 3);
+				gtk_entry_set_width_chars (GTK_ENTRY (widget), 3);
+				gtk_entry_set_alignment (GTK_ENTRY (widget), 0.5);
+			gtk_box_pack_end (GTK_BOX (box2), widget, FALSE, FALSE, 0);
 		gtk_container_add (GTK_CONTAINER (frame), box2);
 	gtk_box_pack_start (GTK_BOX (box1), frame, FALSE, FALSE, 0);
 
@@ -1148,6 +1149,9 @@ void load_config_file (void)
 							first_ptz = slist_itr1->data;
 
 							if (ptz->address.sin_addr.s_addr == first_ptz->address.sin_addr.s_addr) {
+								ptz->last_time = first_ptz->last_time;
+								ptz->cmd_mutex = first_ptz->cmd_mutex;
+
 								for (slist_itr2 = first_ptz->other_ptz_slist; slist_itr2 != NULL; slist_itr2 = slist_itr2->next) {
 									other_ptz = slist_itr2->data;
 
@@ -1161,7 +1165,16 @@ void load_config_file (void)
 								break;
 							}
 						}
-						if (slist_itr1 == NULL) ptz_slist = g_slist_prepend (ptz_slist, ptz);
+
+						if (slist_itr1 == NULL) {
+							ptz->last_time = g_malloc (sizeof (gint64));
+							*ptz->last_time = 0;
+
+							ptz->cmd_mutex = g_malloc (sizeof (GMutex));
+							g_mutex_init (ptz->cmd_mutex);
+
+							ptz_slist = g_slist_prepend (ptz_slist, ptz);
+						}
 					}
 
 					fread (&ptz->number_of_memories, sizeof (int), 1, config_file);
@@ -1250,18 +1263,6 @@ void load_config_file (void)
 		ultimatte_picto_y =  30 * interface_default.thumbnail_size;
 	}
 
-	fread (&controller_is_used, sizeof (gboolean), 1, config_file);
-
-	fread (controller_ip_address, sizeof (char), 16, config_file);
-	controller_ip_address[15] = '\0';
-
-	controller_address.sin_addr.s_addr = inet_addr (controller_ip_address);
-
-	if (controller_address.sin_addr.s_addr == INADDR_NONE) {
-		controller_ip_address_is_valid = FALSE;
-		controller_ip_address[0] = '\0';
-	} else controller_ip_address_is_valid = TRUE;
-
 	fread (&focus_speed, sizeof (int), 1, config_file);
 	if ((focus_speed < 1) || (focus_speed > 49)) focus_speed = 25;
 	focus_near_speed_cmd[2] = '0' + ((50 - focus_speed) / 10);
@@ -1280,6 +1281,19 @@ void load_config_file (void)
 
 	fread (&update_notification_address.sin_port, sizeof (guint16), 1, config_file);
 	if (ntohs (update_notification_address.sin_port) < 1024) update_notification_address.sin_port = htons (UPDATE_NOTIFICATION_TCP_PORT);
+
+	fread (&controller_is_used, sizeof (gboolean), 1, config_file);
+
+	fread (controller_ip_address, sizeof (char), 16, config_file);
+	controller_ip_address[15] = '\0';
+
+	controller_address.sin_addr.s_addr = inet_addr (controller_ip_address);
+
+	if (controller_address.sin_addr.s_addr == INADDR_NONE) {
+		controller_ip_address_is_valid = FALSE;
+		controller_ip_address[0] = '\0';
+		controller_is_used = FALSE;
+	} else controller_ip_address_is_valid = TRUE;
 
 	fread (&sw_p_08_address.sin_port, sizeof (guint16), 1, config_file);
 	if ((ntohs (sw_p_08_address.sin_port) < 1024) || (sw_p_08_address.sin_port == update_notification_address.sin_port))
@@ -1415,10 +1429,6 @@ void save_config_file (void)
 		}
 	}
 
-	fwrite (&controller_is_used, sizeof (gboolean), 1, config_file);
-
-	fwrite (controller_ip_address, sizeof (char), 16, config_file);
-
 	fwrite (&focus_speed, sizeof (int), 1, config_file);
 
 	fwrite (&zoom_speed, sizeof (int), 1, config_file);
@@ -1426,6 +1436,10 @@ void save_config_file (void)
 	fwrite (&send_ip_tally, sizeof (gboolean), 1, config_file);
 
 	fwrite (&update_notification_address.sin_port, sizeof (guint16), 1, config_file);
+
+	fwrite (&controller_is_used, sizeof (gboolean), 1, config_file);
+
+	fwrite (controller_ip_address, sizeof (char), 16, config_file);
 
 	fwrite (&sw_p_08_address.sin_port, sizeof (guint16), 1, config_file);
 

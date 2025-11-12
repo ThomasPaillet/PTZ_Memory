@@ -41,7 +41,7 @@ int controller_cmd_size;
 
 gpointer controller_switch_ptz (ptz_thread_t *ptz_thread)
 {
-	int port_number, size;
+	int port_number, size, index;
 	SOCKET sock;
 	char buffer[264];
 
@@ -54,7 +54,7 @@ gpointer controller_switch_ptz (ptz_thread_t *ptz_thread)
 		controller_cmd[28] = '0';
 		controller_cmd[29] = '0' + port_number;
 	} else {
-		g_idle_add ((GSourceFunc)free_ptz_thread, ptz_thread);
+		g_idle_add_full (G_PRIORITY_LOW, (GSourceFunc)free_ptz_thread, ptz_thread, NULL);
 
 		return NULL;
 	}
@@ -69,17 +69,21 @@ gpointer controller_switch_ptz (ptz_thread_t *ptz_thread)
 			log_controller_command (__FILE__, controller_ip_address, controller_cmd, controller_cmd_size);
 			g_mutex_unlock (&logging_mutex);
 
-			size = recv (sock, buffer, sizeof (buffer), 0);
+			index = 0;
+			do {
+				size = recv (sock, buffer + index, sizeof (buffer) - index, 0);
+				index += size;
+			} while ((size > 0) && (index < sizeof (buffer)));
 
 			g_mutex_lock (&logging_mutex);
-			log_controller_response (__FILE__, controller_ip_address, buffer, size);
+			log_controller_response (__FILE__, controller_ip_address, buffer, index);
 			g_mutex_unlock (&logging_mutex);
 		}
 	}
 
 	closesocket (sock);
 
-	g_idle_add ((GSourceFunc)free_ptz_thread, ptz_thread);
+	g_idle_add_full (G_PRIORITY_LOW, (GSourceFunc)free_ptz_thread, ptz_thread, NULL);
 
 	return NULL;
 }

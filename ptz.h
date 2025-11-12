@@ -53,6 +53,7 @@ typedef struct {
 	struct sockaddr_in address;
 
 	GSList *other_ptz_slist;	//with_the_same_ip_address;
+	GMutex other_ptz_mutex;
 
 	int model;
 
@@ -60,11 +61,9 @@ typedef struct {
 	char cmd_buffer[272];
 	char *last_cmd;
 	gboolean cam_ptz;
-	char last_ctrl_cmd[16];
-	int last_ctrl_cmd_len;
 
-	gint64 last_time;
-	GMutex cmd_mutex;
+	gint64 *last_time;
+	GMutex *cmd_mutex;
 
 	int error_code;
 
@@ -115,7 +114,6 @@ typedef struct {
 	gint32 incomming_free_d_Pan;
 
 	gboolean monitor_pan_tilt;
-	GThread *monitor_pan_tilt_thread;
 
 	GMutex free_d_mutex;
 
@@ -138,7 +136,7 @@ gboolean ptz_is_on (ptz_t *ptz);
 
 gboolean ptz_is_off (ptz_t *ptz);
 
-gpointer monitor_ptz_pan_tilt_position (ptz_t *ptz);
+gpointer monitor_ptz_pan_tilt_position (ptz_thread_t *ptz_thread);
 
 gboolean free_ptz_thread (ptz_thread_t *ptz_thread);
 

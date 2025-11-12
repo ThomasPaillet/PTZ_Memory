@@ -38,6 +38,8 @@ extern gboolean inhibit_main_window_notebook_switch_page;
 
 extern GtkWidget *interface_button;
 
+extern GtkWidget *controller_toggle_button;
+
 extern GtkWidget *store_toggle_button;
 extern GtkWidget *delete_toggle_button;
 extern GtkWidget *link_toggle_button;
@@ -49,6 +51,8 @@ extern GtkWidget *switch_cameras_off_button;
 gboolean digit_key_press (GtkEntry *entry, GdkEventKey *event);
 
 gboolean show_exit_confirmation_window (void);
+
+gboolean show_update_notification_port_error_window (GtkWidget *transient_window);
 
 
 #endif

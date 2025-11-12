@@ -152,7 +152,7 @@ gpointer load_memory (memory_thread_t *memory_thread)
 
 	send_ptz_control_command (ptz, memory->pan_tilt_position_cmd, TRUE);
 
-	if (controller_is_used && controller_ip_address_is_valid) {
+	if (controller_is_used) {
 		controller_thread = g_malloc (sizeof (ptz_thread_t));
 		controller_thread->ptz = ptz;
 		controller_thread->thread = g_thread_new (NULL, (GThreadFunc)controller_switch_ptz, controller_thread);

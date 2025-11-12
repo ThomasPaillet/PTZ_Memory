@@ -23,6 +23,8 @@
 
 #include "network_header.h"
 
+#include <glib-2.0/glib.h>
+
 
 #define UPDATE_NOTIFICATION_TCP_PORT 31004
 
@@ -32,7 +34,7 @@ extern struct sockaddr_in update_notification_address;
 
 void init_update_notification (void);
 
-void start_update_notification (void);
+gboolean start_update_notification (void);
 
 void stop_update_notification (void);
 

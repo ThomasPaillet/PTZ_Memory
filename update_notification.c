@@ -51,6 +51,7 @@ gpointer receive_update_notification (void)
 	guint32 zoom, focus;
 	gint32 free_d_optical_axis_height;
 	gint32 pan, tilt;
+	ptz_thread_t *monitor_ptz_thread;
 
 	while (update_notification_started) {
 		addrlen = sizeof (struct sockaddr_in);
@@ -77,35 +78,23 @@ gpointer receive_update_notification (void)
 					if (buffer[31] == '0') {		//p0	//Power Standby
 						ptz->is_on = FALSE;
 
-						if (ptz->monitor_pan_tilt) {
-							g_mutex_lock (&ptz->free_d_mutex);
-
-							ptz->monitor_pan_tilt = FALSE;
-//							g_thread_join (ptz->monitor_pan_tilt_thread);
-							ptz->monitor_pan_tilt_thread = NULL;
-
-							g_mutex_unlock (&ptz->free_d_mutex);
-						}
+						g_mutex_lock (&ptz->free_d_mutex);
+						ptz->monitor_pan_tilt = FALSE;
+						g_mutex_unlock (&ptz->free_d_mutex);
 
 						g_idle_add ((GSourceFunc)ptz_is_off, ptz);
+
+						g_mutex_lock (&ptz->other_ptz_mutex);
 
 						for (slist_itr2 = ptz->other_ptz_slist; slist_itr2 != NULL; slist_itr2 = slist_itr2->next) {
 							other_ptz = slist_itr2->data;
 
 							other_ptz->is_on = FALSE;
 
-							if (other_ptz->monitor_pan_tilt) {
-								g_mutex_lock (&other_ptz->free_d_mutex);
-
-								other_ptz->monitor_pan_tilt = FALSE;
-//								g_thread_join (other_ptz->monitor_pan_tilt_thread);
-								other_ptz->monitor_pan_tilt_thread = NULL;
-
-								g_mutex_unlock (&other_ptz->free_d_mutex);
-							}
-
 							g_idle_add ((GSourceFunc)ptz_is_off, other_ptz);
 						}
+
+						g_mutex_unlock (&ptz->other_ptz_mutex);
 					} else if (buffer[31] == '1') {		//p1	//Power On
 						send_cam_request_command_string (ptz, "QID", buffer);	//Model
 
@@ -167,6 +156,8 @@ gpointer receive_update_notification (void)
 
 						g_idle_add ((GSourceFunc)ptz_is_on, ptz);
 
+						g_mutex_lock (&ptz->other_ptz_mutex);
+
 						for (slist_itr2 = ptz->other_ptz_slist; slist_itr2 != NULL; slist_itr2 = slist_itr2->next) {
 							other_ptz = slist_itr2->data;
 
@@ -198,18 +189,19 @@ gpointer receive_update_notification (void)
 							g_idle_add ((GSourceFunc)ptz_is_on, other_ptz);
 						}
 
+						g_mutex_unlock (&ptz->other_ptz_mutex);
+
 						if (outgoing_free_d_started && (ptz->model == AW_HE130)) {
 							g_mutex_lock (&ptz->free_d_mutex);
 
-							if (ptz->monitor_pan_tilt_thread == NULL) {
-								ptz->monitor_pan_tilt = TRUE;
-								ptz->monitor_pan_tilt_thread = g_thread_new (NULL, (GThreadFunc)monitor_ptz_pan_tilt_position, ptz);
-							}
+							ptz->monitor_pan_tilt = TRUE;
+
+							monitor_ptz_thread = g_malloc (sizeof (ptz_thread_t));
+							monitor_ptz_thread->ptz = ptz;
+							monitor_ptz_thread->thread = g_thread_new (NULL, (GThreadFunc)monitor_ptz_pan_tilt_position, monitor_ptz_thread);
 
 							g_mutex_unlock (&ptz->free_d_mutex);
 						}
-
-						break;
 					}
 				} else if ((buffer[30] == 'l') && (buffer[31] == 'P') && (buffer[32] == 'I')) { 	//lPI	//Lens information
 					g_mutex_lock (&ptz->lens_information_mutex);
@@ -258,6 +250,8 @@ gpointer receive_update_notification (void)
 
 					g_mutex_unlock (&ptz->lens_information_mutex);
 
+					g_mutex_lock (&ptz->other_ptz_mutex);
+
 					for (slist_itr2 = ptz->other_ptz_slist; slist_itr2 != NULL; slist_itr2 = slist_itr2->next) {
 						other_ptz = slist_itr2->data;
 
@@ -295,6 +289,8 @@ gpointer receive_update_notification (void)
 
 						g_mutex_unlock (&other_ptz->lens_information_mutex);
 					}
+
+					g_mutex_unlock (&ptz->other_ptz_mutex);
 				} else if ((buffer[30] == 'a') && (buffer[31] == 'P') && (buffer[32] == 'C')) { 	//aPC	//Pan/tilt position
 					if (buffer[33] <= '9') pan = (buffer[33] - '0') * 4096;
 					else pan = (buffer[33] - '7') * 4096;
@@ -326,6 +322,8 @@ gpointer receive_update_notification (void)
 
 					if (ptz == current_ptz) gtk_widget_queue_draw (control_window_pan_tilt_label);
 
+					g_mutex_lock (&ptz->other_ptz_mutex);
+
 					for (slist_itr2 = ptz->other_ptz_slist; slist_itr2 != NULL; slist_itr2 = slist_itr2->next) {
 						other_ptz = slist_itr2->data;
 
@@ -338,6 +336,8 @@ gpointer receive_update_notification (void)
 
 						if (other_ptz == current_ptz) gtk_widget_queue_draw (control_window_pan_tilt_label);
 					}
+
+					g_mutex_unlock (&ptz->other_ptz_mutex);
 				} else if ((buffer[30] == 'O') && (buffer[31] == 'A') && (buffer[32] == 'F')) { 	//OAF:	//Auto focus position
 					if (buffer[34] == '1') auto_focus = TRUE;
 					else auto_focus = FALSE;
@@ -350,6 +350,8 @@ gpointer receive_update_notification (void)
 
 					if (ptz == current_ptz) g_idle_add ((GSourceFunc)update_auto_focus_state, NULL);
 
+					g_mutex_lock (&ptz->other_ptz_mutex);
+
 					for (slist_itr2 = ptz->other_ptz_slist; slist_itr2 != NULL; slist_itr2 = slist_itr2->next) {
 						other_ptz = slist_itr2->data;
 
@@ -361,6 +363,8 @@ gpointer receive_update_notification (void)
 
 						if (other_ptz == current_ptz) g_idle_add ((GSourceFunc)update_auto_focus_state, NULL);
 					}
+
+					g_mutex_unlock (&ptz->other_ptz_mutex);
 				} else if ((buffer[30] == 'i') && (buffer[31] == 'N') && (buffer[32] == 'S')) { 	//iNS	//Installation position
 					if (buffer[33] == '1') free_d_optical_axis_height = - ptz_optical_axis_height[ptz->model];
 					else free_d_optical_axis_height = ptz_optical_axis_height[ptz->model];
@@ -371,6 +375,8 @@ gpointer receive_update_notification (void)
 
 					g_mutex_unlock (&ptz->free_d_mutex);
 
+					g_mutex_lock (&ptz->other_ptz_mutex);
+
 					for (slist_itr2 = ptz->other_ptz_slist; slist_itr2 != NULL; slist_itr2 = slist_itr2->next) {
 						other_ptz = slist_itr2->data;
 
@@ -380,6 +386,8 @@ gpointer receive_update_notification (void)
 
 						g_mutex_unlock (&other_ptz->free_d_mutex);
 					}
+
+					g_mutex_unlock (&ptz->other_ptz_mutex);
 				} else if ((buffer[30] == 'r') && (buffer[31] == 'E') && (buffer[32] == 'R')) {		//rER	//Error information
 					src_in_addr = g_malloc (sizeof (struct in_addr));
 					*src_in_addr = src_addr.sin_addr;
@@ -483,7 +491,7 @@ void init_update_notification (void)
 	update_notification_address.sin_addr.s_addr = inet_addr (my_ip_address);
 }
 
-void start_update_notification (void)
+gboolean start_update_notification (void)
 {
 	update_notification_socket = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
@@ -492,13 +500,17 @@ void start_update_notification (void)
 			update_notification_started = TRUE;
 			update_notification_thread = g_thread_new (NULL, (GThreadFunc)receive_update_notification, NULL);
 		}
-	}
+
+		return TRUE;
+	} else return FALSE;
 }
 
 void stop_update_notification (void)
 {
 	GSList *slist_itr;
 	ptz_t *ptz;
+
+	g_mutex_lock (&cameras_sets_mutex);
 
 	for (slist_itr = ptz_slist; slist_itr != NULL; slist_itr = slist_itr->next) {
 		ptz = slist_itr->data;
@@ -509,6 +521,8 @@ void stop_update_notification (void)
 			send_update_stop_cmd (ptz);
 		}
 	}
+
+	g_mutex_unlock (&cameras_sets_mutex);
 
 	update_notification_started = FALSE;
 

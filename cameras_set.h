@@ -42,6 +42,9 @@ typedef struct cameras_set_s {
 	gint page_num;
 	GtkWidget *page_box;
 
+	GtkWidget *scrolled_window;
+	GtkAdjustment *scrolled_window_adjustment;
+
 	GtkWidget *linked_memories_names_entries;
 	GtkWidget *entry_widgets_padding;
 	GtkWidget *entry_widgets[MAX_MEMORIES];
@@ -49,6 +52,7 @@ typedef struct cameras_set_s {
 
 	GtkWidget *name_grid_box;
 
+	GtkWidget *memories_scrolled_window;
 	GtkWidget *memories_grid_box;
 	GtkAdjustment *memories_scrolled_window_adjustment;
 
@@ -57,10 +61,9 @@ typedef struct cameras_set_s {
 	GtkWidget *memories_labels[MAX_MEMORIES];
 	GtkAdjustment *label_scrolled_window_adjustment;
 
+	GtkWidget *memories_scrollbar;
 	GtkWidget *memories_scrollbar_padding;
 	GtkAdjustment *memories_scrollbar_adjustment;
-
-	GtkAdjustment *scrolled_window_adjustment;
 
 	GtkWidget *list_box_row;
 

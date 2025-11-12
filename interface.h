@@ -32,6 +32,8 @@ typedef struct interface_param_s {
 	gboolean show_linked_memories_names_labels;
 	gboolean dont_show_not_active_cameras;
 
+	gboolean disable_kinetic_scrolling;
+
 	gdouble thumbnail_size;
 	int thumbnail_width;
 	int thumbnail_height;

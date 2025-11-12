@@ -43,8 +43,6 @@ cameras_set_t *cameras_set_with_error = NULL;
 
 cameras_set_t *new_cameras_set = NULL;
 
-GSList *old_ptz_sin_addr_slist = NULL;
-
 GtkWidget *cameras_set_configuration_window;
 GtkEntryBuffer *cameras_set_configuration_name_entry_buffer;
 int new_number_of_cameras;
@@ -204,7 +202,7 @@ void remove_ptz_from_slists (ptz_t *ptz)
 {
 	GSList *slist_itr;
 	ptz_t *other_ptz;
-	struct in_addr *sin_addr;
+	ptz_thread_t *monitor_ptz_thread;
 
 	if (ptz->other_ptz_slist != NULL) {
 		slist_itr = g_slist_find (ptz_slist, ptz);
@@ -213,54 +211,60 @@ void remove_ptz_from_slists (ptz_t *ptz)
 			other_ptz = ptz->other_ptz_slist->data;
 			slist_itr->data = other_ptz;
 
+			g_mutex_lock (&ptz->free_d_mutex);
+
 			if (ptz->monitor_pan_tilt) {
-				g_mutex_lock (&ptz->free_d_mutex);
-
 				ptz->monitor_pan_tilt = FALSE;
-//				g_thread_join (ptz->monitor_pan_tilt_thread);
-				ptz->monitor_pan_tilt_thread = NULL;
-
 				g_mutex_unlock (&ptz->free_d_mutex);
 
 				g_mutex_lock (&other_ptz->free_d_mutex);
 
-				if (other_ptz->monitor_pan_tilt_thread == NULL) {
-					other_ptz->monitor_pan_tilt = TRUE;
-					other_ptz->monitor_pan_tilt_thread = g_thread_new (NULL, (GThreadFunc)monitor_ptz_pan_tilt_position, other_ptz);
-				}
+				other_ptz->monitor_pan_tilt = TRUE;
+
+				monitor_ptz_thread = g_malloc (sizeof (ptz_thread_t));
+				monitor_ptz_thread->ptz = other_ptz;
+				monitor_ptz_thread->thread = g_thread_new (NULL, (GThreadFunc)monitor_ptz_pan_tilt_position, monitor_ptz_thread);
 
 				g_mutex_unlock (&other_ptz->free_d_mutex);
-			}
+			} else g_mutex_unlock (&ptz->free_d_mutex);
 		}
 
-		for (slist_itr = ptz->other_ptz_slist; slist_itr != NULL; slist_itr = slist_itr->next)
-			((ptz_t *)slist_itr->data)->other_ptz_slist = g_slist_remove (((ptz_t *)slist_itr->data)->other_ptz_slist, ptz);
+		g_mutex_lock (&ptz->other_ptz_mutex);
+
+		for (slist_itr = ptz->other_ptz_slist; slist_itr != NULL; slist_itr = slist_itr->next) {
+			other_ptz = slist_itr->data;
+
+			g_mutex_lock (&other_ptz->other_ptz_mutex);
+			other_ptz->other_ptz_slist = g_slist_remove (other_ptz->other_ptz_slist, ptz);
+			g_mutex_unlock (&other_ptz->other_ptz_mutex);
+		}
 
 		g_slist_free (ptz->other_ptz_slist);
 		ptz->other_ptz_slist = NULL;
+
+		g_mutex_unlock (&ptz->other_ptz_mutex);
 	} else {
 		ptz_slist = g_slist_remove (ptz_slist, ptz);
 
-		if (ptz->monitor_pan_tilt) {
-			g_mutex_lock (&ptz->free_d_mutex);
-
-			ptz->monitor_pan_tilt = FALSE;
-//			g_thread_join (ptz->monitor_pan_tilt_thread);
-			ptz->monitor_pan_tilt_thread = NULL;
-
-			g_mutex_unlock (&ptz->free_d_mutex);
-		}
+		g_mutex_lock (&ptz->free_d_mutex);
+		ptz->monitor_pan_tilt = FALSE;
+		g_mutex_unlock (&ptz->free_d_mutex);
 
 		if (ptz->error_code != CAMERA_IS_UNREACHABLE_ERROR) {
 			if (ptz->is_on) send_ptz_control_command (ptz, "#LPC0", TRUE);
 
 			send_update_stop_cmd (ptz);
-
-			sin_addr = g_malloc (sizeof (struct in_addr));
-			sin_addr->s_addr = ptz->address.sin_addr.s_addr;
-			old_ptz_sin_addr_slist = g_slist_prepend (old_ptz_sin_addr_slist, sin_addr);
 		}
+
+		g_mutex_lock (ptz->cmd_mutex);
+		g_mutex_unlock (ptz->cmd_mutex);
+		g_mutex_clear (ptz->cmd_mutex);
+		g_free (ptz->cmd_mutex);
+		g_free (ptz->last_time);
 	}
+
+	ptz->cmd_mutex = NULL;
+	ptz->last_time = NULL;
 }
 
 void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *cameras_set)
@@ -332,15 +336,9 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 		for (i = new_number_of_cameras; i < cameras_set->number_of_cameras; i++) {
 			ptz = cameras_set->cameras[i];
 
-			if (ptz->monitor_pan_tilt) {
-				g_mutex_lock (&ptz->free_d_mutex);
-
-				ptz->monitor_pan_tilt = FALSE;
-//				g_thread_join (ptz->monitor_pan_tilt_thread);
-				ptz->monitor_pan_tilt_thread = NULL;
-
-				g_mutex_unlock (&ptz->free_d_mutex);
-			}
+			g_mutex_lock (&ptz->free_d_mutex);
+			ptz->monitor_pan_tilt = FALSE;
+			g_mutex_unlock (&ptz->free_d_mutex);
 
 			if (ptz->active) {
 				if (ptz->ip_address_is_valid) remove_ptz_from_slists (ptz);
@@ -433,20 +431,13 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 
 				if (interface_default.orientation) create_ptz_widgets_horizontal (ptz);
 				else create_ptz_widgets_vertical (ptz);
+
+				gtk_widget_set_sensitive (ptz->name_grid, FALSE);
+				gtk_widget_set_sensitive (ptz->memories_grid, FALSE);
 			} else {
 				ptz->active = FALSE;
 				ptz->is_on = FALSE;
 				cameras_set->number_of_ghost_cameras++;
-
-				if (ptz->monitor_pan_tilt) {
-					g_mutex_lock (&ptz->free_d_mutex);
-
-					ptz->monitor_pan_tilt = FALSE;
-//					g_thread_join (ptz->monitor_pan_tilt_thread);
-					ptz->monitor_pan_tilt_thread = NULL;
-
-					g_mutex_unlock (&ptz->free_d_mutex);
-				}
 
 				if (ptz->ip_address_is_valid) remove_ptz_from_slists (ptz);
 
@@ -576,10 +567,6 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 			} else if (sin_addr.s_addr != ptz->address.sin_addr.s_addr) {
 				if (ptz->ip_address_is_valid) remove_ptz_from_slists (ptz);
 
-				for (slist_itr1 = old_ptz_sin_addr_slist; slist_itr1 != NULL; slist_itr1 = slist_itr1->next) {
-					if (((struct in_addr *)slist_itr1->data)->s_addr == sin_addr.s_addr) ptz->last_time = g_get_monotonic_time ();
-				}
-
 				ptz->ip_address_is_valid = TRUE;
 				memcpy (ptz->ip_address, new_ip_address, 16);
 				ptz->address.sin_addr.s_addr = sin_addr.s_addr;
@@ -590,6 +577,9 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 					first_ptz = slist_itr1->data;
 
 					if (ptz->address.sin_addr.s_addr == first_ptz->address.sin_addr.s_addr) {
+						ptz->last_time = first_ptz->last_time;
+						ptz->cmd_mutex = first_ptz->cmd_mutex;
+
 						if (first_ptz->is_on) {
 							ptz->model = first_ptz->model;
 
@@ -636,21 +626,35 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 							ptz_is_off (ptz);
 						}
 
+						g_mutex_lock (&first_ptz->other_ptz_mutex);
+
 						for (slist_itr2 = first_ptz->other_ptz_slist; slist_itr2 != NULL; slist_itr2 = slist_itr2->next) {
 							other_ptz = slist_itr2->data;
 
-							ptz->other_ptz_slist = g_slist_prepend (ptz->other_ptz_slist, other_ptz);
+							g_mutex_lock (&other_ptz->other_ptz_mutex);
 							other_ptz->other_ptz_slist = g_slist_prepend (other_ptz->other_ptz_slist, ptz);
+							g_mutex_unlock (&other_ptz->other_ptz_mutex);
+
+							ptz->other_ptz_slist = g_slist_prepend (ptz->other_ptz_slist, other_ptz);
 						}
 
-						ptz->other_ptz_slist = g_slist_prepend (ptz->other_ptz_slist, first_ptz);
 						first_ptz->other_ptz_slist = g_slist_prepend (first_ptz->other_ptz_slist, ptz);
+
+						g_mutex_unlock (&first_ptz->other_ptz_mutex);
+
+						ptz->other_ptz_slist = g_slist_prepend (ptz->other_ptz_slist, first_ptz);
 
 						break;
 					}
 				}
 
 				if (slist_itr1 == NULL) {
+					ptz->last_time = g_malloc (sizeof (gint64));
+					*ptz->last_time = 0;
+
+					ptz->cmd_mutex = g_malloc (sizeof (GMutex));
+					g_mutex_init (ptz->cmd_mutex);
+
 					ptz_slist = g_slist_prepend (ptz_slist, ptz);
 
 					if (ptz->error_code == CAMERA_IS_UNREACHABLE_ERROR) {
@@ -706,8 +710,6 @@ void cameras_set_configuration_window_ok (GtkWidget *button, cameras_set_t *came
 
 	g_slist_free (ptz_sin_addr_slist);
 	g_slist_free (ultimatte_sin_addr_slist);
-	g_slist_free_full (old_ptz_sin_addr_slist, g_free);
-	old_ptz_sin_addr_slist = NULL;
 
 	if (current_cameras_set != NULL) interface_default = current_cameras_set->layout;
 
@@ -880,7 +882,9 @@ void show_cameras_set_configuration_window (void)
 			gtk_grid_attach (GTK_GRID (cameras_set_configuration_window_grid), cameras_configuration_widgets[i].name_entry, 1, j, 1, 1);
 
 			if (ptz->ip_address_is_valid) {
-				for (l = 1; ptz->ip_address[l] != '.'; l++) {}
+				l = 1;
+				while (ptz->ip_address[l] != '.') l++;
+
 				cameras_configuration_widgets[i].ip_entry_buffer[0] = gtk_entry_buffer_new (ptz->ip_address, l);
 				k = l + 1;
 			} else cameras_configuration_widgets[i].ip_entry_buffer[0] = gtk_entry_buffer_new (network_address[0], network_address_len[0]);
@@ -903,9 +907,11 @@ void show_cameras_set_configuration_window (void)
 			if (!ptz->active) gtk_widget_set_sensitive (cameras_configuration_widgets[i].dot[0], FALSE);
 
 			if (ptz->ip_address_is_valid) {
-				for (l = 1; ptz->ip_address[k+l] != '.'; l++) {}
+				l = 1;
+				while (ptz->ip_address[k + l] != '.') l++;
+
 				cameras_configuration_widgets[i].ip_entry_buffer[1] = gtk_entry_buffer_new (ptz->ip_address + k, l);
-				k = k + l + 1;
+				k += l + 1;
 			} else cameras_configuration_widgets[i].ip_entry_buffer[1] = gtk_entry_buffer_new (network_address[1], network_address_len[1]);
 
 			cameras_configuration_widgets[i].ip_entry[1] = gtk_entry_new_with_buffer (cameras_configuration_widgets[i].ip_entry_buffer[1]);
@@ -926,9 +932,11 @@ void show_cameras_set_configuration_window (void)
 			if (!ptz->active) gtk_widget_set_sensitive (cameras_configuration_widgets[i].dot[1], FALSE);
 
 			if (ptz->ip_address_is_valid) {
-				for (l = 1; ptz->ip_address[k+l] != '.'; l++) {}
+				l = 1;
+				while (ptz->ip_address[k + l] != '.') l++;
+
 				cameras_configuration_widgets[i].ip_entry_buffer[2] = gtk_entry_buffer_new (ptz->ip_address + k, l);
-				k = k + l + 1;
+				k += l + 1;
 			} else cameras_configuration_widgets[i].ip_entry_buffer[2] = gtk_entry_buffer_new (network_address[2], network_address_len[2]);
 
 			cameras_configuration_widgets[i].ip_entry[2] = gtk_entry_new_with_buffer (cameras_configuration_widgets[i].ip_entry_buffer[2]);
@@ -949,7 +957,9 @@ void show_cameras_set_configuration_window (void)
 			if (!ptz->active) gtk_widget_set_sensitive (cameras_configuration_widgets[i].dot[2], FALSE);
 
 			if (ptz->ip_address_is_valid) {
-				for (l = 1; ptz->ip_address[k+l] != '\0'; l++) {}
+				l = 1;
+				while (ptz->ip_address[k + l] != '\0') l++;
+
 				cameras_configuration_widgets[i].ip_entry_buffer[3] = gtk_entry_buffer_new (ptz->ip_address + k, l);
 			} else cameras_configuration_widgets[i].ip_entry_buffer[3] = gtk_entry_buffer_new (NULL, -1);
 
@@ -1044,8 +1054,10 @@ void show_cameras_set_configuration_window (void)
 			gtk_widget_set_margin_end (cameras_configuration_widgets[i].separator2, MARGIN_VALUE);
 			gtk_grid_attach (GTK_GRID (cameras_set_configuration_window_grid), cameras_configuration_widgets[i].separator2, 18, j, 1, 1);
 
-			if ((ptz->ultimatte != NULL) && (ptz->ultimatte->ip_address_is_valid)) {
-				for (l = 1; ptz->ultimatte->ip_address[l] != '.'; l++) {}
+			if ((ptz->ultimatte != NULL) && ptz->ultimatte->ip_address_is_valid) {
+				l = 1;
+				while (ptz->ip_address[l] != '.') l++;
+
 				cameras_configuration_widgets[i].ultimatte_ip_entry_buffer[0] = gtk_entry_buffer_new (ptz->ultimatte->ip_address, l);
 				k = l + 1;
 			} else cameras_configuration_widgets[i].ultimatte_ip_entry_buffer[0] = gtk_entry_buffer_new (network_address[0], network_address_len[0]);
@@ -1067,10 +1079,12 @@ void show_cameras_set_configuration_window (void)
 			gtk_grid_attach (GTK_GRID (cameras_set_configuration_window_grid), cameras_configuration_widgets[i].ultimatte_dot[0], 20, j, 1, 1);
 			if (!ptz->active) gtk_widget_set_sensitive (cameras_configuration_widgets[i].ultimatte_dot[0], FALSE);
 
-			if ((ptz->ultimatte != NULL) && (ptz->ultimatte->ip_address_is_valid)) {
-				for (l = 1; ptz->ultimatte->ip_address[k+l] != '.'; l++) {}
+			if ((ptz->ultimatte != NULL) && ptz->ultimatte->ip_address_is_valid) {
+				l = 1;
+				while (ptz->ip_address[k + l] != '.') l++;
+
 				cameras_configuration_widgets[i].ultimatte_ip_entry_buffer[1] = gtk_entry_buffer_new (ptz->ultimatte->ip_address + k, l);
-				k = k + l + 1;
+				k += l + 1;
 			} else cameras_configuration_widgets[i].ultimatte_ip_entry_buffer[1] = gtk_entry_buffer_new (network_address[1], network_address_len[1]);
 
 			cameras_configuration_widgets[i].ultimatte_ip_entry[1] = gtk_entry_new_with_buffer (cameras_configuration_widgets[i].ultimatte_ip_entry_buffer[1]);
@@ -1090,10 +1104,12 @@ void show_cameras_set_configuration_window (void)
 			gtk_grid_attach (GTK_GRID (cameras_set_configuration_window_grid), cameras_configuration_widgets[i].ultimatte_dot[1], 22, j, 1, 1);
 			if (!ptz->active) gtk_widget_set_sensitive (cameras_configuration_widgets[i].ultimatte_dot[1], FALSE);
 
-			if ((ptz->ultimatte != NULL) && (ptz->ultimatte->ip_address_is_valid)) {
-				for (l = 1; ptz->ultimatte->ip_address[k+l] != '.'; l++) {}
+			if ((ptz->ultimatte != NULL) && ptz->ultimatte->ip_address_is_valid) {
+				l = 1;
+				while (ptz->ip_address[k + l] != '.') l++;
+
 				cameras_configuration_widgets[i].ultimatte_ip_entry_buffer[2] = gtk_entry_buffer_new (ptz->ultimatte->ip_address + k, l);
-				k = k + l + 1;
+				k += l + 1;
 			} else cameras_configuration_widgets[i].ultimatte_ip_entry_buffer[2] = gtk_entry_buffer_new (network_address[2], network_address_len[2]);
 
 			cameras_configuration_widgets[i].ultimatte_ip_entry[2] = gtk_entry_new_with_buffer (cameras_configuration_widgets[i].ultimatte_ip_entry_buffer[2]);
@@ -1113,8 +1129,10 @@ void show_cameras_set_configuration_window (void)
 			gtk_grid_attach (GTK_GRID (cameras_set_configuration_window_grid), cameras_configuration_widgets[i].ultimatte_dot[2], 24, j, 1, 1);
 			if (!ptz->active) gtk_widget_set_sensitive (cameras_configuration_widgets[i].ultimatte_dot[2], FALSE);
 
-			if ((ptz->ultimatte != NULL) && (ptz->ultimatte->ip_address_is_valid)) {
-				for (l = 1; ptz->ultimatte->ip_address[k+l] != '\0'; l++) {}
+			if ((ptz->ultimatte != NULL) && ptz->ultimatte->ip_address_is_valid) {
+				l = 1;
+				while (ptz->ip_address[k + l] != '\0') l++;
+
 				cameras_configuration_widgets[i].ultimatte_ip_entry_buffer[3] = gtk_entry_buffer_new (ptz->ultimatte->ip_address + k, l);
 			} else cameras_configuration_widgets[i].ultimatte_ip_entry_buffer[3] = gtk_entry_buffer_new (NULL, -1);
 
@@ -1712,10 +1730,16 @@ gboolean configure_memories_scrollbar_adjustment (GtkWidget *widget, cairo_t *cr
 	return GDK_EVENT_PROPAGATE;
 }
 
+gboolean memories_scroll (GtkWidget *widget, GdkEventScroll *event, cameras_set_t *cameras_set)
+{
+	if (cameras_set->layout.disable_kinetic_scrolling) return GDK_EVENT_STOP;
+	else return GDK_EVENT_PROPAGATE;
+}
+
 void fill_cameras_set_page (cameras_set_t *cameras_set)
 {
 	int i;
-	GtkWidget *box, *scrolled_window, *memories_scrolled_window, *scrollbar;
+	GtkWidget *box, *scrolled_window, *memories_scrolled_window;
 
 	if (cameras_set->layout.orientation) {
 /*
@@ -1775,8 +1799,8 @@ cameras_set->page_box (vertical)
 		create_horizontal_linked_memories_names_labels (cameras_set);
 		gtk_box_pack_start (GTK_BOX (cameras_set->page_box), cameras_set->linked_memories_names_labels, FALSE, FALSE, 0);
 
-		scrollbar = create_horizontal_memories_scrollbar (cameras_set);
-		gtk_box_pack_start (GTK_BOX (cameras_set->page_box), scrollbar, FALSE, FALSE, 0);
+		cameras_set->memories_scrollbar = create_horizontal_memories_scrollbar (cameras_set);
+		gtk_box_pack_start (GTK_BOX (cameras_set->page_box), cameras_set->memories_scrollbar, FALSE, FALSE, 0);
 		gtk_box_pack_start (GTK_BOX (cameras_set->page), cameras_set->page_box, TRUE, TRUE, 0);
 	} else {
 /*
@@ -1832,10 +1856,15 @@ cameras_set->page_box (horizontal)
 		create_vertical_linked_memories_names_labels (cameras_set);
 		gtk_box_pack_start (GTK_BOX (cameras_set->page_box), cameras_set->linked_memories_names_labels, FALSE, FALSE, 0);
 
-		scrollbar = create_vertical_memories_scrollbar (cameras_set);
-		gtk_box_pack_start (GTK_BOX (cameras_set->page_box), scrollbar, FALSE, FALSE, 0);
+		cameras_set->memories_scrollbar = create_vertical_memories_scrollbar (cameras_set);
+		gtk_box_pack_start (GTK_BOX (cameras_set->page_box), cameras_set->memories_scrollbar, FALSE, FALSE, 0);
 		gtk_box_pack_start (GTK_BOX (cameras_set->page), cameras_set->page_box, TRUE, TRUE, 0);
 	}
+
+	g_signal_connect (G_OBJECT (scrolled_window), "scroll-event", G_CALLBACK (memories_scroll), cameras_set);
+	cameras_set->scrolled_window = scrolled_window;
+	g_signal_connect (G_OBJECT (memories_scrolled_window), "scroll-event", G_CALLBACK (memories_scroll), cameras_set);
+	cameras_set->memories_scrolled_window = memories_scrolled_window;
 }
 
 void add_cameras_set_to_main_window_notebook (cameras_set_t *cameras_set)
@@ -1887,6 +1916,12 @@ void add_cameras_set_to_main_window_notebook (cameras_set_t *cameras_set)
 	}
 
 	if (!cameras_set->layout.show_linked_memories_names_labels) gtk_widget_hide (cameras_set->linked_memories_names_labels);
+
+	if (cameras_set->layout.disable_kinetic_scrolling) {
+		gtk_scrolled_window_set_kinetic_scrolling (GTK_SCROLLED_WINDOW (cameras_set->scrolled_window), FALSE);
+		gtk_scrolled_window_set_kinetic_scrolling (GTK_SCROLLED_WINDOW (cameras_set->memories_scrolled_window), FALSE);
+		gtk_widget_hide (cameras_set->memories_scrollbar);
+	}
 }
 
 void update_current_cameras_set_vertical_margins (void)

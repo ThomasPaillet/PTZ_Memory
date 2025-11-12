@@ -62,32 +62,24 @@ int full_http_header_size;
 #define WAIT_IF_NEEDED \
 	current_time = g_get_monotonic_time (); \
  \
-	elapsed_time = current_time - ptz->last_time; \
+	elapsed_time = current_time - *ptz->last_time; \
  \
 	if (elapsed_time < 130000) { \
 		usleep (130000 - elapsed_time); \
  \
-		ptz->last_time = current_time + 130000 - elapsed_time; \
-	} else ptz->last_time = current_time; \
- \
-	for (slist_itr = ptz->other_ptz_slist; slist_itr != NULL; slist_itr = slist_itr->next) { \
-		other_ptz = slist_itr->data; \
- \
-		g_mutex_lock (&other_ptz->cmd_mutex); \
-		other_ptz->last_time = ptz->last_time; \
-		g_mutex_unlock (&other_ptz->cmd_mutex); \
-	}
+		*ptz->last_time += 130000; \
+	} else *ptz->last_time = current_time; \
 
 #define COMMAND_FUNCTION_END \
 	} else { \
-		ptz->error_code = CAMERA_IS_UNREACHABLE_ERROR; \
 		ptz->is_on = FALSE; \
+		ptz->error_code = CAMERA_IS_UNREACHABLE_ERROR; \
 		g_idle_add ((GSourceFunc)camera_is_unreachable, ptz); \
 	} \
  \
 	closesocket (sock); \
  \
-g_mutex_unlock (&ptz->cmd_mutex); \
+g_mutex_unlock (ptz->cmd_mutex); \
 }
 
 
@@ -165,13 +157,6 @@ void init_ptz_cmd (ptz_t *ptz)
 	ptz->last_cmd = ptz->cmd_buffer + 13;
 	memcpy (ptz->last_cmd, http_ptz_cmd, 24);
 	ptz->cam_ptz = FALSE;
-
-	ptz->last_ctrl_cmd[0] = '\0';
-	ptz->last_ctrl_cmd_len = 0;
-
-	ptz->last_time = 0;
-
-	g_mutex_init (&ptz->cmd_mutex);
 }
 
 void send_update_start_cmd (ptz_t *ptz)
@@ -180,10 +165,8 @@ void send_update_start_cmd (ptz_t *ptz)
 	char buffer[280];
 	SOCKET sock;
 	gint64 current_time, elapsed_time;
-	GSList *slist_itr;
-	ptz_t *other_ptz;
 
-g_mutex_lock (&ptz->cmd_mutex);
+g_mutex_lock (ptz->cmd_mutex);
 
 	memcpy (buffer, http_update_start_cmd, 41);
 	index = 41 + sprintf (buffer + 41, "%hu", ntohs (update_notification_address.sin_port));
@@ -209,7 +192,7 @@ WAIT_IF_NEEDED
 			do {
 				size = recv (sock, buffer + index, sizeof (buffer) - index, 0);
 				index += size;
-			} while (size > 0);
+			} while ((size > 0) && (index < sizeof (buffer)));
 
 			g_mutex_lock (&logging_mutex);
 			log_ptz_response (__FILE__, ptz, buffer, index);
@@ -230,10 +213,8 @@ void send_update_stop_cmd (ptz_t *ptz)
 	char buffer[280];
 	SOCKET sock;
 	gint64 current_time, elapsed_time;
-	GSList *slist_itr;
-	ptz_t *other_ptz;
 
-g_mutex_lock (&ptz->cmd_mutex);
+g_mutex_lock (ptz->cmd_mutex);
 
 	memcpy (buffer, http_update_stop_cmd, 40);
 	index = 40 + sprintf (buffer + 40, "%hu", ntohs (update_notification_address.sin_port));
@@ -259,7 +240,7 @@ WAIT_IF_NEEDED
 			do {
 				size = recv (sock, buffer + index, sizeof (buffer) - index, 0);
 				index += size;
-			} while (size > 0);
+			} while ((size > 0) && (index < sizeof (buffer)));
 
 			g_mutex_lock (&logging_mutex);
 			log_ptz_response (__FILE__, ptz, buffer, index);
@@ -275,12 +256,10 @@ void send_ptz_request_command (ptz_t *ptz, char* cmd, int *response)
 	char *http_cmd;
 	SOCKET sock;
 	gint64 current_time, elapsed_time;
-	GSList *slist_itr;
-	ptz_t *other_ptz;
 	char buffer[264];
 	int index_error, retry = 2;
 
-g_mutex_lock (&ptz->cmd_mutex);
+g_mutex_lock (ptz->cmd_mutex);
 
 	cmd_len = 2;
 	while (cmd[cmd_len] != '\0') cmd_len++;
@@ -308,7 +287,7 @@ WAIT_IF_NEEDED
 			do {
 				size = recv (sock, buffer + index, sizeof (buffer) - index, 0);
 				index += size;
-			} while (size > 0);
+			} while ((size > 0) && (index < sizeof (buffer)));
 			buffer[index] = '\0';
 
 			LOG_PTZ_RESPONSE(buffer,index)
@@ -331,15 +310,7 @@ WAIT_IF_NEEDED
 
 			usleep (130000);
 
-			ptz->last_time = g_get_monotonic_time ();
-
-			for (slist_itr = ptz->other_ptz_slist; slist_itr != NULL; slist_itr = slist_itr->next) {
-				other_ptz = slist_itr->data;
-
-				g_mutex_lock (&other_ptz->cmd_mutex);
-				other_ptz->last_time = ptz->last_time;
-				g_mutex_unlock (&other_ptz->cmd_mutex);
-			}
+			*ptz->last_time = g_get_monotonic_time ();
 		} else {
 			*response = 0;
 
@@ -353,7 +324,7 @@ WAIT_IF_NEEDED
 		}
 	} while (ptz->is_on && retry--);
 
-g_mutex_unlock (&ptz->cmd_mutex);
+g_mutex_unlock (ptz->cmd_mutex);
 }
 
 void send_ptz_request_command_string (ptz_t *ptz, char* cmd, char *response)
@@ -362,12 +333,10 @@ void send_ptz_request_command_string (ptz_t *ptz, char* cmd, char *response)
 	char *http_cmd;
 	SOCKET sock;
 	gint64 current_time, elapsed_time;
-	GSList *slist_itr;
-	ptz_t *other_ptz;
 	char buffer[264];
 	int retry = 2;
 
-g_mutex_lock (&ptz->cmd_mutex);
+g_mutex_lock (ptz->cmd_mutex);
 
 	cmd_len = 3;
 	while (cmd[cmd_len] != '\0') cmd_len++;
@@ -395,7 +364,7 @@ WAIT_IF_NEEDED
 			do {
 				size = recv (sock, buffer + index, sizeof (buffer) - index, 0);
 				index += size;
-			} while (size > 0);
+			} while ((size > 0) && (index < sizeof (buffer)));
 			buffer[index] = '\0';
 
 			LOG_PTZ_RESPONSE(buffer,index)
@@ -418,15 +387,7 @@ WAIT_IF_NEEDED
 
 			usleep (130000);
 
-			ptz->last_time = g_get_monotonic_time ();
-
-			for (slist_itr = ptz->other_ptz_slist; slist_itr != NULL; slist_itr = slist_itr->next) {
-				other_ptz = slist_itr->data;
-
-				g_mutex_lock (&other_ptz->cmd_mutex);
-				other_ptz->last_time = ptz->last_time;
-				g_mutex_unlock (&other_ptz->cmd_mutex);
-			}
+			*ptz->last_time = g_get_monotonic_time ();
 		} else {
 			response[0] = '\0';
 
@@ -440,7 +401,7 @@ WAIT_IF_NEEDED
 		}
 	} while (ptz->is_on && retry--);
 
-g_mutex_unlock (&ptz->cmd_mutex);
+g_mutex_unlock (ptz->cmd_mutex);
 }
 
 void send_ptz_control_command (ptz_t *ptz, char* cmd, gboolean wait)
@@ -449,18 +410,12 @@ void send_ptz_control_command (ptz_t *ptz, char* cmd, gboolean wait)
 	char *http_cmd;
 	SOCKET sock;
 	gint64 current_time, elapsed_time;
-	GSList *slist_itr;
-	ptz_t *other_ptz;
 	char buffer[264];
 
-g_mutex_lock (&ptz->cmd_mutex);
+g_mutex_lock (ptz->cmd_mutex);
 
 	size = 3;
 	while (cmd[size] != '\0') size++;
-
-	memcpy (ptz->last_ctrl_cmd, cmd, size);
-	ptz->last_ctrl_cmd[size] = '\0';
-	ptz->last_ctrl_cmd_len = size;
 
 	memcpy (ptz->cmd_buffer + 39 - size, cmd, size);
 	http_cmd = ptz->cmd_buffer + 15 - size;
@@ -487,7 +442,7 @@ WAIT_IF_NEEDED
 			do {
 				size = recv (sock, buffer + index, sizeof (buffer) - index, 0);
 				index += size;
-			} while (size > 0);
+			} while ((size > 0) && (index < sizeof (buffer)));
 
 			g_mutex_lock (&logging_mutex);
 			log_ptz_response (__FILE__, ptz, buffer, index);
@@ -503,12 +458,10 @@ void send_cam_request_command (ptz_t *ptz, char* cmd, int *response)
 	char *http_cmd;
 	SOCKET sock;
 	gint64 current_time, elapsed_time;
-	GSList *slist_itr;
-	ptz_t *other_ptz;
 	char buffer[264];
 	int index_error, retry = 2;
 
-g_mutex_lock (&ptz->cmd_mutex);
+g_mutex_lock (ptz->cmd_mutex);
 
 	cmd_len = 3;
 	while (cmd[cmd_len] != '\0') cmd_len++;
@@ -536,7 +489,7 @@ WAIT_IF_NEEDED
 			do {
 				size = recv (sock, buffer + index, sizeof (buffer) - index, 0);
 				index += size;
-			} while (size > 0);
+			} while ((size > 0) && (index < sizeof (buffer)));
 			buffer[index] = '\0';
 
 			LOG_PTZ_RESPONSE(buffer,index)
@@ -563,15 +516,7 @@ WAIT_IF_NEEDED
 
 			usleep (130000);
 
-			ptz->last_time = g_get_monotonic_time ();
-
-			for (slist_itr = ptz->other_ptz_slist; slist_itr != NULL; slist_itr = slist_itr->next) {
-				other_ptz = slist_itr->data;
-
-				g_mutex_lock (&other_ptz->cmd_mutex);
-				other_ptz->last_time = ptz->last_time;
-				g_mutex_unlock (&other_ptz->cmd_mutex);
-			}
+			*ptz->last_time = g_get_monotonic_time ();
 		} else {
 			*response = 0;
 
@@ -585,7 +530,7 @@ WAIT_IF_NEEDED
 		}
 	} while (ptz->is_on && retry--);
 
-g_mutex_unlock (&ptz->cmd_mutex);
+g_mutex_unlock (ptz->cmd_mutex);
 }
 
 void send_cam_request_command_string (ptz_t *ptz, char* cmd, char *response)
@@ -594,12 +539,10 @@ void send_cam_request_command_string (ptz_t *ptz, char* cmd, char *response)
 	char *http_cmd;
 	SOCKET sock;
 	gint64 current_time, elapsed_time;
-	GSList *slist_itr;
-	ptz_t *other_ptz;
 	char buffer[264];
 	int retry = 2;
 
-g_mutex_lock (&ptz->cmd_mutex);
+g_mutex_lock (ptz->cmd_mutex);
 
 	cmd_len = 3;
 	while (cmd[cmd_len] != '\0') cmd_len++;
@@ -627,7 +570,7 @@ WAIT_IF_NEEDED
 			do {
 				size = recv (sock, buffer + index, sizeof (buffer) - index, 0);
 				index += size;
-			} while (size > 0);
+			} while ((size > 0) && (index < sizeof (buffer)));
 			buffer[index] = '\0';
 
 			LOG_PTZ_RESPONSE(buffer,index)
@@ -656,15 +599,7 @@ WAIT_IF_NEEDED
 
 			usleep (130000);
 
-			ptz->last_time = g_get_monotonic_time ();
-
-			for (slist_itr = ptz->other_ptz_slist; slist_itr != NULL; slist_itr = slist_itr->next) {
-				other_ptz = slist_itr->data;
-
-				g_mutex_lock (&other_ptz->cmd_mutex);
-				other_ptz->last_time = ptz->last_time;
-				g_mutex_unlock (&other_ptz->cmd_mutex);
-			}
+			*ptz->last_time = g_get_monotonic_time ();
 		} else {
 			response[0] = '\0';
 
@@ -678,7 +613,7 @@ WAIT_IF_NEEDED
 		}
 	} while (ptz->is_on && retry--);
 
-g_mutex_unlock (&ptz->cmd_mutex);
+g_mutex_unlock (ptz->cmd_mutex);
 }
 
 void send_cam_control_command (ptz_t *ptz, char* cmd)
@@ -687,18 +622,12 @@ void send_cam_control_command (ptz_t *ptz, char* cmd)
 	char *http_cmd;
 	SOCKET sock;
 	gint64 current_time, elapsed_time;
-	GSList *slist_itr;
-	ptz_t *other_ptz;
 	char buffer[264];
 
-g_mutex_lock (&ptz->cmd_mutex);
+g_mutex_lock (ptz->cmd_mutex);
 
 	size = 5;
 	while (cmd[size] != '\0') size++;
-
-	memcpy (ptz->last_ctrl_cmd, cmd, size);
-	ptz->last_ctrl_cmd[size]= '\0';
-	ptz->last_ctrl_cmd_len = size;
 
 	memcpy (ptz->cmd_buffer + 39 - size, cmd, size);
 	http_cmd = ptz->cmd_buffer + 15 - size;
@@ -723,7 +652,7 @@ WAIT_IF_NEEDED
 			do {
 				size = recv (sock, buffer + index, sizeof (buffer) - index, 0);
 				index += size;
-			} while (size > 0);
+			} while ((size > 0) && (index < sizeof (buffer)));
 
 			g_mutex_lock (&logging_mutex);
 			log_ptz_response (__FILE__, ptz, buffer, index);
@@ -738,8 +667,6 @@ void send_thumbnail_320_request_cmd (memory_t *memory)
 	ptz_t *ptz = memory->ptz_ptr;
 	SOCKET sock;
 	gint64 current_time, elapsed_time;
-	GSList *slist_itr;
-	ptz_t *other_ptz;
 	int size, index, i;
 	char buffer[20480];
 	int rowstride;
@@ -748,7 +675,7 @@ void send_thumbnail_320_request_cmd (memory_t *memory)
 	struct jpeg_error_mgr jerr;
 	struct jpeg_decompress_struct cinfo;
 
-g_mutex_lock (&ptz->cmd_mutex);
+g_mutex_lock (ptz->cmd_mutex);
 
 	memcpy (buffer, http_thumbnail_320_cmd, 50);
 	size = sprintf (buffer + 50, "%d", ptz->jpeg_page++);
@@ -809,8 +736,6 @@ void send_thumbnail_640_request_cmd (memory_t *memory)
 	ptz_t *ptz = memory->ptz_ptr;
 	SOCKET sock;
 	gint64 current_time, elapsed_time;
-	GSList *slist_itr;
-	ptz_t *other_ptz;
 	int size, index, i;
 	char buffer[32768];
 	GdkPixbuf *pixbuf;
@@ -820,7 +745,7 @@ void send_thumbnail_640_request_cmd (memory_t *memory)
 	struct jpeg_error_mgr jerr;
 	struct jpeg_decompress_struct cinfo;
 
-g_mutex_lock (&ptz->cmd_mutex);
+g_mutex_lock (ptz->cmd_mutex);
 
 	memcpy (buffer, http_thumbnail_640_cmd, 50);
 	size = sprintf (buffer + 50, "%d", ptz->jpeg_page++);
@@ -887,13 +812,11 @@ void send_jpeg_image_request_cmd (ptz_t *ptz)
 	char buffer[8192];
 	SOCKET sock;
 	gint64 current_time, elapsed_time;
-	GSList *slist_itr;
-	ptz_t *other_ptz;
 	GDateTime *date_time;
 	FILE *jpeg_file;
 	char jpeg_file_name[128];
 
-g_mutex_lock (&ptz->cmd_mutex);
+g_mutex_lock (ptz->cmd_mutex);
 
 	memcpy (buffer, http_camera_cmd, 51);
 	size = sprintf (buffer + 51, "%d", ptz->jpeg_page++);
