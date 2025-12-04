@@ -137,6 +137,8 @@ gboolean show_exit_confirmation_window (void)
 void controller_toggle_button_clicked (GtkToggleButton *button)
 {
 	controller_is_used = gtk_toggle_button_get_active (button);
+
+	backup_needed = TRUE;
 }
 
 void store_toggle_button_clicked (GtkToggleButton *button)
