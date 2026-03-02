@@ -1,5 +1,5 @@
 /*
- * copyright (c) 2025 Thomas Paillet <thomas.paillet@net-c.fr>
+ * copyright (c) 2025 2026 Thomas Paillet <thomas.paillet@net-c.fr>
 
  * This file is part of PTZ-Memory.
 
@@ -86,9 +86,15 @@ extern cameras_set_t *cameras_set_with_error;
 
 void show_cameras_set_configuration_window (void);
 
+void remove_ptz_from_slists (ptz_t *ptz);
+
 void add_cameras_set (void);
 
 void delete_cameras_set (void);
+
+void switch_cameras_set_on (cameras_set_t *cameras_set);
+
+void switch_cameras_set_off (cameras_set_t *cameras_set);
 
 void fill_cameras_set_page (cameras_set_t *cameras_set);
 

@@ -1,5 +1,5 @@
 /*
- * copyright (c) 2025 Thomas Paillet <thomas.paillet@net-c.fr>
+ * copyright (c) 2025 2026 Thomas Paillet <thomas.paillet@net-c.fr>
 
  * This file is part of PTZ-Memory.
 
@@ -223,8 +223,8 @@ void dont_show_not_active_cameras_check_button_toggled (GtkToggleButton *toggleb
 		ptz = current_cameras_set->cameras[0];
 
 		if (!ptz->active) {
-			gtk_widget_show (ptz->name_grid);
-			gtk_widget_show (ptz->memories_grid);
+			gtk_widget_show_all (ptz->name_grid);
+			gtk_widget_show_all (ptz->memories_grid);
 
 			inactive_cameras_at_begining = TRUE;
 		}
@@ -234,9 +234,9 @@ void dont_show_not_active_cameras_check_button_toggled (GtkToggleButton *toggleb
 
 			if (!ptz->active) {
 				gtk_widget_show (ptz->name_separator);
-				gtk_widget_show (ptz->name_grid);
+				gtk_widget_show_all (ptz->name_grid);
 				gtk_widget_show (ptz->memories_separator);
-				gtk_widget_show (ptz->memories_grid);
+				gtk_widget_show_all (ptz->memories_grid);
 			} else {
 				if (inactive_cameras_at_begining) {
 					gtk_widget_show (ptz->name_separator);

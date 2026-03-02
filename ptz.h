@@ -1,5 +1,5 @@
 /*
- * copyright (c) 2020 2021 2025 Thomas Paillet <thomas.paillet@net-c.fr>
+ * copyright (c) 2020 2021 2025 2026 Thomas Paillet <thomas.paillet@net-c.fr>
 
  * This file is part of PTZ-Memory.
 
@@ -41,7 +41,8 @@
 #define MAX_MEMORIES 15
 
 
-typedef struct {
+typedef struct ptz_s {
+	gpointer cameras_set;
 	char name[9];
 	int index;
 	gboolean active;
@@ -81,7 +82,6 @@ typedef struct {
 	gboolean enter_notify_name_drawing_area;
 	gboolean enter_notify_ultimatte_picto;
 	GtkWidget *error_drawing_area;
-	gchar *error_drawing_area_tooltip;
 	GtkWidget *memories_separator;
 	GtkWidget *memories_grid;
 	GtkWidget *tally[6];
@@ -120,11 +120,6 @@ typedef struct {
 	ultimatte_t *ultimatte;
 } ptz_t;
 
-typedef struct {
-	ptz_t *ptz;
-	GThread *thread;
-} ptz_thread_t;
-
 
 extern char *ptz_model[];
 extern gint32 ptz_optical_axis_height[];
@@ -132,21 +127,23 @@ extern gint32 ptz_optical_axis_height[];
 
 void init_ptz (ptz_t *ptz);
 
+void clear_ptz (ptz_t *ptz);
+
 gboolean ptz_is_on (ptz_t *ptz);
 
 gboolean ptz_is_off (ptz_t *ptz);
 
 gpointer monitor_ptz_pan_tilt_position (ptz_thread_t *ptz_thread);
 
-gboolean free_ptz_thread (ptz_thread_t *ptz_thread);
+gpointer ptz_power_is_on (ptz_thread_t *ptz_thread);
 
-gpointer start_ptz (ptz_thread_t *ptz_thread);
+gpointer check_ptz_power_status (ptz_thread_t *ptz_thread);
 
 gpointer switch_ptz_on (ptz_thread_t *ptz_thread);
 
 gpointer switch_ptz_off (ptz_thread_t *ptz_thread);
 
-gboolean update_auto_focus_toggle_button (ptz_t *ptz);
+gboolean free_ptz_thread (ptz_thread_t *ptz_thread);
 
 void create_ptz_widgets_horizontal (ptz_t *ptz);
 

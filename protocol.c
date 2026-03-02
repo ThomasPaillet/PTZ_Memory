@@ -1,5 +1,5 @@
 /*
- * copyright (c) 2020 2021 2025 Thomas Paillet <thomas.paillet@net-c.fr>
+ * copyright (c) 2020 2021 2025 2026 Thomas Paillet <thomas.paillet@net-c.fr>
 
  * This file is part of PTZ-Memory.
 
@@ -288,7 +288,6 @@ WAIT_IF_NEEDED
 				size = recv (sock, buffer + index, sizeof (buffer) - index, 0);
 				index += size;
 			} while ((size > 0) && (index < sizeof (buffer)));
-			buffer[index] = '\0';
 
 			LOG_PTZ_RESPONSE(buffer,index)
 
@@ -299,7 +298,7 @@ WAIT_IF_NEEDED
 				while (buffer[index_error] != '\n') index_error--;
 				index_error++;
 
-				if (((buffer[index_error] != 'e') && (buffer[index_error] != 'E')) || (buffer[index_error + 1] != 'R') || (buffer[index_error + 2] != '2')) {
+				if ((buffer[index_error] != 'e') || (buffer[index_error + 1] != 'R') || (buffer[index_error + 2] != '2')) {
 					*response = buffer[index] - 48;
 
 					break;
@@ -364,19 +363,20 @@ WAIT_IF_NEEDED
 			do {
 				size = recv (sock, buffer + index, sizeof (buffer) - index, 0);
 				index += size;
-			} while ((size > 0) && (index < sizeof (buffer)));
-			buffer[index] = '\0';
+			} while ((size > 0) && (index < sizeof (buffer) - 1));
 
 			LOG_PTZ_RESPONSE(buffer,index)
 
 			closesocket (sock);
 
 			if (index > 0) {
+				buffer[index] = '\0';
+
 				index--;
 				while (buffer[index] != '\n') index--;
 				index++;
 
-				if (((buffer[index] != 'e') && (buffer[index] != 'E')) || (buffer[index + 1] != 'R') || (buffer[index + 2] != '2')) {
+				if ((buffer[index] != 'e') || (buffer[index + 1] != 'R') || (buffer[index + 2] != '2')) {
 					strcpy (response, buffer + index);
 
 					break;
@@ -490,7 +490,6 @@ WAIT_IF_NEEDED
 				size = recv (sock, buffer + index, sizeof (buffer) - index, 0);
 				index += size;
 			} while ((size > 0) && (index < sizeof (buffer)));
-			buffer[index] = '\0';
 
 			LOG_PTZ_RESPONSE(buffer,index)
 
@@ -570,14 +569,15 @@ WAIT_IF_NEEDED
 			do {
 				size = recv (sock, buffer + index, sizeof (buffer) - index, 0);
 				index += size;
-			} while ((size > 0) && (index < sizeof (buffer)));
-			buffer[index] = '\0';
+			} while ((size > 0) && (index < sizeof (buffer) - 1));
 
 			LOG_PTZ_RESPONSE(buffer,index)
 
 			closesocket (sock);
 
 			if (index > 0) {
+				buffer[index] = '\0';
+
 				index--;
 				while ((buffer[index] != ':') && (buffer[index] != '\n')) index--;
 				index++;
@@ -664,7 +664,7 @@ COMMAND_FUNCTION_END
 
 void send_thumbnail_320_request_cmd (memory_t *memory)
 {
-	ptz_t *ptz = memory->ptz_ptr;
+	ptz_t *ptz = memory->ptz;
 	SOCKET sock;
 	gint64 current_time, elapsed_time;
 	int size, index, i;
@@ -733,7 +733,7 @@ COMMAND_FUNCTION_END
 
 void send_thumbnail_640_request_cmd (memory_t *memory)
 {
-	ptz_t *ptz = memory->ptz_ptr;
+	ptz_t *ptz = memory->ptz;
 	SOCKET sock;
 	gint64 current_time, elapsed_time;
 	int size, index, i;

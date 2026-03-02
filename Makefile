@@ -19,39 +19,41 @@ Linux/gresources.o: Linux/gresources.xml
 
 cameras_set.o: main_window.h memory.h protocol.h settings.h tally.h ultimatte.h
 
-control_window.o: cameras_set.h controller.h free_d.h main_window.h memory.h protocol.h ptz.h sw_p_08.h tally.h trackball.h
+control_window.o: cameras_set.h controller.h free_d.h main_window.h memory.h protocol.h sw_p_08.h tally.h trackball.h
 
-controller.o: logging.h network_header.h protocol.h
+controller.o: network_header.h protocol.h
 
-error.o: cameras_set.h logging.h memory.h network_header.h ptz.h
+error.o: cameras_set.h memory.h network_header.h
 
-free_d.o: cameras_set.h logging.h network_header.h protocol.h
+free_d.o: cameras_set.h network_header.h protocol.h
 
-interface.o: cameras_set.h main_window.h memory.h ptz.h settings.h
+interface.o: cameras_set.h main_window.h memory.h settings.h
 
 logging.o: f_sync.h
 
-main_window.o: cameras_set.h control_window.h controller.h free_d.h interface.h logging.h memory.h protocol.h ptz.h settings.h sw_p_08.h tally.h trackball.h ultimatte.h update_notification.h
+main_window.o: cameras_set.h control_window.h controller.h free_d.h interface.h memory.h protocol.h settings.h sw_p_08.h tally.h trackball.h ultimatte.h update_notification.h
 
-memory.o: cameras_set.h controller.h interface.h logging.h main_window.h memory.h protocol.h ptz.h settings.h sw_p_08.h ultimatte.h
+memory.o: cameras_set.h controller.h interface.h main_window.h memory.h protocol.h settings.h sw_p_08.h ultimatte.h
 
-protocol.o: error.h logging.h network_header.h update_notification.h
+osc.o: cameras_set.h main_window.h network_header.h protocol.h
+
+protocol.o: error.h network_header.h update_notification.h
 
 ptz.o: cameras_set.h control_window.h controller.h error.h free_d.h interface.h main_window.h memory.h protocol.h settings.h sw_p_08.h tally.h ultimatte.h
 
-settings.o: cameras_set.h control_window.h controller.h error.h f_sync.h free_d.h interface.h logging.h main_window.h memory.h protocol.h ptz.h sw_p_08.h tally.h trackball.h ultimatte.h update_notification.h
+settings.o: cameras_set.h control_window.h controller.h error.h f_sync.h free_d.h interface.h main_window.h memory.h osc.h protocol.h sw_p_08.h tally.h trackball.h ultimatte.h update_notification.h
 
-sw_p_08.o: cameras_set.h control_window.h logging.h main_window.h memory.h network_header.h protocol.h ptz.h settings.h
+sw_p_08.o: cameras_set.h control_window.h main_window.h memory.h network_header.h protocol.h settings.h
 
-tally.o: cameras_set.h control_window.h interface.h logging.h memory.h network_header.h protocol.h ptz.h ultimatte.h
+tally.o: cameras_set.h control_window.h interface.h memory.h network_header.h protocol.h ultimatte.h
 
 trackball.o: main_window.h settings.h
 
-ultimatte.o: logging.h network_header.h
+ultimatte.o: network_header.h
 
-update_notification.o: cameras_set.h control_window.h error.h free_d.h memory.h network_header.h protocol.h ptz.h
+update_notification.o: cameras_set.h control_window.h error.h free_d.h memory.h network_header.h protocol.h
 
-%.o: %.c ptz.h %.h
+%.o: %.c %.h ptz.h logging.h
 	$(CC) $(CFLAGS) $<
 
 Win32/pixbufs.o: $(PNG) $(PIXBUF)

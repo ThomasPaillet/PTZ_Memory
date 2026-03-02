@@ -1,5 +1,5 @@
 /*
- * copyright (c) 2020 2021 2025 Thomas Paillet <thomas.paillet@net-c.fr>
+ * copyright (c) 2020 2021 2025 2026 Thomas Paillet <thomas.paillet@net-c.fr>
 
  * This file is part of PTZ-Memory.
 
@@ -178,7 +178,7 @@ gboolean control_window_key_press (GtkWidget *window, GdkEventKey *event)
 
 					if (controller_is_used) {
 						controller_thread = g_malloc (sizeof (ptz_thread_t));
-						controller_thread->ptz = new_ptz;
+						controller_thread->pointer = new_ptz;
 						controller_thread->thread = g_thread_new (NULL, (GThreadFunc)controller_switch_ptz, controller_thread);
 					}
 				} else hide_control_window ();
@@ -1462,7 +1462,7 @@ void show_control_window (ptz_t *ptz, GtkWindowPosition position)
 		ptz->monitor_pan_tilt = TRUE;
 
 		monitor_ptz_thread = g_malloc (sizeof (ptz_thread_t));
-		monitor_ptz_thread->ptz = ptz;
+		monitor_ptz_thread->pointer = ptz;
 		monitor_ptz_thread->thread = g_thread_new (NULL, (GThreadFunc)monitor_ptz_pan_tilt_position, monitor_ptz_thread);
 
 		g_mutex_unlock (&ptz->free_d_mutex);

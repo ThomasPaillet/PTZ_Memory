@@ -1,5 +1,5 @@
 /*
- * copyright (c) 2020 2021 2025 Thomas Paillet <thomas.paillet@net-c.fr>
+ * copyright (c) 2020 2021 2025 2026 Thomas Paillet <thomas.paillet@net-c.fr>
 
  * This file is part of PTZ-Memory.
 
@@ -47,6 +47,7 @@ extern GdkPixbuf *pixbuf_grille_4;
 typedef struct {
 	SOCKET src_socket;
 	struct sockaddr_in src_addr;
+	char ip_address[16];
 	GtkWidget *connected_label;
 	char buffer[256];
 	int recv_len;
@@ -82,12 +83,17 @@ gboolean g_source_select_cameras_set_page (gpointer page_num)
 {
 	cameras_set_t *cameras_set_itr;
 
+	g_mutex_lock (&cameras_sets_mutex);
+
 	for (cameras_set_itr = cameras_sets; cameras_set_itr != NULL; cameras_set_itr = cameras_set_itr->next) {
 		if (cameras_set_itr->page_num == GPOINTER_TO_INT (page_num)) {
 			gtk_notebook_set_current_page (GTK_NOTEBOOK (main_window_notebook), cameras_set_itr->page_num);
+
 			break;
 		}
 	}
+
+	g_mutex_unlock (&cameras_sets_mutex);
 
 	return G_SOURCE_REMOVE;
 }
@@ -101,14 +107,14 @@ gboolean g_source_show_control_window (ptz_t *ptz)
 
 gboolean g_source_recall_memory (memory_t *memory)
 {
-	memory_thread_t *memory_thread;
+	ptz_thread_t *ptz_thread;
 
 	if (!memory->empty) {
 		g_signal_handler_block (memory->button, memory->button_handler_id);
 
-		memory_thread = g_malloc (sizeof (memory_thread_t));
-		memory_thread->memory = memory;
-		memory_thread->thread = g_thread_new (NULL, (GThreadFunc)load_memory, memory_thread);
+		ptz_thread = g_malloc (sizeof (ptz_thread_t));
+		ptz_thread->pointer = memory;
+		ptz_thread->thread = g_thread_new (NULL, (GThreadFunc)load_memory, ptz_thread);
 	}
 
 	return G_SOURCE_REMOVE;
@@ -163,16 +169,15 @@ void show_matrix_window (void)
 
 			if (sw_p_08_server_started) {
 				if (remote_devices[0].src_socket != INVALID_SOCKET) {
-					sprintf (label, "%s est connecté", inet_ntoa (remote_devices[0].src_addr.sin_addr));
+					sprintf (label, "%s est connecté", remote_devices[0].ip_address);
 					remote_devices[0].connected_label = gtk_label_new (label);
 				} else remote_devices[0].connected_label = gtk_label_new (NULL);
 				gtk_widget_set_margin_bottom (remote_devices[0].connected_label, MARGIN_VALUE);
 				gtk_box_pack_start (GTK_BOX (box), remote_devices[0].connected_label, FALSE, FALSE, 0);
 
 				if (remote_devices[1].src_socket != INVALID_SOCKET) {
-					sprintf (label, "%s est connecté", inet_ntoa (remote_devices[1].src_addr.sin_addr));
+					sprintf (label, "%s est connecté", remote_devices[1].ip_address);
 					remote_devices[1].connected_label = gtk_label_new (label);
-
 				} else remote_devices[1].connected_label = gtk_label_new (NULL);
 				gtk_widget_set_margin_bottom (remote_devices[1].connected_label, MARGIN_VALUE);
 				gtk_box_pack_start (GTK_BOX (box), remote_devices[1].connected_label, FALSE, FALSE, 0);
@@ -316,7 +321,7 @@ gboolean remote_device_connect (remote_device_t *remote_device)
 	char label[32];
 
 	if ((remote_device->connected_label != NULL) && (remote_device->src_socket != INVALID_SOCKET)) {
-		sprintf (label, "%s est connecté", inet_ntoa (remote_device->src_addr.sin_addr));
+		sprintf (label, "%s est connecté", remote_device->ip_address);
 		gtk_label_set_text (GTK_LABEL (remote_device->connected_label), label);
 		gtk_widget_show (remote_device->connected_label);
 	}
@@ -336,13 +341,13 @@ void send_sw_p_08_buffer (void)
 	if (remote_devices[0].src_socket != INVALID_SOCKET) {
 		send (remote_devices[0].src_socket, sw_p_08_buffer, sw_p_08_buffer_len, 0);
 
-		LOG_SW_P_08_OUTGOING_MESSAGE(inet_ntoa (remote_devices[0].src_addr.sin_addr),sw_p_08_buffer,sw_p_08_buffer_len)
+		LOG_SW_P_08_OUTGOING_MESSAGE(remote_devices[0].ip_address,sw_p_08_buffer,sw_p_08_buffer_len)
 	}
 
 	if (remote_devices[1].src_socket != INVALID_SOCKET) {
 		send (remote_devices[1].src_socket, sw_p_08_buffer, sw_p_08_buffer_len, 0);
 
-		LOG_SW_P_08_OUTGOING_MESSAGE(inet_ntoa (remote_devices[1].src_addr.sin_addr),sw_p_08_buffer,sw_p_08_buffer_len)
+		LOG_SW_P_08_OUTGOING_MESSAGE(remote_devices[1].ip_address,sw_p_08_buffer,sw_p_08_buffer_len)
 	}
 }
 
@@ -451,7 +456,7 @@ void tell_memory_is_selected (int index)
 	sw_p_08_buffer[3] = 0;
 	sw_p_08_buffer[4] = 0;
 	sw_p_08_buffer[5] = 2;				//Dest	"3: Mémoire"
-	sw_p_08_buffer[6] = tally_memory;	//Src
+	sw_p_08_buffer[6] = tally_memory;	//Src	"index"
 
 	if (tally_memory == DLE) {
 		sw_p_08_buffer[7] = DLE;
@@ -508,7 +513,7 @@ void send_ok_plus_crosspoint_tally_message (remote_device_t *remote_device, char
 		send (remote_device->src_socket, full_sw_p_08_buffer, 13, 0);
 	}
 
-	LOG_SW_P_08_OUTGOING_MESSAGE(inet_ntoa (remote_device->src_addr.sin_addr),full_sw_p_08_buffer,sw_p_08_buffer_len + 2)
+	LOG_SW_P_08_OUTGOING_MESSAGE(remote_device->ip_address,full_sw_p_08_buffer,sw_p_08_buffer_len + 2)
 }
 
 void send_crosspoint_connected_message (remote_device_t *remote_device, char dest, char src)
@@ -539,7 +544,7 @@ void send_crosspoint_connected_message (remote_device_t *remote_device, char des
 		send (remote_device->src_socket, sw_p_08_buffer, 11, 0);
 	}
 
-	LOG_SW_P_08_OUTGOING_MESSAGE(inet_ntoa (remote_device->src_addr.sin_addr),sw_p_08_buffer,sw_p_08_buffer_len)
+	LOG_SW_P_08_OUTGOING_MESSAGE(remote_device->ip_address,sw_p_08_buffer,sw_p_08_buffer_len)
 }
 
 gboolean recv_from_remote_device_socket (remote_device_t *remote_device, char* buffer, int size)
@@ -555,7 +560,7 @@ gboolean recv_from_remote_device_socket (remote_device_t *remote_device, char* b
 			buffer[i] = remote_device->buffer[0];
 			remote_device->index = 1;
 
-			LOG_SW_P_08_INCOMMING_MESSAGE(inet_ntoa (remote_device->src_addr.sin_addr),remote_device->buffer,remote_device->recv_len)
+			LOG_SW_P_08_INCOMMING_MESSAGE(remote_device->ip_address,remote_device->buffer,remote_device->recv_len)
 		}
 	}
 
@@ -584,7 +589,7 @@ gpointer receive_message_from_remote_device (remote_device_t *remote_device)
 					} else {
 						send (remote_device->src_socket, NOK, 2, 0);
 
-						LOG_SW_P_08_OUTGOING_MESSAGE(inet_ntoa (remote_device->src_addr.sin_addr),NOK,2)
+						LOG_SW_P_08_OUTGOING_MESSAGE(remote_device->ip_address,NOK,2)
 					}
 				} else if (buffer[0] == 0x02) {	//Crosspoint Connect Message
 					if (!recv_from_remote_device_socket (remote_device, buffer, 4)) { g_mutex_unlock (&sw_p_08_mutex); break; }
@@ -595,7 +600,7 @@ gpointer receive_message_from_remote_device (remote_device_t *remote_device)
 					if ((0x02 + buffer[0] + buffer[1] + buffer[2] + buffer[3] + buffer[4] + buffer[5]) == 0) {
 						send (remote_device->src_socket, OK, 2, 0);
 
-						LOG_SW_P_08_OUTGOING_MESSAGE(inet_ntoa (remote_device->src_addr.sin_addr),OK,2)
+						LOG_SW_P_08_OUTGOING_MESSAGE(remote_device->ip_address,OK,2)
 
 						if (buffer[2] == 0) {			//Dest	"1: Ensemble de caméras"
 							if (buffer[3] < number_of_cameras_sets) {
@@ -649,17 +654,17 @@ gpointer receive_message_from_remote_device (remote_device_t *remote_device)
 					} else {
 						send (remote_device->src_socket, NOK, 2, 0);
 
-						LOG_SW_P_08_OUTGOING_MESSAGE(inet_ntoa (remote_device->src_addr.sin_addr),NOK,2)
+						LOG_SW_P_08_OUTGOING_MESSAGE(remote_device->ip_address,NOK,2)
 					}
 				} else {
 					send (remote_device->src_socket, OK, 2, 0);
 
-					LOG_SW_P_08_OUTGOING_MESSAGE(inet_ntoa (remote_device->src_addr.sin_addr),OK,2)
+					LOG_SW_P_08_OUTGOING_MESSAGE(remote_device->ip_address,OK,2)
 
 					if ((remote_device->recv_len = recv (remote_device->src_socket, remote_device->buffer, 256, 0)) <= 0) { g_mutex_unlock (&sw_p_08_mutex); break; }
 					remote_device->index = 0;
 
-					LOG_SW_P_08_INCOMMING_MESSAGE(inet_ntoa (remote_device->src_addr.sin_addr),remote_device->buffer,remote_device->recv_len)
+					LOG_SW_P_08_INCOMMING_MESSAGE(remote_device->ip_address,remote_device->buffer,remote_device->recv_len)
 				}
 			}
 		}
@@ -670,7 +675,7 @@ gpointer receive_message_from_remote_device (remote_device_t *remote_device)
 	closesocket (remote_device->src_socket);
 	remote_device->src_socket = INVALID_SOCKET;
 
-	LOG_SW_P_08_2_STRINGS("Disconnected from: ",inet_ntoa (remote_device->src_addr.sin_addr))
+	LOG_SW_P_08_2_STRINGS("Disconnected from: ",remote_device->ip_address)
 
 	g_idle_add ((GSourceFunc)remote_device_disconnect, remote_device);
 
@@ -681,21 +686,17 @@ gpointer sw_p_08_server (void)
 {
 	SOCKET src_socket;
 	struct sockaddr_in src_addr;
-#ifdef _WIN32
-	int addrlen;
-#elif defined (__linux)
 	socklen_t addrlen;
-#endif
+
+	LOG_SW_P_08_STRING("sw_p_08_server ()")
 
 	sw_p_08_server_started = TRUE;
 
 	while (sw_p_08_server_started) {
-		addrlen = sizeof (struct sockaddr_in);
+		addrlen = sizeof (src_addr);
 		src_socket = accept (sw_p_08_socket, (struct sockaddr *)&src_addr, &addrlen);
 
 		if (src_socket == INVALID_SOCKET) continue;
-
-		LOG_SW_P_08_2_STRINGS("Connected to: ",inet_ntoa (src_addr.sin_addr))
 
 		if (remote_devices[0].src_socket == INVALID_SOCKET) {
 			if (remote_devices[0].thread != NULL) {
@@ -705,10 +706,15 @@ gpointer sw_p_08_server (void)
 
 			if ((remote_devices[0].recv_len = recv (src_socket, remote_devices[0].buffer, 256, 0)) <= 0) {
 				closesocket (src_socket);
+
 				continue;
 			}
 
-			LOG_SW_P_08_INCOMMING_MESSAGE(inet_ntoa (src_addr.sin_addr),remote_devices[0].buffer,remote_devices[0].recv_len)
+			memcpy (remote_devices[0].ip_address, inet_ntoa (src_addr.sin_addr), 16);
+
+			LOG_SW_P_08_2_STRINGS("Connected to: ",remote_devices[0].ip_address)
+
+			LOG_SW_P_08_INCOMMING_MESSAGE(remote_devices[0].ip_address,remote_devices[0].buffer,remote_devices[0].recv_len)
 
 			remote_devices[0].src_socket = src_socket;
 			memcpy (&remote_devices[0].src_addr, &src_addr, sizeof (struct sockaddr_in));
@@ -725,10 +731,15 @@ gpointer sw_p_08_server (void)
 
 			if ((remote_devices[1].recv_len = recv (src_socket, remote_devices[1].buffer, 256, 0)) <= 0) {
 				closesocket (src_socket);
+
 				continue;
 			}
 
-			LOG_SW_P_08_INCOMMING_MESSAGE(inet_ntoa (src_addr.sin_addr),remote_devices[1].buffer,remote_devices[1].recv_len)
+			memcpy (remote_devices[1].ip_address, inet_ntoa (src_addr.sin_addr), 16);
+
+			LOG_SW_P_08_2_STRINGS("Connected to: ",remote_devices[1].ip_address)
+
+			LOG_SW_P_08_INCOMMING_MESSAGE(remote_devices[1].ip_address,remote_devices[1].buffer,remote_devices[1].recv_len)
 
 			remote_devices[1].src_socket = src_socket;
 			memcpy (&remote_devices[1].src_addr, &src_addr, sizeof (struct sockaddr_in));
@@ -740,6 +751,8 @@ gpointer sw_p_08_server (void)
 		} else closesocket (src_socket);
 	}
 
+	LOG_SW_P_08_STRING("sw_p_08_server () return")
+
 	return NULL;
 }
 
@@ -748,21 +761,26 @@ void init_sw_p_08 (void)
 	g_mutex_init (&sw_p_08_mutex);
 
 	memset (&sw_p_08_address, 0, sizeof (struct sockaddr_in));
+
 	sw_p_08_address.sin_family = AF_INET;
 	sw_p_08_address.sin_port = htons (SW_P_08_TCP_PORT);
 	sw_p_08_address.sin_addr.s_addr = inet_addr (my_ip_address);
 
 	remote_devices[0].src_socket = INVALID_SOCKET;
+	remote_devices[0].ip_address[0] = '\0';
 	remote_devices[0].connected_label = NULL;
 	remote_devices[0].thread = NULL;
 
 	remote_devices[1].src_socket = INVALID_SOCKET;
+	remote_devices[1].ip_address[0] = '\0';
 	remote_devices[1].connected_label = NULL;
 	remote_devices[1].thread = NULL;
 }
 
 void start_sw_p_08 (void)
 {
+	LOG_SW_P_08_STRING("start_sw_p_08 ()")
+
 	sw_p_08_socket = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
 	if (bind (sw_p_08_socket, (struct sockaddr *)&sw_p_08_address, sizeof (struct sockaddr_in)) == 0) {
@@ -772,6 +790,8 @@ void start_sw_p_08 (void)
 
 void stop_sw_p_08 (void)
 {
+	LOG_SW_P_08_STRING("stop_sw_p_08 ()")
+
 	sw_p_08_server_started = FALSE;
 
 	if (remote_devices[0].src_socket != INVALID_SOCKET) {

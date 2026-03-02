@@ -1,5 +1,5 @@
 /*
- * copyright (c) 2020 2021 2025 Thomas Paillet <thomas.paillet@net-c.fr>
+ * copyright (c) 2020 2021 2025 2026 Thomas Paillet <thomas.paillet@net-c.fr>
 
  * This file is part of PTZ-Memory.
 
@@ -25,6 +25,7 @@
 #include "free_d.h"
 #include "interface.h"
 #include "logging.h"
+#include "osc.h"
 #include "protocol.h"
 #include "settings.h"
 #include "sw_p_08.h"
@@ -41,10 +42,10 @@ void load_pixbufs (void);
 #include "Linux/gresources.h"
 #endif
 
+
 #define BUTTON_MARGIN_VALUE 6
 
 
-const char application_name_txt[] = "Mémoires Pan Tilt Zoom pour caméras PTZ Panasonic";
 const char warning_txt[] = "Attention !";
 
 GtkWidget *main_window, *main_event_box, *main_window_notebook;
@@ -153,30 +154,7 @@ void delete_toggle_button_clicked (GtkToggleButton *button)
 
 void switch_cameras_on (void)
 {
-	int i;
-	ptz_thread_t *ptz_thread;
-
-	for (i = 0; i < current_cameras_set->number_of_cameras; i++) {
-		if (current_cameras_set->cameras[i]->ip_address_is_valid) {
-			ptz_thread = g_malloc (sizeof (ptz_thread_t));
-			ptz_thread->ptz = current_cameras_set->cameras[i];
-			ptz_thread->thread = g_thread_new (NULL, (GThreadFunc)switch_ptz_on, ptz_thread);
-		}
-	}
-}
-
-void switch_cameras_off (void)
-{
-	int i;
-	ptz_thread_t *ptz_thread;
-
-	for (i = 0; i < current_cameras_set->number_of_cameras; i++) {
-		if (current_cameras_set->cameras[i]->ip_address_is_valid) {
-			ptz_thread = g_malloc (sizeof (ptz_thread_t));
-			ptz_thread->ptz = current_cameras_set->cameras[i];
-			ptz_thread->thread = g_thread_new (NULL, (GThreadFunc)switch_ptz_off, ptz_thread);
-		}
-	}
+	switch_cameras_set_on (current_cameras_set);
 }
 
 gboolean switch_cameras_off_confirmation_window_key_press (GtkWidget *confirmation_window, GdkEventKey *event)
@@ -184,7 +162,7 @@ gboolean switch_cameras_off_confirmation_window_key_press (GtkWidget *confirmati
 	if ((event->keyval == GDK_KEY_n) || (event->keyval == GDK_KEY_N) || (event->keyval == GDK_KEY_Escape))
 		gtk_widget_destroy (confirmation_window);
 	else if ((event->keyval == GDK_KEY_o) || (event->keyval == GDK_KEY_O)|| (event->keyval == GDK_KEY_Return)) {
-		switch_cameras_off ();
+		switch_cameras_set_off (current_cameras_set);
 
 		gtk_widget_destroy (confirmation_window);
 	}
@@ -226,7 +204,7 @@ void show_switch_cameras_off_confirmation_window (void)
 		gtk_box_set_spacing (GTK_BOX (box2), MARGIN_VALUE);
 		gtk_box_set_homogeneous (GTK_BOX (box2), TRUE);
 			widget = gtk_button_new_with_label ("OUI");
-			g_signal_connect (G_OBJECT (widget), "clicked", G_CALLBACK (switch_cameras_off), NULL);
+			g_signal_connect_swapped (G_OBJECT (widget), "clicked", G_CALLBACK (switch_cameras_set_off), current_cameras_set);
 			g_signal_connect_swapped (G_OBJECT (widget), "clicked", G_CALLBACK (gtk_widget_destroy), confirmation_window);
 		gtk_box_pack_start (GTK_BOX (box2), widget, TRUE, TRUE, 0);
 
@@ -241,7 +219,7 @@ void show_switch_cameras_off_confirmation_window (void)
 
 gpointer get_camera_screen_shot (ptz_thread_t *ptz_thread)
 {
-	send_jpeg_image_request_cmd (ptz_thread->ptz);
+	send_jpeg_image_request_cmd (ptz_thread->pointer);
 
 	g_idle_add_full (G_PRIORITY_LOW, (GSourceFunc)free_ptz_thread, ptz_thread, NULL);
 
@@ -359,7 +337,7 @@ gboolean main_window_key_press (GtkWidget *widget, GdkEventKey *event)
 
 					if (controller_is_used) {
 						controller_thread = g_malloc (sizeof (ptz_thread_t));
-						controller_thread->ptz = ptz;
+						controller_thread->pointer = ptz;
 						controller_thread->thread = g_thread_new (NULL, (GThreadFunc)controller_switch_ptz, controller_thread);
 					}
 				}
@@ -387,7 +365,7 @@ gboolean main_window_key_press (GtkWidget *widget, GdkEventKey *event)
 
 					if (ptz->is_on) {
 						ptz_thread = g_malloc (sizeof (ptz_thread_t));
-						ptz_thread->ptz = ptz;
+						ptz_thread->pointer = ptz;
 						ptz_thread->thread = g_thread_new (NULL, (GThreadFunc)get_camera_screen_shot, ptz_thread);
 					}
 				}
@@ -535,7 +513,7 @@ void create_main_window (void)
 	g_object_unref (file);
 
 	main_window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
-	gtk_window_set_title (GTK_WINDOW (main_window), application_name_txt);
+	gtk_window_set_title (GTK_WINDOW (main_window), "Mémoires Pan Tilt Zoom pour caméras PTZ Panasonic");
 	gtk_window_set_default_size (GTK_WINDOW (main_window), 1200, 1000);
 	gtk_window_fullscreen (GTK_WINDOW (main_window));
 	g_signal_connect (G_OBJECT (main_window), "key-press-event", G_CALLBACK (main_window_key_press), NULL);
@@ -572,7 +550,7 @@ void create_main_window (void)
 		gtk_box_pack_start (GTK_BOX (box2), interface_button, FALSE, FALSE, 0);
 
 			box3 = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
-				controller_toggle_button = gtk_toggle_button_new_with_label ("AW-_RPxxx");
+				controller_toggle_button = gtk_toggle_button_new_with_label ("AW-_RP");
 				gtk_style_context_add_provider (gtk_widget_get_style_context (controller_toggle_button), GTK_STYLE_PROVIDER (css_provider_toggle_button_blue), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
 				gtk_button_set_use_underline (GTK_BUTTON (controller_toggle_button), TRUE);
 				g_signal_connect (G_OBJECT (controller_toggle_button), "toggled", G_CALLBACK (controller_toggle_button_clicked), NULL);
@@ -665,7 +643,7 @@ gboolean show_update_notification_port_error_window (GtkWidget *transient_window
 		gtk_box_pack_start (GTK_BOX (box2), widget, FALSE, FALSE, 0);
 	gtk_box_pack_start (GTK_BOX (box1), box2, FALSE, FALSE, 0);
 
-		widget = gtk_label_new ("Typiquement une instance de PTZ-Memory (ou RCP-Virtuel) est déjà en cours d'exécution.");
+		widget = gtk_label_new ("Typiquement une instance de PTZ-Memory (ou RCP-Virtuels) est déjà en cours d'exécution.");
 	gtk_box_pack_start (GTK_BOX (box1), widget, FALSE, FALSE, 0);
 
 		box2 = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
@@ -699,11 +677,23 @@ int main (int argc, char** argv)
 	GSList *slist_itr;
 	ptz_thread_t *ptz_thread;
 
-	WSAInit ();	//_WIN32
 #ifdef _WIN32
+	FreeConsole ();
+
+	WSAInit ();
+
 	AddFontResource (".\\resources\\fonts\\FreeMono.ttf");
 	AddFontResource (".\\resources\\fonts\\FreeMonoBold.ttf");
+
+	gtk_init (NULL, NULL);
+
+	load_pixbufs ();
+#elif defined (__linux)
+	gtk_init (&argc, &argv);
+
+	g_resources_register (gresources_get_resource ());
 #endif
+
 	g_mutex_init (&cameras_sets_mutex);
 
 	init_protocol ();
@@ -712,21 +702,11 @@ int main (int argc, char** argv)
 
 	init_update_notification ();
 
-#ifdef _WIN32
-	gtk_init (NULL, NULL);
-
-	load_pixbufs ();
-
-	FreeConsole ();
-#elif defined (__linux)
-	gtk_init (&argc, &argv);
-
-	g_resources_register (gresources_get_resource ());
-#endif
-
 	init_sw_p_08 ();
 
 	init_tally ();
+
+	init_osc ();
 
 	init_free_d ();
 
@@ -822,6 +802,7 @@ int main (int argc, char** argv)
 			add_cameras_set ();
 		} else if (cameras_set_with_error != NULL) {
 			gtk_notebook_set_current_page (GTK_NOTEBOOK (main_window_notebook), cameras_set_with_error->page_num);
+
 			show_settings_window ();
 			show_cameras_set_configuration_window ();
 		}
@@ -829,17 +810,20 @@ int main (int argc, char** argv)
 
 	for (slist_itr = ptz_slist; slist_itr != NULL; slist_itr = slist_itr->next) {
 		ptz_thread = g_malloc (sizeof (ptz_thread_t));
-		ptz_thread->ptz = slist_itr->data;
-		ptz_thread->thread = g_thread_new (NULL, (GThreadFunc)start_ptz, ptz_thread);
+		ptz_thread->pointer = slist_itr->data;
+		ptz_thread->thread = g_thread_new (NULL, (GThreadFunc)check_ptz_power_status, ptz_thread);
 	}
 
 	start_sw_p_08 ();
 
 	start_tally ();
 
+	start_osc ();
+
 	start_incomming_free_d ();
 
 	if (free_d_output_ip_address_is_valid) start_outgoing_freed_d ();
+
 
 	gtk_main ();
 
@@ -849,6 +833,8 @@ int main (int argc, char** argv)
 	stop_outgoing_freed_d ();
 
 	stop_incomming_free_d ();
+
+	stop_osc ();
 
 	stop_tally ();
 
@@ -877,14 +863,16 @@ int main (int argc, char** argv)
 		pango_font_description_free (cameras_set_itr->layout.ultimatte_picto_font_description);
 	}
 
-	if (logging) stop_logging ();
+	stop_logging ();
 
 	g_list_free (pointing_devices);
+
 #ifdef _WIN32
 	RemoveFontResource (".\\resources\\fonts\\FreeMonoBold.ttf");
 	RemoveFontResource (".\\resources\\fonts\\FreeMono.ttf");
+
+	WSACleanup ();
 #endif
-	WSACleanup ();	//_WIN32
 
 	return 0;
 }

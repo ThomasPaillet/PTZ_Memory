@@ -1,5 +1,5 @@
 /*
- * copyright (c) 2020 2021 2025 Thomas Paillet <thomas.paillet@net-c.fr>
+ * copyright (c) 2020 2021 2025 2026 Thomas Paillet <thomas.paillet@net-c.fr>
 
  * This file is part of PTZ-Memory.
 
@@ -47,6 +47,7 @@ void init_ptz (ptz_t *ptz)
 	ptz->is_on = FALSE;
 	ptz->ip_address[0] = '\0';
 	ptz->ip_address_is_valid = FALSE;
+	ptz->address.sin_addr.s_addr = INADDR_NONE;
 
 	ptz->other_ptz_slist = NULL;
 	g_mutex_init (&ptz->other_ptz_mutex);
@@ -64,7 +65,7 @@ void init_ptz (ptz_t *ptz)
 	ptz->tally_1_is_on = FALSE;
 
 	for (i = 0; i < MAX_MEMORIES; i++) {
-		ptz->memories[i].ptz_ptr = ptz;
+		ptz->memories[i].ptz = ptz;
 		ptz->memories[i].index = i;
 		ptz->memories[i].empty = TRUE;
 		ptz->memories[i].is_loaded = FALSE;
@@ -85,8 +86,6 @@ void init_ptz (ptz_t *ptz)
 
 	ptz->enter_notify_name_drawing_area = FALSE;
 	ptz->enter_notify_ultimatte_picto = FALSE;
-
-	ptz->error_drawing_area_tooltip = NULL;
 
 	ptz->zoom_position = 0xAAA;
 
@@ -134,6 +133,49 @@ void init_ptz (ptz_t *ptz)
 	ptz->ultimatte = NULL;
 }
 
+void clear_ptz (ptz_t *ptz)
+{
+	int i;
+
+	g_mutex_lock (&ptz->free_d_mutex);
+	ptz->monitor_pan_tilt = FALSE;
+	g_mutex_unlock (&ptz->free_d_mutex);
+
+	if (ptz->active) {
+		if (ptz->ip_address_is_valid) {
+			if (send_ip_tally && ptz->is_on && ptz->tally_1_is_on) send_ptz_control_command (ptz, "#DA0", TRUE);
+
+			remove_ptz_from_slists (ptz);
+
+			ptz->is_on = FALSE;
+
+			ptz->ip_address[0] = '\0';
+			ptz->ip_address_is_valid = FALSE;
+			ptz->address.sin_addr.s_addr = INADDR_NONE;
+		}
+
+		for (i = 0; i < MAX_MEMORIES; i++) {
+			if (!ptz->memories[i].empty) {
+				ptz->memories[i].empty = TRUE;
+
+				g_object_unref (G_OBJECT (ptz->memories[i].full_pixbuf));
+
+				if (((cameras_set_t *)ptz->cameras_set)->layout.thumbnail_width != 320) g_object_unref (G_OBJECT (ptz->memories[i].scaled_pixbuf));
+			}
+		}
+
+		if (ptz->ultimatte != NULL) {
+			if (ptz->ultimatte->connected) {
+				ptz->ultimatte->will_be_destroyed = TRUE;
+
+				disconnect_ultimatte (ptz->ultimatte);
+			} else g_free (ptz->ultimatte);
+
+			ptz->ultimatte = NULL;
+		}
+	}
+}
+
 gboolean ptz_is_on (ptz_t *ptz)
 {
 	int i;
@@ -142,6 +184,8 @@ gboolean ptz_is_on (ptz_t *ptz)
 
 	gtk_widget_set_sensitive (ptz->name_grid, TRUE);
 	gtk_widget_set_sensitive (ptz->memories_grid, TRUE);
+
+	g_mutex_lock (&cameras_sets_mutex);
 
 	if (current_cameras_set != NULL) {
 		for (i = 0; i < current_cameras_set->number_of_cameras; i++) {
@@ -153,6 +197,8 @@ gboolean ptz_is_on (ptz_t *ptz)
 			}
 		}
 	}
+
+	g_mutex_unlock (&cameras_sets_mutex);
 
 	return G_SOURCE_REMOVE;
 }
@@ -167,11 +213,6 @@ gboolean ptz_is_off (ptz_t *ptz)
 		ptz->error_code = 0x00;
 		gtk_widget_queue_draw (ptz->error_drawing_area);
 		gtk_widget_set_tooltip_text (ptz->error_drawing_area, NULL);
-
-		if (ptz->error_drawing_area_tooltip != NULL) {
-			g_free (ptz->error_drawing_area_tooltip);
-			ptz->error_drawing_area_tooltip = NULL;
-		}
 	}
 
 	if (ptz->previous_loaded_memory != NULL) {
@@ -187,17 +228,9 @@ gboolean ptz_is_off (ptz_t *ptz)
 	return G_SOURCE_REMOVE;
 }
 
-gboolean free_ptz_thread (ptz_thread_t *ptz_thread)
-{
-	g_thread_join (ptz_thread->thread);
-	g_free (ptz_thread);
-
-	return G_SOURCE_REMOVE;
-}
-
 gpointer monitor_ptz_pan_tilt_position (ptz_thread_t *ptz_thread)
 {
-	ptz_t *ptz = ptz_thread->ptz;
+	ptz_t *ptz = ptz_thread->pointer;
 	char buffer[64];
 	gint32 pan, tilt;
 	GSList *slist_itr;
@@ -280,9 +313,9 @@ gpointer monitor_ptz_pan_tilt_position (ptz_thread_t *ptz_thread)
 	return NULL;
 }
 
-gpointer start_ptz (ptz_thread_t *ptz_thread)
+gpointer ptz_power_is_on (ptz_thread_t *ptz_thread)
 {
-	ptz_t *ptz = ptz_thread->ptz, *other_ptz;
+	ptz_t *ptz = ptz_thread->pointer, *other_ptz;
 	GSList *slist_itr;
 	int response, i;
 	char buffer[16];
@@ -290,120 +323,134 @@ gpointer start_ptz (ptz_thread_t *ptz_thread)
 	guint32 zoom, focus;
 	gint32 free_d_optical_axis_height;
 	ptz_thread_t *monitor_ptz_thread;
-printf ("start_ptz %s (%s)\n", ptz->name, ptz->ip_address);
+
+	ptz->is_on = TRUE;
+
+	send_cam_request_command_string (ptz, "QID", buffer);	//Model
+
+	for (i = 0; i < UNKNOWN_PTZ; i++) {
+		if (strcmp (buffer, ptz_model[i]) == 0) break;
+	}
+	ptz->model = i;
+
+	send_cam_request_command (ptz, "QAF", &response);		//Focus Auto/Manual
+
+	if (response == 1) auto_focus = TRUE;
+	else auto_focus = FALSE;
+
+	g_mutex_lock (&ptz->lens_information_mutex);
+
+	ptz->auto_focus = auto_focus;
+
+	send_ptz_request_command_string (ptz, "#LPI", buffer);	//Lens information
+
+	ptz->zoom_position_cmd[4] = buffer[3];
+	ptz->zoom_position_cmd[5] = buffer[4];
+	ptz->zoom_position_cmd[6] = buffer[5];
+
+	if (buffer[3] <= '9') zoom = (buffer[3] - '0') * 256;
+	else zoom = (buffer[3] - '7') * 256;
+	if (buffer[4] <= '9') zoom += (buffer[4] - '0') * 16;
+	else zoom += (buffer[4] - '7') * 16;
+	if (buffer[5] <= '9') zoom += buffer[5] - '0';
+	else zoom += buffer[5] - '7';
+
+	ptz->focus_position_cmd[4] = buffer[6];
+	ptz->focus_position_cmd[5] = buffer[7];
+	ptz->focus_position_cmd[6] = buffer[8];
+
+	if (buffer[6] <= '9') focus = (buffer[6] - '0') * 256;
+	else focus = (buffer[6] - '7') * 256;
+	if (buffer[7] <= '9') focus += (buffer[7] - '0') * 16;
+	else focus += (buffer[7] - '7') * 16;
+	if (buffer[8] <= '9') focus += buffer[8] - '0';
+	else focus += buffer[8] - '7';
+
+	send_ptz_request_command (ptz, "#INS", &response);		//Installation position
+
+	if (response == 1) free_d_optical_axis_height = - ptz_optical_axis_height[ptz->model];
+	else free_d_optical_axis_height = ptz_optical_axis_height[ptz->model];
+
+	g_mutex_lock (&ptz->free_d_mutex);
+
+	ptz->zoom_position = zoom;
+	ptz->focus_position = focus;
+
+	ptz->free_d_optical_axis_height = free_d_optical_axis_height;
+
+	g_mutex_unlock (&ptz->free_d_mutex);
+
+	g_mutex_unlock (&ptz->lens_information_mutex);
+
+	send_ptz_control_command (ptz, "#LPC1", TRUE);			//Lens information notification On
+
+	g_idle_add ((GSourceFunc)ptz_is_on, ptz);
+
+	g_mutex_lock (&ptz->other_ptz_mutex);
+
+	for (slist_itr = ptz->other_ptz_slist; slist_itr != NULL; slist_itr = slist_itr->next) {
+		other_ptz = slist_itr->data;
+
+		other_ptz->model = ptz->model;
+
+		g_mutex_lock (&other_ptz->lens_information_mutex);
+
+		other_ptz->auto_focus = auto_focus;
+
+		other_ptz->zoom_position_cmd[4] = buffer[3];
+		other_ptz->zoom_position_cmd[5] = buffer[4];
+		other_ptz->zoom_position_cmd[6] = buffer[5];
+
+		other_ptz->focus_position_cmd[4] = buffer[6];
+		other_ptz->focus_position_cmd[5] = buffer[7];
+		other_ptz->focus_position_cmd[6] = buffer[8];
+
+		g_mutex_lock (&other_ptz->free_d_mutex);
+
+		other_ptz->zoom_position = zoom;
+		other_ptz->focus_position = focus;
+
+		other_ptz->free_d_optical_axis_height = free_d_optical_axis_height;
+
+		g_mutex_unlock (&other_ptz->free_d_mutex);
+
+		g_mutex_unlock (&other_ptz->lens_information_mutex);
+
+		g_idle_add ((GSourceFunc)ptz_is_on, other_ptz);
+	}
+
+	g_mutex_unlock (&ptz->other_ptz_mutex);
+
+	if (outgoing_free_d_started && (ptz->model == AW_HE130)) {
+		g_mutex_lock (&ptz->free_d_mutex);
+
+		ptz->monitor_pan_tilt = TRUE;
+
+		monitor_ptz_thread = g_malloc (sizeof (ptz_thread_t));
+		monitor_ptz_thread->pointer = ptz;
+		monitor_ptz_thread->thread = g_thread_new (NULL, (GThreadFunc)monitor_ptz_pan_tilt_position, monitor_ptz_thread);
+
+		g_mutex_unlock (&ptz->free_d_mutex);
+	}
+
+	g_idle_add_full (G_PRIORITY_LOW, (GSourceFunc)free_ptz_thread, ptz_thread, NULL);
+
+	return NULL;
+}
+
+gpointer check_ptz_power_status (ptz_thread_t *ptz_thread)
+{
+	ptz_t *ptz = ptz_thread->pointer;
+	int response;
+	GSList *slist_itr;
+
 	send_update_start_cmd (ptz);
 
 	if (ptz->error_code != CAMERA_IS_UNREACHABLE_ERROR) {
 		send_ptz_request_command (ptz, "#O", &response);			//Power On/Standby
 
-		if (response == 1) {
-			send_cam_request_command_string (ptz, "QID", buffer);	//Model
-
-			for (i = 0; i < UNKNOWN_PTZ; i++) {
-				if (strcmp (buffer, ptz_model[i]) == 0) break;
-			}
-			ptz->model = i;
-
-			send_cam_request_command (ptz, "QAF", &response);		//Focus Auto/Manual
-
-			if (response == 1) auto_focus = TRUE;
-			else auto_focus = FALSE;
-
-			g_mutex_lock (&ptz->lens_information_mutex);
-
-			ptz->auto_focus = auto_focus;
-
-			send_ptz_request_command_string (ptz, "#LPI", buffer);	//Lens information
-
-			ptz->zoom_position_cmd[4] = buffer[3];
-			ptz->zoom_position_cmd[5] = buffer[4];
-			ptz->zoom_position_cmd[6] = buffer[5];
-
-			if (buffer[3] <= '9') zoom = (buffer[3] - '0') * 256;
-			else zoom = (buffer[3] - '7') * 256;
-			if (buffer[4] <= '9') zoom += (buffer[4] - '0') * 16;
-			else zoom += (buffer[4] - '7') * 16;
-			if (buffer[5] <= '9') zoom += buffer[5] - '0';
-			else zoom += buffer[5] - '7';
-
-			ptz->focus_position_cmd[4] = buffer[6];
-			ptz->focus_position_cmd[5] = buffer[7];
-			ptz->focus_position_cmd[6] = buffer[8];
-
-			if (buffer[6] <= '9') focus = (buffer[6] - '0') * 256;
-			else focus = (buffer[6] - '7') * 256;
-			if (buffer[7] <= '9') focus += (buffer[7] - '0') * 16;
-			else focus += (buffer[7] - '7') * 16;
-			if (buffer[8] <= '9') focus += buffer[8] - '0';
-			else focus += buffer[8] - '7';
-
-			send_ptz_request_command (ptz, "#INS", &response);		//Installation position
-
-			if (response == 1) free_d_optical_axis_height = - ptz_optical_axis_height[ptz->model];
-			else free_d_optical_axis_height = ptz_optical_axis_height[ptz->model];
-
-			g_mutex_lock (&ptz->free_d_mutex);
-
-			ptz->zoom_position = zoom;
-			ptz->focus_position = focus;
-
-			ptz->free_d_optical_axis_height = free_d_optical_axis_height;
-
-			g_mutex_unlock (&ptz->free_d_mutex);
-
-			g_mutex_unlock (&ptz->lens_information_mutex);
-
-			send_ptz_control_command (ptz, "#LPC1", TRUE);			//Lens information notification On
-
-			g_idle_add ((GSourceFunc)ptz_is_on, ptz);
-
-			g_mutex_lock (&ptz->other_ptz_mutex);
-
-			for (slist_itr = ptz->other_ptz_slist; slist_itr != NULL; slist_itr = slist_itr->next) {
-				other_ptz = slist_itr->data;
-
-				other_ptz->model = ptz->model;
-
-				g_mutex_lock (&other_ptz->lens_information_mutex);
-
-				other_ptz->auto_focus = auto_focus;
-
-				other_ptz->zoom_position_cmd[4] = buffer[3];
-				other_ptz->zoom_position_cmd[5] = buffer[4];
-				other_ptz->zoom_position_cmd[6] = buffer[5];
-
-				other_ptz->focus_position_cmd[4] = buffer[6];
-				other_ptz->focus_position_cmd[5] = buffer[7];
-				other_ptz->focus_position_cmd[6] = buffer[8];
-
-				g_mutex_lock (&other_ptz->free_d_mutex);
-
-				other_ptz->zoom_position = zoom;
-				other_ptz->focus_position = focus;
-
-				other_ptz->free_d_optical_axis_height = free_d_optical_axis_height;
-
-				g_mutex_unlock (&other_ptz->free_d_mutex);
-
-				g_mutex_unlock (&other_ptz->lens_information_mutex);
-
-				g_idle_add ((GSourceFunc)ptz_is_on, other_ptz);
-			}
-
-			g_mutex_unlock (&ptz->other_ptz_mutex);
-
-			if (outgoing_free_d_started && (ptz->model == AW_HE130)) {
-				g_mutex_lock (&ptz->free_d_mutex);
-
-				ptz->monitor_pan_tilt = TRUE;
-
-				monitor_ptz_thread = g_malloc (sizeof (ptz_thread_t));
-				monitor_ptz_thread->ptz = ptz;
-				monitor_ptz_thread->thread = g_thread_new (NULL, (GThreadFunc)monitor_ptz_pan_tilt_position, monitor_ptz_thread);
-
-				g_mutex_unlock (&ptz->free_d_mutex);
-			}
-		} else {
+		if (response == 1) ptz_power_is_on (ptz_thread);
+		else {
 			g_idle_add ((GSourceFunc)ptz_is_off, ptz);
 
 			g_mutex_lock (&ptz->other_ptz_mutex);
@@ -412,17 +459,17 @@ printf ("start_ptz %s (%s)\n", ptz->name, ptz->ip_address);
 				g_idle_add ((GSourceFunc)ptz_is_off, slist_itr->data);
 
 			g_mutex_unlock (&ptz->other_ptz_mutex);
-		}
-	}
 
-	g_idle_add_full (G_PRIORITY_LOW, (GSourceFunc)free_ptz_thread, ptz_thread, NULL);
+			g_idle_add_full (G_PRIORITY_LOW, (GSourceFunc)free_ptz_thread, ptz_thread, NULL);
+		}
+	} else g_idle_add_full (G_PRIORITY_LOW, (GSourceFunc)free_ptz_thread, ptz_thread, NULL);
 
 	return NULL;
 }
 
 gpointer switch_ptz_on (ptz_thread_t *ptz_thread)
 {
-	ptz_t *ptz = ptz_thread->ptz;
+	ptz_t *ptz = ptz_thread->pointer;
 
 	if (ptz->error_code == CAMERA_IS_UNREACHABLE_ERROR) send_update_start_cmd (ptz);
 
@@ -435,13 +482,15 @@ gpointer switch_ptz_on (ptz_thread_t *ptz_thread)
 
 gpointer switch_ptz_off (ptz_thread_t *ptz_thread)
 {
-	ptz_t *ptz = ptz_thread->ptz;
+	ptz_t *ptz = ptz_thread->pointer;
 
 	g_mutex_lock (&ptz->free_d_mutex);
 	ptz->monitor_pan_tilt = FALSE;
 	g_mutex_unlock (&ptz->free_d_mutex);
 
 	if (ptz->error_code == CAMERA_IS_UNREACHABLE_ERROR) send_update_start_cmd (ptz);
+
+	ptz->is_on = FALSE;
 
 	if (ptz->error_code != CAMERA_IS_UNREACHABLE_ERROR) send_ptz_control_command (ptz, "#O0", TRUE);
 
@@ -450,10 +499,18 @@ gpointer switch_ptz_off (ptz_thread_t *ptz_thread)
 	return NULL;
 }
 
+gboolean free_ptz_thread (ptz_thread_t *ptz_thread)
+{
+	g_thread_join (ptz_thread->thread);
+	g_free (ptz_thread);
+
+	return G_SOURCE_REMOVE;
+}
+
 gboolean name_drawing_area_button_press_event (GtkButton *widget, GdkEventButton *event, ptz_t *ptz)
 {
 	ultimatte_t *ultimatte;
-	ptz_thread_t *controller_thread;
+	ptz_thread_t *ptz_thread;
 
 	if (event->button == GDK_BUTTON_PRIMARY) {
 		ultimatte = ptz->ultimatte;
@@ -468,9 +525,9 @@ gboolean name_drawing_area_button_press_event (GtkButton *widget, GdkEventButton
 			ask_to_connect_ptz_to_ctrl_opv (ptz);
 
 			if (controller_is_used) {
-				controller_thread = g_malloc (sizeof (ptz_thread_t));
-				controller_thread->ptz = ptz;
-				controller_thread->thread = g_thread_new (NULL, (GThreadFunc)controller_switch_ptz, controller_thread);
+				ptz_thread = g_malloc (sizeof (ptz_thread_t));
+				ptz_thread->pointer = ptz;
+				ptz_thread->thread = g_thread_new (NULL, (GThreadFunc)controller_switch_ptz, ptz_thread);
 			}
 		}
 	}
@@ -532,8 +589,6 @@ name_grid                                       memories_grid
 */
 	int i;
 
-	ptz->name_separator = gtk_separator_new (GTK_ORIENTATION_HORIZONTAL);
-
 	ptz->name_grid = gtk_grid_new ();
 		ptz->tally[0] = gtk_drawing_area_new ();
 		gtk_widget_set_size_request (ptz->tally[0], 4, 4);
@@ -566,8 +621,6 @@ name_grid                                       memories_grid
 		gtk_widget_set_margin_bottom (ptz->tally[2], interface_default.memories_button_horizontal_margins);
 		g_signal_connect (G_OBJECT (ptz->tally[2]), "draw", G_CALLBACK (ptz_tally_draw), ptz);
 	gtk_grid_attach (GTK_GRID (ptz->name_grid), ptz->tally[2], 0, 2, 3, 1);
-
-	ptz->memories_separator = gtk_separator_new (GTK_ORIENTATION_HORIZONTAL);
 
 	ptz->memories_grid = gtk_grid_new ();
 		ptz->tally[3] = gtk_drawing_area_new ();
@@ -623,8 +676,6 @@ memories_grid
 */
 	int i;
 
-	ptz->name_separator = gtk_separator_new (GTK_ORIENTATION_VERTICAL);
-
 	ptz->name_grid = gtk_grid_new ();
 		ptz->tally[0] = gtk_drawing_area_new ();
 		gtk_widget_set_size_request (ptz->tally[0], 4, 4);
@@ -657,8 +708,6 @@ memories_grid
 		gtk_widget_set_margin_end (ptz->tally[2], interface_default.memories_button_vertical_margins);
 		g_signal_connect (G_OBJECT (ptz->tally[2]), "draw", G_CALLBACK (ptz_tally_draw), ptz);
 	gtk_grid_attach (GTK_GRID (ptz->name_grid), ptz->tally[2], 2, 0, 1, 3);
-
-	ptz->memories_separator = gtk_separator_new (GTK_ORIENTATION_VERTICAL);
 
 	ptz->memories_grid = gtk_grid_new ();
 		ptz->tally[3] = gtk_drawing_area_new ();
@@ -716,8 +765,6 @@ name_grid                    memories_grid
 |         tally[2]         | |      tally[4]      |        |
 +--------+-----------------+ +----            ----+--------+
 */
-	ptz->name_separator = gtk_separator_new (GTK_ORIENTATION_HORIZONTAL);
-
 	ptz->name_grid = gtk_grid_new ();
 		ptz->tally[0] = gtk_drawing_area_new ();
 		gtk_widget_set_size_request (ptz->tally[0], 4, 4);
@@ -739,8 +786,6 @@ name_grid                    memories_grid
 		gtk_widget_set_size_request (ptz->tally[2], 4, 4);
 		g_signal_connect (G_OBJECT (ptz->tally[2]), "draw", G_CALLBACK (ghost_ptz_tally_draw), ptz);
 	gtk_grid_attach (GTK_GRID (ptz->name_grid), ptz->tally[2], 0, 2, 2, 1);
-
-	ptz->memories_separator = gtk_separator_new (GTK_ORIENTATION_HORIZONTAL);
 
 	ptz->memories_grid = gtk_grid_new ();
 		ptz->tally[3] = gtk_drawing_area_new ();
@@ -785,8 +830,6 @@ memories_grid
 |             tally[5]              |
 +--------+-----------------+--------+
 */
-	ptz->name_separator = gtk_separator_new (GTK_ORIENTATION_VERTICAL);
-
 	ptz->name_grid = gtk_grid_new ();
 		ptz->tally[0] = gtk_drawing_area_new ();
 		gtk_widget_set_size_request (ptz->tally[0], 4, 4);
@@ -808,8 +851,6 @@ memories_grid
 		gtk_widget_set_size_request (ptz->tally[2], 4, 4);
 		g_signal_connect (G_OBJECT (ptz->tally[2]), "draw", G_CALLBACK (ghost_ptz_tally_draw), ptz);
 	gtk_grid_attach (GTK_GRID (ptz->name_grid), ptz->tally[2], 2, 1, 1, 1);
-
-	ptz->memories_separator = gtk_separator_new (GTK_ORIENTATION_VERTICAL);
 
 	ptz->memories_grid = gtk_grid_new ();
 		ptz->tally[3] = gtk_drawing_area_new ();

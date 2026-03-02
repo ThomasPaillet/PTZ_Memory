@@ -1,5 +1,5 @@
 /*
- * copyright (c) 2025 Thomas Paillet <thomas.paillet@net-c.fr>
+ * copyright (c) 2025 2026 Thomas Paillet <thomas.paillet@net-c.fr>
 
  * This file is part of PTZ-Memory.
 
@@ -27,8 +27,8 @@
 #define MEMORIES_NAME_LENGTH 18
 
 
-typedef struct {
-	gpointer ptz_ptr;
+typedef struct memory_s {
+	gpointer ptz;
 	int index;
 
 	gboolean empty;
@@ -52,13 +52,19 @@ typedef struct {
 	int name_len;
 } memory_t;
 
-typedef struct memory_thread_s {
-	memory_t *memory;
+typedef struct ptz_thread_s {
+	gpointer pointer;
 	GThread *thread;
-} memory_thread_t;
+} ptz_thread_t;
 
 
-gpointer load_memory (memory_thread_t *memory_thread);
+gpointer save_memory (ptz_thread_t *ptz_thread);
+
+gpointer load_memory (ptz_thread_t *ptz_thread);
+
+gpointer load_other_memory (ptz_thread_t *ptz_thread);
+
+void delete_memory (memory_t *memory);
 
 gboolean memory_button_button_press_event (GtkButton *button, GdkEventButton *event, memory_t *memory);
 

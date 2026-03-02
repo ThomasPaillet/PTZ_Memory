@@ -1,5 +1,5 @@
 /*
- * copyright (c) 2025 Thomas Paillet <thomas.paillet@net-c.fr>
+ * copyright (c) 2025 2026 Thomas Paillet <thomas.paillet@net-c.fr>
 
  * This file is part of PTZ-Memory.
 
@@ -23,7 +23,7 @@
 #include "logging.h"
 #include "protocol.h"
 
-#include <unistd.h>
+#include <unistd.h>	//usleep
 
 
 char free_d_output_ip_address[16] = { '\0' };
@@ -43,20 +43,6 @@ GThread *outgoing_free_d_thread = NULL;
 GThread *incomming_free_d_thread = NULL;
 
 
-void init_free_d (void)
-{
-	memset (&free_d_output_address, 0, sizeof (struct sockaddr_in));
-
-	free_d_output_address.sin_family = AF_INET;
-	free_d_output_address.sin_port = htons (FREE_D_UDP_PORT);
-
-	memset (&free_d_input_address, 0, sizeof (struct sockaddr_in));
-
-	free_d_input_address.sin_family = AF_INET;
-	free_d_input_address.sin_port = htons (FREE_D_UDP_PORT);
-	free_d_input_address.sin_addr.s_addr = inet_addr (my_ip_address);
-}
-
 gpointer send_free_d_message (void)
 {
 	gint64 last_time, current_time, elapsed_time;
@@ -65,6 +51,8 @@ gpointer send_free_d_message (void)
 	unsigned int checksum;
 	ptz_t *ptz;
 	gint32 value;
+
+	LOG_FREE_D_STRING("send_free_d_message ()")
 
 	free_d_message[0] = 0xD1;
 
@@ -83,7 +71,7 @@ gpointer send_free_d_message (void)
 				if (ptz->is_on) {
 					g_mutex_lock (&ptz->free_d_mutex);
 
-					free_d_message[1] = ptz->index;
+					free_d_message[1] = i + 1;
 
 					value = ptz->incomming_free_d_Pan + ptz->free_d_P + ptz->free_d_Pan;
 					while (value > 5898240) value -= 5898240;	//180 * 32768;
@@ -138,7 +126,7 @@ gpointer send_free_d_message (void)
 					for (checksum = 0x40, j = 0; j < 28; j++) checksum -= free_d_message[j];
 					free_d_message[28] = checksum % 256;
 
-					LOG_FREE_D_OUTGOING_MESSAGE(inet_ntoa (free_d_output_address.sin_addr),free_d_message,sizeof (free_d_message))
+					LOG_FREE_D_OUTGOING_MESSAGE(free_d_output_address.sin_addr,free_d_message,sizeof (free_d_message))
 
 					sendto (free_d_output_socket, (char *)free_d_message, sizeof (free_d_message), 0, (struct sockaddr *)&free_d_output_address, sizeof (struct sockaddr_in));
 				}
@@ -157,65 +145,9 @@ gpointer send_free_d_message (void)
 	shutdown (free_d_output_socket, SHUT_RD);
 	closesocket (free_d_output_socket);
 
+	LOG_FREE_D_STRING("send_free_d_message () return")
+
 	return NULL;
-}
-
-void start_outgoing_freed_d (void)
-{
-	GSList *slist_itr;
-	ptz_t *ptz;
-	ptz_thread_t *monitor_ptz_thread;
-
-	free_d_output_socket = socket (AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-
-	outgoing_free_d_started = TRUE;
-
-	g_mutex_lock (&cameras_sets_mutex);
-
-	for (slist_itr = ptz_slist; slist_itr != NULL; slist_itr = slist_itr->next) {
-		ptz = slist_itr->data;
-
-		if (ptz->is_on && (ptz->model == AW_HE130)) {
-			g_mutex_lock (&ptz->free_d_mutex);
-
-			ptz->monitor_pan_tilt = TRUE;
-
-			monitor_ptz_thread = g_malloc (sizeof (ptz_thread_t));
-			monitor_ptz_thread->ptz = ptz;
-			monitor_ptz_thread->thread = g_thread_new (NULL, (GThreadFunc)monitor_ptz_pan_tilt_position, monitor_ptz_thread);
-
-			g_mutex_unlock (&ptz->free_d_mutex);
-		}
-	}
-
-	g_mutex_unlock (&cameras_sets_mutex);
-
-	outgoing_free_d_thread = g_thread_new (NULL, (GThreadFunc)send_free_d_message, NULL);
-}
-
-void stop_outgoing_freed_d (void)
-{
-	GSList *slist_itr;
-	ptz_t *ptz;
-
-	outgoing_free_d_started = FALSE;
-
-	g_mutex_lock (&cameras_sets_mutex);
-
-	for (slist_itr = ptz_slist; slist_itr != NULL; slist_itr = slist_itr->next) {
-		ptz = slist_itr->data;
-
-		g_mutex_lock (&ptz->free_d_mutex);
-		ptz->monitor_pan_tilt = FALSE;
-		g_mutex_unlock (&ptz->free_d_mutex);
-	}
-
-	g_mutex_unlock (&cameras_sets_mutex);
-
-	if (outgoing_free_d_thread != NULL) {
-		g_thread_join (outgoing_free_d_thread);
-		outgoing_free_d_thread = NULL;
-	}
 }
 
 gpointer receive_free_d_message (void)
@@ -228,10 +160,12 @@ gpointer receive_free_d_message (void)
 	ptz_t *ptz;
 	unsigned char *value;
 
+	LOG_FREE_D_STRING("receive_free_d_message ()")
+
 	addrlen = sizeof (src_addr);
 
 	while ((msg_len = recvfrom (free_d_input_socket, (char *)free_d_message, sizeof (free_d_message), 0, (struct sockaddr *)&src_addr, &addrlen)) > 1) {
-		LOG_FREE_D_INCOMMING_MESSAGE(inet_ntoa (src_addr.sin_addr),free_d_message,msg_len)
+		LOG_FREE_D_INCOMMING_MESSAGE(src_addr.sin_addr,free_d_message,msg_len)
 
 		if (msg_len < 29) continue;
 
@@ -241,8 +175,8 @@ gpointer receive_free_d_message (void)
 
 		g_mutex_lock (&cameras_sets_mutex);
 
-		if ((current_cameras_set != NULL) && (free_d_message[1] < current_cameras_set->number_of_cameras)) {
-			ptz = current_cameras_set->cameras[(int)free_d_message[1]];
+		if ((current_cameras_set != NULL) && (free_d_message[1] != 0) && (free_d_message[1] <= current_cameras_set->number_of_cameras)) {
+			ptz = current_cameras_set->cameras[(int)free_d_message[1] - 1];
 
 			if (ptz->active) {
 				g_mutex_lock (&ptz->free_d_mutex);
@@ -288,11 +222,91 @@ gpointer receive_free_d_message (void)
 		addrlen = sizeof (src_addr);
 	}
 
+	LOG_FREE_D_STRING("receive_free_d_message () return")
+
 	return NULL;
+}
+
+void init_free_d (void)
+{
+	memset (&free_d_output_address, 0, sizeof (struct sockaddr_in));
+
+	free_d_output_address.sin_family = AF_INET;
+	free_d_output_address.sin_port = htons (FREE_D_UDP_PORT);
+
+	memset (&free_d_input_address, 0, sizeof (struct sockaddr_in));
+
+	free_d_input_address.sin_family = AF_INET;
+	free_d_input_address.sin_port = htons (FREE_D_UDP_PORT);
+	free_d_input_address.sin_addr.s_addr = inet_addr (my_ip_address);
+}
+
+void start_outgoing_freed_d (void)
+{
+	GSList *slist_itr;
+	ptz_t *ptz;
+	ptz_thread_t *monitor_ptz_thread;
+
+	LOG_FREE_D_STRING("start_outgoing_freed_d ()")
+
+	free_d_output_socket = socket (AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+
+	outgoing_free_d_started = TRUE;
+
+	g_mutex_lock (&cameras_sets_mutex);
+
+	for (slist_itr = ptz_slist; slist_itr != NULL; slist_itr = slist_itr->next) {
+		ptz = slist_itr->data;
+
+		if (ptz->is_on && (ptz->model == AW_HE130)) {
+			g_mutex_lock (&ptz->free_d_mutex);
+
+			ptz->monitor_pan_tilt = TRUE;
+
+			monitor_ptz_thread = g_malloc (sizeof (ptz_thread_t));
+			monitor_ptz_thread->pointer = ptz;
+			monitor_ptz_thread->thread = g_thread_new (NULL, (GThreadFunc)monitor_ptz_pan_tilt_position, monitor_ptz_thread);
+
+			g_mutex_unlock (&ptz->free_d_mutex);
+		}
+	}
+
+	g_mutex_unlock (&cameras_sets_mutex);
+
+	outgoing_free_d_thread = g_thread_new (NULL, (GThreadFunc)send_free_d_message, NULL);
+}
+
+void stop_outgoing_freed_d (void)
+{
+	GSList *slist_itr;
+	ptz_t *ptz;
+
+	LOG_FREE_D_STRING("stop_outgoing_freed_d ()")
+
+	outgoing_free_d_started = FALSE;
+
+	g_mutex_lock (&cameras_sets_mutex);
+
+	for (slist_itr = ptz_slist; slist_itr != NULL; slist_itr = slist_itr->next) {
+		ptz = slist_itr->data;
+
+		g_mutex_lock (&ptz->free_d_mutex);
+		ptz->monitor_pan_tilt = FALSE;
+		g_mutex_unlock (&ptz->free_d_mutex);
+	}
+
+	g_mutex_unlock (&cameras_sets_mutex);
+
+	if (outgoing_free_d_thread != NULL) {
+		g_thread_join (outgoing_free_d_thread);
+		outgoing_free_d_thread = NULL;
+	}
 }
 
 void start_incomming_free_d (void)
 {
+	LOG_FREE_D_STRING("start_incomming_free_d ()")
+
 	free_d_input_socket = socket (AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 	bind (free_d_input_socket, (struct sockaddr *)&free_d_input_address, sizeof (struct sockaddr_in));
 
@@ -301,6 +315,8 @@ void start_incomming_free_d (void)
 
 void stop_incomming_free_d (void)
 {
+	LOG_FREE_D_STRING("stop_incomming_free_d ()")
+
 	shutdown (free_d_input_socket, SHUT_RD);
 	closesocket (free_d_input_socket);
 

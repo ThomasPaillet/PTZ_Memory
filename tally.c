@@ -1,5 +1,5 @@
 /*
- * copyright (c) 2020 2021 2025 Thomas Paillet <thomas.paillet@net-c.fr>
+ * copyright (c) 2020 2021 2025 2026 Thomas Paillet <thomas.paillet@net-c.fr>
 
  * This file is part of PTZ-Memory.
 
@@ -260,15 +260,6 @@ gboolean control_window_name_draw (GtkWidget *widget, cairo_t *cr)
 	return GDK_EVENT_PROPAGATE;
 }
 
-void init_tally (void)
-{
-	memset (&tsl_umd_v5_address, 0, sizeof (struct sockaddr_in));
-
-	tsl_umd_v5_address.sin_family = AF_INET;
-	tsl_umd_v5_address.sin_port = htons (TSL_UMD_V5_UDP_PORT);
-	tsl_umd_v5_address.sin_addr.s_addr = inet_addr (my_ip_address);
-}
-
 /*
 typedef struct tsl_umd_v5_packet_s {
 	guint16 total_byte_count;
@@ -285,13 +276,21 @@ typedef struct tsl_umd_v5_packet_s {
 
 gpointer receive_tsl_umd_v5_packet (void)
 {
+	struct sockaddr_in src_addr;
+	socklen_t addrlen;
 	int size, ptr, i;
 	char packet[2048];
 	guint16 total_byte_count, index, control, length;
 	ptz_t *ptz;
 
-	while ((size = recv (tsl_umd_v5_socket, packet, 2048, 0)) > 1) {
-		LOG_TSL_UMD_V5_PACKET(packet)
+	LOG_TSL_UMD_V5_STRING("receive_tsl_umd_v5_packet ()")
+
+	addrlen = sizeof (src_addr);
+
+	while ((size = recvfrom (tsl_umd_v5_socket, packet, sizeof (packet), 0, (struct sockaddr *)&src_addr, &addrlen)) > 1) {
+		LOG_TSL_UMD_V5_PACKET(src_addr.sin_addr,packet)
+
+		g_mutex_lock (&cameras_sets_mutex);
 
 		if (current_cameras_set != NULL) {
 			total_byte_count = *((guint16 *)packet);
@@ -312,10 +311,12 @@ gpointer receive_tsl_umd_v5_packet (void)
 					else ptz->tally_brightness = 0.4;
 
 					if (control & 0x30) {
-						if (send_ip_tally && ptz->ip_address_is_valid && ptz->is_on && !ptz->tally_1_is_on) send_ptz_control_command (ptz, "#DA1", TRUE);
+						if (send_ip_tally && ptz->is_on && !ptz->tally_1_is_on) send_ptz_control_command (ptz, "#DA1", TRUE);
+
 						ptz->tally_1_is_on = TRUE;
 					} else {
-						if (send_ip_tally && ptz->ip_address_is_valid && ptz->is_on && ptz->tally_1_is_on) send_ptz_control_command (ptz, "#DA0", TRUE);
+						if (send_ip_tally && ptz->is_on && ptz->tally_1_is_on) send_ptz_control_command (ptz, "#DA0", TRUE);
+
 						ptz->tally_1_is_on = FALSE;
 					}
 
@@ -331,10 +332,12 @@ gpointer receive_tsl_umd_v5_packet (void)
 						else ptz->tally_brightness = 0.4;
 
 						if (control & 0x30) {
-							if (send_ip_tally && ptz->ip_address_is_valid && ptz->is_on && !ptz->tally_1_is_on) send_ptz_control_command (ptz, "#DA1", TRUE);
+							if (send_ip_tally && ptz->is_on && !ptz->tally_1_is_on) send_ptz_control_command (ptz, "#DA1", TRUE);
+
 							ptz->tally_1_is_on = TRUE;
 						} else {
-							if (send_ip_tally && ptz->ip_address_is_valid && ptz->is_on && ptz->tally_1_is_on) send_ptz_control_command (ptz, "#DA0", TRUE);
+							if (send_ip_tally && ptz->is_on && ptz->tally_1_is_on) send_ptz_control_command (ptz, "#DA0", TRUE);
+
 							ptz->tally_1_is_on = FALSE;
 						}
 
@@ -345,13 +348,30 @@ gpointer receive_tsl_umd_v5_packet (void)
 				ptr += 6 + length;
 			} while (ptr <= total_byte_count - 6);
 		}
+
+		g_mutex_unlock (&cameras_sets_mutex);
+
+		addrlen = sizeof (src_addr);
 	}
+
+	LOG_TSL_UMD_V5_STRING("receive_tsl_umd_v5_packet () return")
 
 	return NULL;
 }
 
+void init_tally (void)
+{
+	memset (&tsl_umd_v5_address, 0, sizeof (struct sockaddr_in));
+
+	tsl_umd_v5_address.sin_family = AF_INET;
+	tsl_umd_v5_address.sin_port = htons (TSL_UMD_V5_UDP_PORT);
+	tsl_umd_v5_address.sin_addr.s_addr = inet_addr (my_ip_address);
+}
+
 void start_tally (void)
 {
+	LOG_TSL_UMD_V5_STRING("start_tally ()")
+
 	tsl_umd_v5_socket = socket (AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 	bind (tsl_umd_v5_socket, (struct sockaddr *)&tsl_umd_v5_address, sizeof (struct sockaddr_in));
 
@@ -363,6 +383,8 @@ void stop_tally (void)
 	int i;
 	ptz_t *ptz;
 
+	LOG_TSL_UMD_V5_STRING("stop_tally ()")
+
 	shutdown (tsl_umd_v5_socket, SHUT_RD);
 	closesocket (tsl_umd_v5_socket);
 
@@ -371,12 +393,18 @@ void stop_tally (void)
 		tsl_umd_v5_thread = NULL;
 	}
 
-	if (send_ip_tally && (current_cameras_set != NULL)) {
-		for (i = 0; i < current_cameras_set->number_of_cameras; i++) {
-			ptz = current_cameras_set->cameras[i];
+	if (send_ip_tally) {
+		g_mutex_lock (&cameras_sets_mutex);
 
-			if (ptz->ip_address_is_valid && ptz->is_on && ptz->tally_1_is_on) send_ptz_control_command (ptz, "#DA0", TRUE);
+		if (current_cameras_set != NULL) {
+			for (i = 0; i < current_cameras_set->number_of_cameras; i++) {
+				ptz = current_cameras_set->cameras[i];
+
+				if (ptz->is_on && ptz->tally_1_is_on) send_ptz_control_command (ptz, "#DA0", TRUE);
+			}
 		}
+
+		g_mutex_unlock (&cameras_sets_mutex);
 	}
 }
 

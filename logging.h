@@ -1,5 +1,5 @@
 /*
- * copyright (c) 2025 Thomas Paillet <thomas.paillet@net-c.fr>
+ * copyright (c) 2025 2026 Thomas Paillet <thomas.paillet@net-c.fr>
 
  * This file is part of PTZ-Memory.
 
@@ -26,179 +26,278 @@
 #include <stdio.h>
 
 
-#define LOG_PANASONIC_INT(i) if (logging && log_panasonic) { \
+#define LOG_PANASONIC_INT(i) \
+if (logging && log_panasonic) { \
 	g_mutex_lock (&logging_mutex); \
 	log_int (__FILE__, i, panasonic_log_file); \
 	g_mutex_unlock (&logging_mutex); \
-	}
+}
 
-#define LOG_SW_P_08_INT(i) if (logging && log_sw_p_08) { \
+#define LOG_SW_P_08_INT(i) \
+if (logging && log_sw_p_08) { \
 	g_mutex_lock (&logging_mutex); \
 	log_int (__FILE__, i, sw_p_08_log_file); \
 	g_mutex_unlock (&logging_mutex); \
-	}
+}
 
-#define LOG_TSL_UMD_V5_INT(i) if (logging && log_tsl_umd_v5) { \
+#define LOG_TSL_UMD_V5_INT(i) \
+if (logging && log_tsl_umd_v5) { \
 	g_mutex_lock (&logging_mutex); \
 	log_int (__FILE__, i, tsl_umd_v5_log_file); \
 	g_mutex_unlock (&logging_mutex); \
-	}
+}
 
-#define LOG_ULTIMATTE_INT(i) if (logging && log_ultimatte) { \
+#define LOG_OSC_INT(i) \
+if (logging && log_osc) { \
+	g_mutex_lock (&logging_mutex); \
+	log_int (__FILE__, i, osc_log_file); \
+	g_mutex_unlock (&logging_mutex); \
+}
+
+#define LOG_ULTIMATTE_INT(i) \
+if (logging && log_ultimatte) { \
 	g_mutex_lock (&logging_mutex); \
 	log_int (__FILE__, i, ultimatte_log_file); \
 	g_mutex_unlock (&logging_mutex); \
-	}
+}
 
-#define LOG_FREE_D_INT(i) if (logging && log_free_d) { \
+#define LOG_FREE_D_INT(i) \
+if (logging && log_free_d) { \
 	g_mutex_lock (&logging_mutex); \
 	log_int (__FILE__, i, free_d_log_file); \
 	g_mutex_unlock (&logging_mutex); \
-	}
+}
 
-#define LOG_PANASONIC_STRING(s) if (logging && log_panasonic) { \
+#define LOG_PANASONIC_STRING(s) \
+if (logging && log_panasonic) { \
 	g_mutex_lock (&logging_mutex); \
 	log_string (__FILE__, s, panasonic_log_file); \
 	g_mutex_unlock (&logging_mutex); \
-	}
+}
 
-#define LOG_SW_P_08_STRING(s) if (logging && log_sw_p_08) { \
+#define LOG_SW_P_08_STRING(s) \
+if (logging && log_sw_p_08) { \
 	g_mutex_lock (&logging_mutex); \
 	log_string (__FILE__, s, sw_p_08_log_file); \
 	g_mutex_unlock (&logging_mutex); \
-	}
+}
 
-#define LOG_TSL_UMD_V5_STRING(s) if (logging && log_tsl_umd_v5) { \
+#define LOG_TSL_UMD_V5_STRING(s) \
+if (logging && log_tsl_umd_v5) { \
 	g_mutex_lock (&logging_mutex); \
 	log_string (__FILE__, s, tsl_umd_v5_log_file); \
 	g_mutex_unlock (&logging_mutex); \
-	}
+}
 
-#define LOG_ULTIMATTE_STRING(s) if (logging && log_ultimatte) { \
+#define LOG_OSC_STRING(s) \
+if (logging && log_osc) { \
+	g_mutex_lock (&logging_mutex); \
+	log_string (__FILE__, s, osc_log_file); \
+	g_mutex_unlock (&logging_mutex); \
+}
+
+#define LOG_ULTIMATTE_STRING(s) \
+if (logging && log_ultimatte) { \
 	g_mutex_lock (&logging_mutex); \
 	log_string (__FILE__, s, ultimatte_log_file); \
 	g_mutex_unlock (&logging_mutex); \
-	}
+}
 
-#define LOG_FREE_D_STRING(s) if (logging && log_free_d) { \
+#define LOG_FREE_D_STRING(s) \
+if (logging && log_free_d) { \
 	g_mutex_lock (&logging_mutex); \
 	log_string (__FILE__, s, free_d_log_file); \
 	g_mutex_unlock (&logging_mutex); \
-	}
+}
 
-#define LOG_PANASONIC_2_STRINGS(s,t) if (logging && log_panasonic) { \
+#define LOG_PANASONIC_2_STRINGS(s,t) \
+if (logging && log_panasonic) { \
 	g_mutex_lock (&logging_mutex); \
 	log_2_strings (__FILE__, s, t, panasonic_log_file); \
 	g_mutex_unlock (&logging_mutex); \
-	}
+}
 
-#define LOG_SW_P_08_2_STRINGS(s,t) if (logging && log_sw_p_08) { \
+#define LOG_SW_P_08_2_STRINGS(s,t) \
+if (logging && log_sw_p_08) { \
 	g_mutex_lock (&logging_mutex); \
 	log_2_strings (__FILE__, s, t, sw_p_08_log_file); \
 	g_mutex_unlock (&logging_mutex); \
-	}
+}
 
-#define LOG_TSL_UMD_V5_2_STRINGS(s,t) if (logging && log_tsl_umd_v5) { \
+#define LOG_TSL_UMD_V5_2_STRINGS(s,t) \
+if (logging && log_tsl_umd_v5) { \
 	g_mutex_lock (&logging_mutex); \
 	log_2_strings (__FILE__, s, t, tsl_umd_v5_log_file); \
 	g_mutex_unlock (&logging_mutex); \
-	}
+}
 
-#define LOG_ULTIMATTE_2_STRINGS(s,t) if (logging && log_ultimatte) { \
+#define LOG_OSC_2_STRINGS(s,t) \
+if (logging && log_osc) { \
+	g_mutex_lock (&logging_mutex); \
+	log_2_strings (__FILE__, s, t, osc_log_file); \
+	g_mutex_unlock (&logging_mutex); \
+}
+
+#define LOG_ULTIMATTE_2_STRINGS(s,t) \
+if (logging && log_ultimatte) { \
 	g_mutex_lock (&logging_mutex); \
 	log_2_strings (__FILE__, s, t, ultimatte_log_file); \
 	g_mutex_unlock (&logging_mutex); \
-	}
+}
 
-#define LOG_FREE_D_2_STRINGS(s,t) if (logging && log_free_d) { \
+#define LOG_FREE_D_2_STRINGS(s,t) \
+if (logging && log_free_d) { \
 	g_mutex_lock (&logging_mutex); \
 	log_2_strings (__FILE__, s, t, free_d_log_file); \
 	g_mutex_unlock (&logging_mutex); \
-	}
+}
 
-#define LOG_PANASONIC_STRING_INT(s,i) if (logging && log_panasonic) { \
+#define LOG_PANASONIC_STRING_INT(s,i) \
+if (logging && log_panasonic) { \
 	g_mutex_lock (&logging_mutex); \
 	log_string_int (__FILE__, s, i, panasonic_log_file); \
 	g_mutex_unlock (&logging_mutex); \
-	}
+}
 
-#define LOG_SW_P_08_STRING_INT(s,i) if (logging && log_sw_p_08) { \
+#define LOG_SW_P_08_STRING_INT(s,i) \
+if (logging && log_sw_p_08) { \
 	g_mutex_lock (&logging_mutex); \
 	log_string_int (__FILE__, s, i, sw_p_08_log_file); \
 	g_mutex_unlock (&logging_mutex); \
-	}
+}
 
-#define LOG_TSL_UMD_V5_STRING_INT(s,i) if (logging && log_tsl_umd_v5) { \
+#define LOG_TSL_UMD_V5_STRING_INT(s,i) \
+if (logging && log_tsl_umd_v5) { \
 	g_mutex_lock (&logging_mutex); \
 	log_string_int (__FILE__, s, i, tsl_umd_v5_log_file); \
 	g_mutex_unlock (&logging_mutex); \
-	}
+}
 
-#define LOG_ULTIMATTE_STRING_INT(s,i) if (logging && log_ultimatte) { \
+#define LOG_OSC_STRING_INT(s,i) \
+if (logging && log_osc) { \
+	g_mutex_lock (&logging_mutex); \
+	log_string_int (__FILE__, s, i, osc_log_file); \
+	g_mutex_unlock (&logging_mutex); \
+}
+
+#define LOG_ULTIMATTE_STRING_INT(s,i) \
+if (logging && log_ultimatte) { \
 	g_mutex_lock (&logging_mutex); \
 	log_string_int (__FILE__, s, i, ultimatte_log_file); \
 	g_mutex_unlock (&logging_mutex); \
-	}
+}
 
-#define LOG_FREE_D_STRING_INT(s,i) if (logging && log_free_d) { \
+#define LOG_FREE_D_STRING_INT(s,i) \
+if (logging && log_free_d) { \
 	g_mutex_lock (&logging_mutex); \
 	log_string_int (__FILE__, s, i, free_d_log_file); \
 	g_mutex_unlock (&logging_mutex); \
-	}
+}
 
-#define LOG_PTZ_STRING(s) if (logging && log_panasonic) { \
+#define LOG_PTZ_STRING(s) \
+if (logging && log_panasonic) { \
 	g_mutex_lock (&logging_mutex); \
 	log_ptz_string (__FILE__, ptz, s); \
 	g_mutex_unlock (&logging_mutex); \
-	}
+}
 
-#define LOG_PTZ_COMMAND(c) if (logging && log_panasonic) { \
+#define LOG_PTZ_2_STRINGS(s,t) \
+if (logging && log_panasonic) { \
+	g_mutex_lock (&logging_mutex); \
+	log_ptz_2_strings (__FILE__, ptz, s, t); \
+	g_mutex_unlock (&logging_mutex); \
+}
+
+#define LOG_PTZ_STRING_INT(s,i) \
+if (logging && log_panasonic) { \
+	g_mutex_lock (&logging_mutex); \
+	log_ptz_string_int (__FILE__, ptz, s, i); \
+	g_mutex_unlock (&logging_mutex); \
+}
+
+#define LOG_PTZ_COMMAND(c) \
+if (logging && log_panasonic) { \
 	g_mutex_lock (&logging_mutex); \
 	log_ptz_command (__FILE__, ptz, c); \
 	g_mutex_unlock (&logging_mutex); \
-	}
+}
 
-#define LOG_PTZ_RESPONSE(r,l) if (logging && log_panasonic) { \
+#define LOG_PTZ_RESPONSE(r,l) \
+if (logging && log_panasonic) { \
 	g_mutex_lock (&logging_mutex); \
 	log_ptz_response (__FILE__, ptz, r, l); \
 	g_mutex_unlock (&logging_mutex); \
-	}
+}
 
-#define LOG_PTZ_ERROR(s) if (logging && log_panasonic) { \
+#define LOG_PTZ_UPDATE_NOTIFICATION(a,u) \
+if (logging && log_panasonic) { \
+	g_mutex_lock (&logging_mutex); \
+	log_ptz_update_notification (__FILE__, inet_ntoa (a), u); \
+	g_mutex_unlock (&logging_mutex); \
+}
+
+#define LOG_PTZ_ERROR(s) \
+if (logging && log_panasonic) { \
 	g_mutex_lock (&logging_mutex); \
 	log_ptz_error (__FILE__, ptz, s); \
 	g_mutex_unlock (&logging_mutex); \
-	}
+}
 
-#define LOG_SW_P_08_OUTGOING_MESSAGE(a,m,s) if (logging && log_sw_p_08) { \
+#define LOG_SW_P_08_OUTGOING_MESSAGE(a,m,s) \
+if (logging && log_sw_p_08) { \
 	g_mutex_lock (&logging_mutex); \
 	log_sw_p_08_outgoing_message (__FILE__, a, m, s); \
 	g_mutex_unlock (&logging_mutex); \
-	}
+}
 
-#define LOG_SW_P_08_INCOMMING_MESSAGE(a,m,s) if (logging && log_sw_p_08) { \
+#define LOG_SW_P_08_INCOMMING_MESSAGE(a,m,s) \
+if (logging && log_sw_p_08) { \
 	g_mutex_lock (&logging_mutex); \
 	log_sw_p_08_incomming_message (__FILE__, a, m, s); \
 	g_mutex_unlock (&logging_mutex); \
-	}
+}
 
-#define LOG_TSL_UMD_V5_PACKET(p) if (logging && log_tsl_umd_v5) { \
+#define LOG_TSL_UMD_V5_PACKET(a,p) \
+if (logging && log_tsl_umd_v5) { \
 	g_mutex_lock (&logging_mutex); \
-	log_tsl_umd_v5_packet (p); \
+	log_tsl_umd_v5_packet (inet_ntoa (a), p); \
 	g_mutex_unlock (&logging_mutex); \
-	}
+}
 
-#define LOG_FREE_D_OUTGOING_MESSAGE(a,m,s) if (logging && log_free_d) { \
+#define LOG_OSC_PACKET(a,p,s) \
+if (logging && log_osc) { \
 	g_mutex_lock (&logging_mutex); \
-	log_free_d_outgoing_message(__FILE__, a, m, s); \
+	log_osc_packet (inet_ntoa (a), p, s); \
 	g_mutex_unlock (&logging_mutex); \
-	}
+}
 
-#define LOG_FREE_D_INCOMMING_MESSAGE(a,m,s) if (logging && log_free_d) { \
+#define LOG_ULTIMATE_COMMAND(a,c,s) \
+if (logging && log_ultimatte) { \
 	g_mutex_lock (&logging_mutex); \
-	log_free_d_incomming_message(__FILE__, a, m, s); \
+	log_ultimatte_command (__FILE__, a, c, s); \
 	g_mutex_unlock (&logging_mutex); \
-	}
+}
+
+#define LOG_ULTIMATE_MESSAGE(m,s) \
+if (logging && log_ultimatte) { \
+	g_mutex_lock (&logging_mutex); \
+	log_ultimatte_message (m, s); \
+	g_mutex_unlock (&logging_mutex); \
+}
+
+#define LOG_FREE_D_OUTGOING_MESSAGE(a,m,s) \
+if (logging && log_free_d) { \
+	g_mutex_lock (&logging_mutex); \
+	log_free_d_outgoing_message(__FILE__, inet_ntoa (a), m, s); \
+	g_mutex_unlock (&logging_mutex); \
+}
+
+#define LOG_FREE_D_INCOMMING_MESSAGE(a,m,s) \
+if (logging && log_free_d) { \
+	g_mutex_lock (&logging_mutex); \
+	log_free_d_incomming_message(__FILE__, inet_ntoa (a), m, s); \
+	g_mutex_unlock (&logging_mutex); \
+}
 
 
 extern gboolean logging;
@@ -206,6 +305,7 @@ extern gboolean logging;
 extern gboolean log_panasonic;
 extern gboolean log_sw_p_08;
 extern gboolean log_tsl_umd_v5;
+extern gboolean log_osc;
 extern gboolean log_ultimatte;
 extern gboolean log_free_d;
 
@@ -216,6 +316,7 @@ extern GMutex logging_mutex;
 extern FILE *panasonic_log_file;
 extern FILE *sw_p_08_log_file;
 extern FILE *tsl_umd_v5_log_file;
+extern FILE *osc_log_file;
 extern FILE *ultimatte_log_file;
 extern FILE *free_d_log_file;
 
@@ -229,6 +330,10 @@ void log_2_strings (const char *c_source_filename, const char *str1, const char 
 void log_string_int (const char *c_source_filename, const char *str, int i, FILE *log_file);
 
 void log_ptz_string (const char *c_source_filename, ptz_t *ptz, const char *str);
+
+void log_ptz_2_strings (const char *c_source_filename, ptz_t *ptz, const char *str1, const char *str2);
+
+void log_ptz_string_int (const char *c_source_filename, ptz_t *ptz, const char *str, int i);
 
 void log_ptz_command (const char *c_source_filename, ptz_t *ptz, const char *cmd);
 
@@ -246,7 +351,9 @@ void log_sw_p_08_outgoing_message (const char *c_source_filename, const char *ip
 
 void log_sw_p_08_incomming_message (const char *c_source_filename, const char *ip_address, const char *sw_p_08_message, int len);
 
-void log_tsl_umd_v5_packet (const char *packet);
+void log_tsl_umd_v5_packet (const char *ip_address, const char *packet);
+
+void log_osc_packet (const char *ip_address, const char *packet, int size);
 
 void log_ultimatte_command (const char *c_source_filename, const char *ip_address, const char *ultimatte_command, int len);
 
@@ -266,6 +373,8 @@ void start_sw_p_08_log (void);
 
 void start_tsl_umd_v5_log (void);
 
+void start_osc_log (void);
+
 void start_ultimatte_log (void);
 
 void start_free_d_log (void);
@@ -277,6 +386,8 @@ void stop_panasonic_log (void);
 void stop_sw_p_08_log (void);
 
 void stop_tsl_umd_v5_log (void);
+
+void stop_osc_log (void);
 
 void stop_ultimatte_log (void);
 

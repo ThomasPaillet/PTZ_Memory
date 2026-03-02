@@ -1,5 +1,5 @@
 /*
- * copyright (c) 2025 Thomas Paillet <thomas.paillet@net-c.fr>
+ * copyright (c) 2025 2026 Thomas Paillet <thomas.paillet@net-c.fr>
 
  * This file is part of PTZ-Memory.
 
@@ -35,14 +35,6 @@ GtkWidget *memory_name_window;
 GtkEntryBuffer *memory_name_entry_buffer;
 
 
-gboolean free_memory_thread (memory_thread_t *memory_thread)
-{
-	g_thread_join (memory_thread->thread);
-	g_free (memory_thread);
-
-	return G_SOURCE_REMOVE;
-}
-
 gboolean update_button (memory_t *memory)
 {
 	if (memory->image == NULL) {
@@ -59,12 +51,14 @@ gboolean update_button (memory_t *memory)
 	return G_SOURCE_REMOVE;
 }
 
-gpointer save_memory (memory_thread_t *memory_thread)
+gpointer save_memory (ptz_thread_t *ptz_thread)
 {
-	memory_t *memory = memory_thread->memory;
-	ptz_t *ptz = memory->ptz_ptr;
+	memory_t *memory = ptz_thread->pointer;
+	ptz_t *ptz = memory->ptz;
 	char buf[128];
 	int len;
+
+	LOG_PTZ_STRING_INT("Save memory ",memory->index + 1)
 
 	if (ptz->model == AW_UE150) send_thumbnail_640_request_cmd (memory);
 	else send_thumbnail_320_request_cmd (memory);
@@ -88,10 +82,8 @@ gpointer save_memory (memory_thread_t *memory_thread)
 	memory->focus_position_hexa[1] = ptz->focus_position_cmd[5];
 	memory->focus_position_hexa[2] = ptz->focus_position_cmd[6];
 
-	LOG_PTZ_STRING("Save zoom_position")
-	LOG_PTZ_STRING(ptz->zoom_position_cmd)
-	LOG_PTZ_STRING("Save focus_position")
-	LOG_PTZ_STRING(ptz->focus_position_cmd)
+	LOG_PTZ_2_STRINGS("Save zoom_position ",ptz->zoom_position_cmd)
+	LOG_PTZ_2_STRINGS("Save focus_position ",ptz->focus_position_cmd)
 
 	g_mutex_unlock (&ptz->lens_information_mutex);
 
@@ -112,14 +104,10 @@ gpointer save_memory (memory_thread_t *memory_thread)
 	}
 
 	if ((ptz->ultimatte != NULL) && ptz->ultimatte->connected) {
-		len = sprintf (buf, "FILE:\nSave: %s %s %d\n\n", current_cameras_set->name, ptz->name, memory->index);
+		len = sprintf (buf, "FILE:\nSave: %s %s %d\n\n", ((cameras_set_t *)ptz->cameras_set)->name, ptz->name, memory->index + 1);
 		send (ptz->ultimatte->socket, buf, len, 0);
 
-		if (logging && log_ultimatte) {
-			g_mutex_lock (&logging_mutex);
-			log_ultimatte_command (__FILE__, ptz->ultimatte->ip_address, buf, len);
-			g_mutex_unlock (&logging_mutex);
-		}
+		LOG_ULTIMATE_COMMAND(ptz->ultimatte->ip_address,buf,len)
 	}
 
 	send_ptz_request_command_string (ptz, "#APC", buf);
@@ -133,52 +121,50 @@ gpointer save_memory (memory_thread_t *memory_thread)
 	memory->pan_tilt_position_cmd[11] = buf[10];
 
 	g_idle_add ((GSourceFunc)update_button, memory);
-	g_idle_add ((GSourceFunc)free_memory_thread, memory_thread);
+	g_idle_add_full (G_PRIORITY_LOW, (GSourceFunc)free_ptz_thread, ptz_thread, NULL);
 
 	backup_needed = TRUE;
 
 	return NULL;
 }
 
-gpointer load_memory (memory_thread_t *memory_thread)
+gpointer load_memory (ptz_thread_t *ptz_thread)
 {
-	memory_t *memory = memory_thread->memory;
-	ptz_t *ptz = memory->ptz_ptr;
+	memory_t *memory = ptz_thread->pointer;
+	ptz_t *ptz = memory->ptz;
 	ptz_thread_t *controller_thread;
 	char buf[128];
 	int len;
 
-	LOG_PTZ_STRING("Load memory")
+	LOG_PTZ_STRING_INT("Load memory ",memory->index + 1)
 
 	send_ptz_control_command (ptz, memory->pan_tilt_position_cmd, TRUE);
 
 	if (controller_is_used) {
 		controller_thread = g_malloc (sizeof (ptz_thread_t));
-		controller_thread->ptz = ptz;
+		controller_thread->pointer = ptz;
 		controller_thread->thread = g_thread_new (NULL, (GThreadFunc)controller_switch_ptz, controller_thread);
 	}
 
 	if (memory != ptz->previous_loaded_memory) {
 		memory->is_loaded = TRUE;
 		gtk_widget_queue_draw (memory->button);
-	
+
 		if (ptz->previous_loaded_memory != NULL) {
 			ptz->previous_loaded_memory->is_loaded = FALSE;
 			gtk_widget_queue_draw (ptz->previous_loaded_memory->button);
 		}
-	
+
 		ptz->previous_loaded_memory = memory;
 	}
 
+	tell_memory_is_selected (memory->index);
+
 	if ((ptz->ultimatte != NULL) && ptz->ultimatte->connected) {
-		len = sprintf (buf, "FILE:\nLoad: %s %s %d\n\n", current_cameras_set->name, ptz->name, memory->index);
+		len = sprintf (buf, "FILE:\nLoad: %s %s %d\n\n", ((cameras_set_t *)ptz->cameras_set)->name, ptz->name, memory->index + 1);
 		send (ptz->ultimatte->socket, buf, len, 0);
 
-		if (logging && log_ultimatte) {
-			g_mutex_lock (&logging_mutex);
-			log_ultimatte_command (__FILE__, ptz->ultimatte->ip_address, buf, len);
-			g_mutex_unlock (&logging_mutex);
-		}
+		LOG_ULTIMATE_COMMAND(ptz->ultimatte->ip_address,buf,len)
 	}
 
 	g_mutex_lock (&ptz->lens_information_mutex);
@@ -204,52 +190,47 @@ gpointer load_memory (memory_thread_t *memory_thread)
 	g_mutex_unlock (&ptz->lens_information_mutex);
 
 	g_signal_handler_unblock (memory->button, memory->button_handler_id);
-	g_idle_add ((GSourceFunc)free_memory_thread, memory_thread);
+	g_idle_add_full (G_PRIORITY_LOW, (GSourceFunc)free_ptz_thread, ptz_thread, NULL);
 
 	return NULL;
 }
 
 gboolean release_memory_button (memory_t *memory)
 {
-//	gtk_widget_unset_state_flags (memory->button, GTK_STATE_FLAG_ACTIVE);
 	gtk_widget_unset_state_flags (memory->button, GTK_STATE_FLAG_PRELIGHT);
 	g_signal_handler_unblock (memory->button, memory->button_handler_id);
 
 	return G_SOURCE_REMOVE;
 }
 
-gpointer load_other_memory (memory_thread_t *memory_thread)
+gpointer load_other_memory (ptz_thread_t *ptz_thread)
 {
-	memory_t *memory = memory_thread->memory;
-	ptz_t *ptz = memory->ptz_ptr;
+	memory_t *memory = ptz_thread->pointer;
+	ptz_t *ptz = memory->ptz;
 	char buf[128];
 	int len;
 
-	LOG_PTZ_STRING("Load other memory")
+	LOG_PTZ_STRING_INT("Load other memory ",memory->index + 1)
 
 	send_ptz_control_command (ptz, memory->pan_tilt_position_cmd, TRUE);
 
 	if (memory != ptz->previous_loaded_memory) {
 		memory->is_loaded = TRUE;
 		gtk_widget_queue_draw (memory->button);
-	
+
 		if (ptz->previous_loaded_memory != NULL) {
 			ptz->previous_loaded_memory->is_loaded = FALSE;
 			gtk_widget_queue_draw (ptz->previous_loaded_memory->button);
 		}
-	
+
 		ptz->previous_loaded_memory = memory;
 	}
 
 	if ((ptz->ultimatte != NULL) && ptz->ultimatte->connected) {
-		len = sprintf (buf, "FILE:\nLoad: %s %s %d\n\n", current_cameras_set->name, ptz->name, memory->index);
+		len = sprintf (buf, "FILE:\nLoad: %s %s %d\n\n", ((cameras_set_t *)ptz->cameras_set)->name, ptz->name, memory->index + 1);
 		send (ptz->ultimatte->socket, buf, len, 0);
 
-		if (logging && log_ultimatte) {
-			g_mutex_lock (&logging_mutex);
-			log_ultimatte_command (__FILE__, ptz->ultimatte->ip_address, buf, len);
-			g_mutex_unlock (&logging_mutex);
-		}
+		LOG_ULTIMATE_COMMAND(ptz->ultimatte->ip_address,buf,len)
 	}
 
 	g_mutex_lock (&ptz->lens_information_mutex);
@@ -275,18 +256,51 @@ gpointer load_other_memory (memory_thread_t *memory_thread)
 	g_mutex_unlock (&ptz->lens_information_mutex);
 
 	g_idle_add ((GSourceFunc)release_memory_button, memory);
-	g_idle_add ((GSourceFunc)free_memory_thread, memory_thread);
+	g_idle_add_full (G_PRIORITY_LOW, (GSourceFunc)free_ptz_thread, ptz_thread, NULL);
 
 	return NULL;
 }
 
-gboolean memory_button_button_press_event (GtkButton *button, GdkEventButton *event, memory_t *memory)
+void delete_memory (memory_t *memory)
 {
-	memory_thread_t *memory_thread;
-	int i;
-	ptz_t *ptz;
+	ptz_t *ptz = memory->ptz;
 	char buf[128];
 	int len;
+
+	memory->empty = TRUE;
+	ptz->number_of_memories--;
+
+	memory->name[0] = '\0';
+	memory->name_len = 0;
+
+	gtk_widget_destroy (memory->image);
+	memory->image = NULL;
+
+	if (ptz->previous_loaded_memory == memory) {
+		ptz->previous_loaded_memory = NULL;
+		memory->is_loaded = FALSE;
+		gtk_widget_queue_draw (memory->button);
+	}
+
+	g_object_unref (G_OBJECT (memory->full_pixbuf));
+	if (interface_default.thumbnail_width != 320) g_object_unref (G_OBJECT (memory->scaled_pixbuf));
+
+	if ((ptz->ultimatte != NULL) && ptz->ultimatte->connected) {
+		len = sprintf (buf, "FILE:\nDelete: %s %s %d\n\n", ((cameras_set_t *)ptz->cameras_set)->name, ptz->name, memory->index + 1);
+		send (ptz->ultimatte->socket, buf, len, 0);
+
+		LOG_ULTIMATE_COMMAND(ptz->ultimatte->ip_address,buf,len)
+	}
+
+	backup_needed = TRUE;
+}
+
+gboolean memory_button_button_press_event (GtkButton *button, GdkEventButton *event, memory_t *memory)
+{
+	ptz_thread_t *ptz_thread;
+	int i;
+	ptz_t *ptz;
+	memory_t *other_memory;
 
 	if (event->button != GDK_BUTTON_PRIMARY) {
 		if (!memory->empty) {
@@ -302,47 +316,15 @@ gboolean memory_button_button_press_event (GtkButton *button, GdkEventButton *ev
 	}
 
 	if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (delete_toggle_button))) {
-		if (!memory->empty) {
-			ptz = memory->ptz_ptr;
-
-			memory->empty = TRUE;
-			ptz->number_of_memories--;
-
-			memory->name[0] = '\0';
-			memory->name_len = 0;
-
-			if (ptz->previous_loaded_memory == memory) {
-				ptz->previous_loaded_memory = NULL;
-				memory->is_loaded = FALSE;
-			}
-
-			gtk_widget_destroy (memory->image);
-			memory->image = NULL;
-
-			g_object_unref (G_OBJECT (memory->full_pixbuf));
-			if (interface_default.thumbnail_width != 320) g_object_unref (G_OBJECT (memory->scaled_pixbuf));
-
-			if ((ptz->ultimatte != NULL) && ptz->ultimatte->connected) {
-				len = sprintf (buf, "FILE:\nDelete: %s %s %d\n\n", current_cameras_set->name, ptz->name, memory->index);
-				send (ptz->ultimatte->socket, buf, len, 0);
-
-				if (logging && log_ultimatte) {
-					g_mutex_lock (&logging_mutex);
-					log_ultimatte_command (__FILE__, ptz->ultimatte->ip_address, buf, len);
-					g_mutex_unlock (&logging_mutex);
-				}
-			}
-
-			backup_needed = TRUE;
-		}
+		if (!memory->empty) delete_memory (memory);
 
 		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (delete_toggle_button), FALSE);
 	} else if (memory->empty || gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (store_toggle_button))) {
 		g_signal_handler_block (memory->button, memory->button_handler_id);
 
-		memory_thread = g_malloc (sizeof (memory_thread_t));
-		memory_thread->memory = memory;
-		memory_thread->thread = g_thread_new (NULL, (GThreadFunc)save_memory, memory_thread);
+		ptz_thread = g_malloc (sizeof (ptz_thread_t));
+		ptz_thread->pointer = memory;
+		ptz_thread->thread = g_thread_new (NULL, (GThreadFunc)save_memory, ptz_thread);
 
 		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (store_toggle_button), FALSE);
 	} else {
@@ -350,33 +332,34 @@ gboolean memory_button_button_press_event (GtkButton *button, GdkEventButton *ev
 			for (i = 0; i < current_cameras_set->number_of_cameras; i++) {
 				ptz = current_cameras_set->cameras[i];
 
-				if (ptz->ip_address_is_valid && ptz->is_on && !ptz->memories[memory->index].empty) {
-					if (ptz->memories + memory->index == memory) {
-						g_signal_handler_block (memory->button, memory->button_handler_id);
+				if (ptz->is_on) {
+					other_memory = ptz->memories + memory->index;
 
-						memory_thread = g_malloc (sizeof (memory_thread_t));
-						memory_thread->memory = memory;
-						memory_thread->thread = g_thread_new (NULL, (GThreadFunc)load_memory, memory_thread);
-					} else {
-//						gtk_widget_set_state_flags (ptz->memories[memory->index].button, GTK_STATE_FLAG_ACTIVE, FALSE);
-						gtk_widget_set_state_flags (ptz->memories[memory->index].button, GTK_STATE_FLAG_PRELIGHT, FALSE);
-						g_signal_handler_block (ptz->memories[memory->index].button, ptz->memories[memory->index].button_handler_id);
+					if (!other_memory->empty) {
+						if (other_memory == memory) {
+							g_signal_handler_block (memory->button, memory->button_handler_id);
 
-						memory_thread = g_malloc (sizeof (ptz_thread_t));
-						memory_thread->memory = ptz->memories + memory->index;
-						memory_thread->thread = g_thread_new (NULL, (GThreadFunc)load_other_memory, memory_thread);
+							ptz_thread = g_malloc (sizeof (ptz_thread_t));
+							ptz_thread->pointer = memory;
+							ptz_thread->thread = g_thread_new (NULL, (GThreadFunc)load_memory, ptz_thread);
+						} else {
+							gtk_widget_set_state_flags (other_memory->button, GTK_STATE_FLAG_PRELIGHT, FALSE);
+							g_signal_handler_block (other_memory->button, other_memory->button_handler_id);
+
+							ptz_thread = g_malloc (sizeof (ptz_thread_t));
+							ptz_thread->pointer = other_memory;
+							ptz_thread->thread = g_thread_new (NULL, (GThreadFunc)load_other_memory, ptz_thread);
+						}
 					}
 				}
 			}
 		} else {
 			g_signal_handler_block (memory->button, memory->button_handler_id);
 
-			memory_thread = g_malloc (sizeof (memory_thread_t));
-			memory_thread->memory = memory;
-			memory_thread->thread = g_thread_new (NULL, (GThreadFunc)load_memory, memory_thread);
+			ptz_thread = g_malloc (sizeof (ptz_thread_t));
+			ptz_thread->pointer = memory;
+			ptz_thread->thread = g_thread_new (NULL, (GThreadFunc)load_memory, ptz_thread);
 		}
-
-		tell_memory_is_selected (memory->index);
 	}
 
 	return GDK_EVENT_PROPAGATE;

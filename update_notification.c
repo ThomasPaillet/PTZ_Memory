@@ -1,5 +1,5 @@
 /*
- * copyright (c) 2020 2021 2025 Thomas Paillet <thomas.paillet@net-c.fr>
+ * copyright (c) 2020 2021 2025 2026 Thomas Paillet <thomas.paillet@net-c.fr>
 
  * This file is part of PTZ-Memory.
 
@@ -26,8 +26,6 @@
 #include "logging.h"
 #include "protocol.h"
 
-#include <unistd.h>
-
 
 struct sockaddr_in update_notification_address;
 SOCKET update_notification_socket;
@@ -45,16 +43,17 @@ gpointer receive_update_notification (void)
 	SOCKET src_socket;
 	char buffer[556];
 	GSList *slist_itr1, *slist_itr2;
-	int i, response;
 	ptz_t *ptz, *other_ptz;
 	gboolean auto_focus;
 	guint32 zoom, focus;
 	gint32 free_d_optical_axis_height;
 	gint32 pan, tilt;
-	ptz_thread_t *monitor_ptz_thread;
+	ptz_thread_t *ptz_thread;
+
+	LOG_PANASONIC_STRING("receive_update_notification ()")
 
 	while (update_notification_started) {
-		addrlen = sizeof (struct sockaddr_in);
+		addrlen = sizeof (src_addr);
 		src_socket = accept (update_notification_socket, (struct sockaddr *)&src_addr, &addrlen);
 
 		if (src_socket == INVALID_SOCKET) break;
@@ -62,11 +61,7 @@ gpointer receive_update_notification (void)
 		recv (src_socket, buffer, sizeof (buffer), 0);
 		closesocket (src_socket);
 
-		if (logging && log_panasonic) {
-			g_mutex_lock (&logging_mutex);
-			log_ptz_update_notification (__FILE__, inet_ntoa (src_addr.sin_addr), buffer);
-			g_mutex_unlock (&logging_mutex);
-		}
+		LOG_PTZ_UPDATE_NOTIFICATION(src_addr.sin_addr,buffer)
 
 		g_mutex_lock (&cameras_sets_mutex);
 
@@ -75,7 +70,7 @@ gpointer receive_update_notification (void)
 
 			if (ptz->address.sin_addr.s_addr == src_addr.sin_addr.s_addr) {
 				if (buffer[30] == 'p') {
-					if (buffer[31] == '0') {		//p0	//Power Standby
+					if (buffer[31] == '0') {			//p0	//Standby
 						ptz->is_on = FALSE;
 
 						g_mutex_lock (&ptz->free_d_mutex);
@@ -96,112 +91,9 @@ gpointer receive_update_notification (void)
 
 						g_mutex_unlock (&ptz->other_ptz_mutex);
 					} else if (buffer[31] == '1') {		//p1	//Power On
-						send_cam_request_command_string (ptz, "QID", buffer);	//Model
-
-						for (i = 0; i < UNKNOWN_PTZ; i++) {
-							if (strcmp (buffer, ptz_model[i]) == 0) break;
-						}
-						ptz->model = i;
-
-						send_cam_request_command (ptz, "QAF", &response);		//Focus Auto/Manual
-
-						if (response == 1) auto_focus = TRUE;
-						else auto_focus = FALSE;
-
-						g_mutex_lock (&ptz->lens_information_mutex);
-
-						ptz->auto_focus = auto_focus;
-
-						send_ptz_request_command_string (ptz, "#LPI", buffer);	//Lens information
-
-						ptz->zoom_position_cmd[4] = buffer[3];
-						ptz->zoom_position_cmd[5] = buffer[4];
-						ptz->zoom_position_cmd[6] = buffer[5];
-
-						if (buffer[3] <= '9') zoom = (buffer[3] - '0') * 256;
-						else zoom = (buffer[3] - '7') * 256;
-						if (buffer[4] <= '9') zoom += (buffer[4] - '0') * 16;
-						else zoom += (buffer[4] - '7') * 16;
-						if (buffer[5] <= '9') zoom += buffer[5] - '0';
-						else zoom += buffer[5] - '7';
-
-						ptz->focus_position_cmd[4] = buffer[6];
-						ptz->focus_position_cmd[5] = buffer[7];
-						ptz->focus_position_cmd[6] = buffer[8];
-
-						if (buffer[6] <= '9') focus = (buffer[6] - '0') * 256;
-						else focus = (buffer[6] - '7') * 256;
-						if (buffer[7] <= '9') focus += (buffer[7] - '0') * 16;
-						else focus += (buffer[7] - '7') * 16;
-						if (buffer[8] <= '9') focus += buffer[8] - '0';
-						else focus += buffer[8] - '7';
-
-						send_ptz_request_command (ptz, "#INS", &response);		//Installation position
-
-						if (response == 1) free_d_optical_axis_height = - ptz_optical_axis_height[ptz->model];
-						else free_d_optical_axis_height = ptz_optical_axis_height[ptz->model];
-
-						g_mutex_lock (&ptz->free_d_mutex);
-
-						ptz->zoom_position = zoom;
-						ptz->focus_position = focus;
-
-						ptz->free_d_optical_axis_height = free_d_optical_axis_height;
-
-						g_mutex_unlock (&ptz->free_d_mutex);
-
-						g_mutex_unlock (&ptz->lens_information_mutex);
-
-						send_ptz_control_command (ptz, "#LPC1", TRUE);			//Lens information notification On
-
-						g_idle_add ((GSourceFunc)ptz_is_on, ptz);
-
-						g_mutex_lock (&ptz->other_ptz_mutex);
-
-						for (slist_itr2 = ptz->other_ptz_slist; slist_itr2 != NULL; slist_itr2 = slist_itr2->next) {
-							other_ptz = slist_itr2->data;
-
-							other_ptz->model = ptz->model;
-
-							g_mutex_lock (&other_ptz->lens_information_mutex);
-
-							other_ptz->auto_focus = auto_focus;
-
-							other_ptz->zoom_position_cmd[4] = buffer[3];
-							other_ptz->zoom_position_cmd[5] = buffer[4];
-							other_ptz->zoom_position_cmd[6] = buffer[5];
-
-							other_ptz->focus_position_cmd[4] = buffer[6];
-							other_ptz->focus_position_cmd[5] = buffer[7];
-							other_ptz->focus_position_cmd[6] = buffer[8];
-
-							g_mutex_lock (&other_ptz->free_d_mutex);
-
-							other_ptz->zoom_position = zoom;
-							other_ptz->focus_position = focus;
-
-							other_ptz->free_d_optical_axis_height = free_d_optical_axis_height;
-
-							g_mutex_unlock (&other_ptz->free_d_mutex);
-
-							g_mutex_unlock (&other_ptz->lens_information_mutex);
-
-							g_idle_add ((GSourceFunc)ptz_is_on, other_ptz);
-						}
-
-						g_mutex_unlock (&ptz->other_ptz_mutex);
-
-						if (outgoing_free_d_started && (ptz->model == AW_HE130)) {
-							g_mutex_lock (&ptz->free_d_mutex);
-
-							ptz->monitor_pan_tilt = TRUE;
-
-							monitor_ptz_thread = g_malloc (sizeof (ptz_thread_t));
-							monitor_ptz_thread->ptz = ptz;
-							monitor_ptz_thread->thread = g_thread_new (NULL, (GThreadFunc)monitor_ptz_pan_tilt_position, monitor_ptz_thread);
-
-							g_mutex_unlock (&ptz->free_d_mutex);
-						}
+						ptz_thread = g_malloc (sizeof (ptz_thread_t));
+						ptz_thread->pointer = ptz;
+						ptz_thread->thread = g_thread_new (NULL, (GThreadFunc)ptz_power_is_on, ptz_thread);
 					}
 				} else if ((buffer[30] == 'l') && (buffer[31] == 'P') && (buffer[32] == 'I')) { 	//lPI	//Lens information
 					g_mutex_lock (&ptz->lens_information_mutex);
@@ -480,12 +372,15 @@ gpointer receive_update_notification (void)
 		g_mutex_unlock (&cameras_sets_mutex);
 	}
 
+	LOG_PANASONIC_STRING("receive_update_notification () return")
+
 	return NULL;
 }
 
 void init_update_notification (void)
 {
 	memset (&update_notification_address, 0, sizeof (struct sockaddr_in));
+
 	update_notification_address.sin_family = AF_INET;
 	update_notification_address.sin_port = htons (UPDATE_NOTIFICATION_TCP_PORT);
 	update_notification_address.sin_addr.s_addr = inet_addr (my_ip_address);
@@ -493,11 +388,14 @@ void init_update_notification (void)
 
 gboolean start_update_notification (void)
 {
+	LOG_PANASONIC_STRING("start_update_notification ()")
+
 	update_notification_socket = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
 	if (bind (update_notification_socket, (struct sockaddr *)&update_notification_address, sizeof (struct sockaddr_in)) == 0) {
 		if (listen (update_notification_socket, MAX_CAMERAS * MAX_CAMERAS_SET) == 0) {
 			update_notification_started = TRUE;
+
 			update_notification_thread = g_thread_new (NULL, (GThreadFunc)receive_update_notification, NULL);
 		}
 
@@ -509,6 +407,8 @@ void stop_update_notification (void)
 {
 	GSList *slist_itr;
 	ptz_t *ptz;
+
+	LOG_PANASONIC_STRING("stop_update_notification ()")
 
 	g_mutex_lock (&cameras_sets_mutex);
 

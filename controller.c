@@ -1,5 +1,5 @@
 /*
- * copyright (c) 2020 2021 2025 Thomas Paillet <thomas.paillet@net-c.fr>
+ * copyright (c) 2020 2021 2025 2026 Thomas Paillet <thomas.paillet@net-c.fr>
 
  * This file is part of PTZ-Memory.
 
@@ -45,7 +45,9 @@ gpointer controller_switch_ptz (ptz_thread_t *ptz_thread)
 	SOCKET sock;
 	char buffer[264];
 
-	port_number = ptz_thread->ptz->index + 1;
+	port_number = ((ptz_t *)ptz_thread->pointer)->index + 1;
+
+	LOG_PANASONIC_STRING_INT("controller_switch_ptz ",port_number)
 
 	if (port_number == 10) {
 		controller_cmd[28] = '1';

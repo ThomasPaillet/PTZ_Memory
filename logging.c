@@ -1,5 +1,5 @@
 /*
- * copyright (c) 2020 2021 2025 Thomas Paillet <thomas.paillet@net-c.fr>
+ * copyright (c) 2020 2021 2025 2026 Thomas Paillet <thomas.paillet@net-c.fr>
 
  * This file is part of PTZ-Memory.
 
@@ -27,6 +27,7 @@ gboolean logging = FALSE;
 gboolean log_panasonic = FALSE;
 gboolean log_sw_p_08 = FALSE;
 gboolean log_tsl_umd_v5 = FALSE;
+gboolean log_osc = FALSE;
 gboolean log_ultimatte = FALSE;
 gboolean log_free_d = FALSE;
 
@@ -40,6 +41,7 @@ FILE *panasonic_log_file;
 FILE *panasonic_errors_log_file;
 FILE *sw_p_08_log_file;
 FILE *tsl_umd_v5_log_file;
+FILE *osc_log_file;
 FILE *ultimatte_log_file;
 FILE *free_d_log_file;
 
@@ -142,6 +144,44 @@ void log_ptz_string (const char *c_source_filename, ptz_t *ptz, const char *str)
 	g_date_time_unref (current_time);
 }
 
+void log_ptz_2_strings (const char *c_source_filename, ptz_t *ptz, const char *str1, const char *str2)
+{
+	GDateTime *current_time;
+
+	current_time = g_date_time_new_now_local ();
+
+	log_buffer_size = sprintf (log_buffer, "%02dh %02dm %02ds %03dms: [%s] Camera %s (%s) %s%s\n\n", g_date_time_get_hour (current_time), g_date_time_get_minute (current_time), g_date_time_get_second (current_time), g_date_time_get_microsecond (current_time) / 1000, c_source_filename, ptz->name, ptz->ip_address, str1, str2);
+
+	fwrite (log_buffer, log_buffer_size, 1, main_log_file);
+	fwrite (log_buffer, log_buffer_size, 1, panasonic_log_file);
+
+	if (fsync_log) {
+		F_SYNC (main_log_file);
+		F_SYNC (panasonic_log_file);
+	}
+
+	g_date_time_unref (current_time);
+}
+
+void log_ptz_string_int (const char *c_source_filename, ptz_t *ptz, const char *str, int i)
+{
+	GDateTime *current_time;
+
+	current_time = g_date_time_new_now_local ();
+
+	log_buffer_size = sprintf (log_buffer, "%02dh %02dm %02ds %03dms: [%s] Camera %s (%s) %s%d\n\n", g_date_time_get_hour (current_time), g_date_time_get_minute (current_time), g_date_time_get_second (current_time), g_date_time_get_microsecond (current_time) / 1000, c_source_filename, ptz->name, ptz->ip_address, str, i);
+
+	fwrite (log_buffer, log_buffer_size, 1, main_log_file);
+	fwrite (log_buffer, log_buffer_size, 1, panasonic_log_file);
+
+	if (fsync_log) {
+		F_SYNC (main_log_file);
+		F_SYNC (panasonic_log_file);
+	}
+
+	g_date_time_unref (current_time);
+}
+
 void log_ptz_command (const char *c_source_filename, ptz_t *ptz, const char *cmd)
 {
 	GDateTime *current_time;
@@ -161,9 +201,14 @@ void log_ptz_command (const char *c_source_filename, ptz_t *ptz, const char *cmd
 	g_date_time_unref (current_time);
 }
 
-void log_ptz_ER1 (const char *c_source_filename, GDateTime *current_time, ptz_t *ptz, const char *str)
+void log_ptz_ER1 (const char *c_source_filename, GDateTime *current_time, ptz_t *ptz, const char *str, int len)
 {
-	log_buffer_size = sprintf (log_buffer, "%02dh %02dm %02ds %03dms: [%s] Camera %s (%s) ERROR 1 (%s): The command is not supported by the camera.\n\n", g_date_time_get_hour (current_time), g_date_time_get_minute (current_time), g_date_time_get_second (current_time), g_date_time_get_microsecond (current_time) / 1000, c_source_filename, ptz->name, ptz->ip_address, str);
+	log_buffer_size = sprintf (log_buffer, "%02dh %02dm %02ds %03dms: [%s] Camera %s (%s) ERROR 1 (", g_date_time_get_hour (current_time), g_date_time_get_minute (current_time), g_date_time_get_second (current_time), g_date_time_get_microsecond (current_time) / 1000, c_source_filename, ptz->name, ptz->ip_address);
+
+	memcpy (log_buffer + log_buffer_size, str, len);
+	log_buffer_size += len;
+
+	log_buffer_size += sprintf (log_buffer + log_buffer_size, "): The command is not supported by the camera.\n\n");
 
 	fwrite (log_buffer, log_buffer_size, 1, main_log_file);
 	fwrite (log_buffer, log_buffer_size, 1, panasonic_log_file);
@@ -172,9 +217,14 @@ void log_ptz_ER1 (const char *c_source_filename, GDateTime *current_time, ptz_t 
 	if (fsync_log) F_SYNC (panasonic_errors_log_file);
 }
 
-void log_ptz_ER2 (const char *c_source_filename, GDateTime *current_time, ptz_t *ptz, const char *str)
+void log_ptz_ER2 (const char *c_source_filename, GDateTime *current_time, ptz_t *ptz, const char *str, int len)
 {
-	log_buffer_size = sprintf (log_buffer, "%02dh %02dm %02ds %03dms: [%s] Camera %s (%s) ERROR 2 (%s): The camera is in the busy status.\n\n", g_date_time_get_hour (current_time), g_date_time_get_minute (current_time), g_date_time_get_second (current_time), g_date_time_get_microsecond (current_time) / 1000, c_source_filename, ptz->name, ptz->ip_address, str);
+	log_buffer_size = sprintf (log_buffer, "%02dh %02dm %02ds %03dms: [%s] Camera %s (%s) ERROR 2 (", g_date_time_get_hour (current_time), g_date_time_get_minute (current_time), g_date_time_get_second (current_time), g_date_time_get_microsecond (current_time) / 1000, c_source_filename, ptz->name, ptz->ip_address);
+
+	memcpy (log_buffer + log_buffer_size, str, len);
+	log_buffer_size += len;
+
+	log_buffer_size += sprintf (log_buffer + log_buffer_size, "): The camera is in the busy status.\n\n");
 
 	fwrite (log_buffer, log_buffer_size, 1, main_log_file);
 	fwrite (log_buffer, log_buffer_size, 1, panasonic_log_file);
@@ -183,9 +233,14 @@ void log_ptz_ER2 (const char *c_source_filename, GDateTime *current_time, ptz_t 
 	if (fsync_log) F_SYNC (panasonic_errors_log_file);
 }
 
-void log_ptz_ER3 (const char *c_source_filename, GDateTime *current_time, ptz_t *ptz, const char *str)
+void log_ptz_ER3 (const char *c_source_filename, GDateTime *current_time, ptz_t *ptz, const char *str, int len)
 {
-	log_buffer_size = sprintf (log_buffer, "%02dh %02dm %02ds %03dms: [%s] Camera %s (%s) ERROR 3 (%s): The data value of the command is outside the acceptable range.\n\n", g_date_time_get_hour (current_time), g_date_time_get_minute (current_time), g_date_time_get_second (current_time), g_date_time_get_microsecond (current_time) / 1000, c_source_filename, ptz->name, ptz->ip_address, str);
+	log_buffer_size = sprintf (log_buffer, "%02dh %02dm %02ds %03dms: [%s] Camera %s (%s) ERROR 3 (", g_date_time_get_hour (current_time), g_date_time_get_minute (current_time), g_date_time_get_second (current_time), g_date_time_get_microsecond (current_time) / 1000, c_source_filename, ptz->name, ptz->ip_address);
+
+	memcpy (log_buffer + log_buffer_size, str, len);
+	log_buffer_size += len;
+
+	log_buffer_size += sprintf (log_buffer + log_buffer_size, "): The data value of the command is outside the acceptable range.\n\n");
 
 	fwrite (log_buffer, log_buffer_size, 1, main_log_file);
 	fwrite (log_buffer, log_buffer_size, 1, panasonic_log_file);
@@ -217,9 +272,9 @@ void log_ptz_response (const char *c_source_filename, ptz_t *ptz, const char *re
 	index++;
 
 	if (((response[index] == 'e') || (response[index] == 'E')) && (response[index + 1] == 'R')) {
-		if (response[index + 2] == '1') log_ptz_ER1 (__FILE__, current_time, ptz, response + index);
-		else if (response[index + 2] == '2') log_ptz_ER2 (__FILE__, current_time, ptz, response + index);
-		else if (response[index + 2] == '3') log_ptz_ER3 (__FILE__, current_time, ptz, response + index); 
+		if (response[index + 2] == '1') log_ptz_ER1 (__FILE__, current_time, ptz, response + index, len - index);
+		else if (response[index + 2] == '2') log_ptz_ER2 (__FILE__, current_time, ptz, response + index, len - index);
+		else if (response[index + 2] == '3') log_ptz_ER3 (__FILE__, current_time, ptz, response + index, len - index);
 	}
 
 	if (fsync_log) {
@@ -239,7 +294,7 @@ void log_ptz_update_notification (const char *c_source_filename, const char *ip_
 
 	log_buffer_size = sprintf (log_buffer, "%02dh %02dm %02ds %03dms: [%s] Receive Update Notification from %s <-- ", g_date_time_get_hour (current_time), g_date_time_get_minute (current_time), g_date_time_get_second (current_time), g_date_time_get_microsecond (current_time) / 1000, c_source_filename, ip_address);
 
-	len = ((((int)((unsigned char *)update_notification)[22])) << 8) + ((unsigned char *)update_notification)[23] - 8;
+	len = ((((int)((unsigned char *)update_notification)[22])) << 8) + ((unsigned char *)update_notification)[23] - 10;
 
 	memcpy (log_buffer + log_buffer_size, update_notification + 30, len);
 	log_buffer_size += len;
@@ -385,7 +440,7 @@ void log_sw_p_08_incomming_message (const char *c_source_filename, const char *i
 	g_date_time_unref (current_time);
 }
 
-void log_tsl_umd_v5_packet (const char *packet)
+void log_tsl_umd_v5_packet (const char *ip_address, const char *packet)
 {
 	GDateTime *current_time;
 	guint16 total_byte_count, length;
@@ -396,12 +451,12 @@ void log_tsl_umd_v5_packet (const char *packet)
 	total_byte_count = *((guint16 *)packet);
 	ptr = 6;
 
-	log_buffer_size = sprintf (log_buffer, "%02dh %02dm %02ds %03dms: [tsl_umd_v5.c] Receive TSL UMD V5 packet\n" \
+	log_buffer_size = sprintf (log_buffer, "%02dh %02dm %02ds %03dms: [tsl_umd_v5.c] Receive TSL UMD V5 packet from %s\n" \
 			"\tTotal byte count of following packet: %d\n" \
 			"\tMinor version number: %d\n" \
 			"\tFlags: 0x%02X\n" \
 			"\tPrimary index (screen): %d\n\n", \
-			g_date_time_get_hour (current_time), g_date_time_get_minute (current_time), g_date_time_get_second (current_time), g_date_time_get_microsecond (current_time) / 1000, total_byte_count, *((guint8 *)(packet + 2)), *((guint8 *)(packet + 3)), *((guint16 *)(packet + 4)));
+			g_date_time_get_hour (current_time), g_date_time_get_minute (current_time), g_date_time_get_second (current_time), g_date_time_get_microsecond (current_time) / 1000, ip_address, total_byte_count, *((guint8 *)(packet + 2)), *((guint8 *)(packet + 3)), *((guint16 *)(packet + 4)));
 
 	fwrite (log_buffer, log_buffer_size, 1, main_log_file);
 	fwrite (log_buffer, log_buffer_size, 1, tsl_umd_v5_log_file);
@@ -433,6 +488,40 @@ void log_tsl_umd_v5_packet (const char *packet)
 	if (fsync_log) {
 		F_SYNC (main_log_file);
 		F_SYNC (tsl_umd_v5_log_file);
+	}
+
+	g_date_time_unref (current_time);
+}
+
+void log_osc_packet (const char *ip_address, const char *packet, int size)
+{
+	GDateTime *current_time;
+	int i;
+
+	current_time = g_date_time_new_now_local ();
+
+	log_buffer_size = sprintf (log_buffer, "%02dh %02dm %02ds %03dms: [osc.c] Receive OSC packet from %s <--", \
+			g_date_time_get_hour (current_time), g_date_time_get_minute (current_time), g_date_time_get_second (current_time), g_date_time_get_microsecond (current_time) / 1000, ip_address);
+
+	for (i = 0; i < size; i++) {
+		if ((31 < packet[i]) && (packet[i] < 127)) {
+			sprintf (log_buffer + log_buffer_size, " %02X (%c)", packet[i], packet[i]);
+			log_buffer_size += 7;
+		} else {
+			sprintf (log_buffer + log_buffer_size, " %02X", packet[i]);
+			log_buffer_size += 3;
+		}
+	}
+
+	fwrite (log_buffer, log_buffer_size, 1, main_log_file);
+	fwrite (log_buffer, log_buffer_size, 1, osc_log_file);
+
+	fwrite ("\n\n", 2, 1, main_log_file);
+	fwrite ("\n\n", 2, 1, osc_log_file);
+
+	if (fsync_log) {
+		F_SYNC (main_log_file);
+		F_SYNC (osc_log_file);
 	}
 
 	g_date_time_unref (current_time);
@@ -652,6 +741,11 @@ void start_logging (void)
 		tsl_umd_v5_log_file = fopen (log_file_name, "a");
 	}
 
+	if (log_osc) {
+		sprintf (log_file_name, "%04d-%02d-%02d_PTZ-Memory_OSC.log", year, month, day);
+		osc_log_file = fopen (log_file_name, "a");
+	}
+
 	if (log_ultimatte) {
 		sprintf (log_file_name, "%04d-%02d-%02d_PTZ-Memory_Ultimatte.log", year, month, day);
 		ultimatte_log_file = fopen (log_file_name, "a");
@@ -740,6 +834,27 @@ void start_tsl_umd_v5_log (void)
 	g_mutex_unlock (&logging_mutex);
 }
 
+void start_osc_log (void)
+{
+	GDateTime *current_time;
+	char log_file_name[56];
+
+	g_mutex_lock (&logging_mutex);
+
+	if (logging) {
+		current_time = g_date_time_new_now_local ();
+
+		sprintf (log_file_name, "%04d-%02d-%02d_PTZ-Memory_OSC.log", g_date_time_get_year (current_time), g_date_time_get_month (current_time), g_date_time_get_day_of_month (current_time));
+		osc_log_file = fopen (log_file_name, "a");
+
+		g_date_time_unref (current_time);
+	}
+
+	log_osc = TRUE;
+
+	g_mutex_unlock (&logging_mutex);
+}
+
 void start_ultimatte_log (void)
 {
 	GDateTime *current_time;
@@ -786,20 +901,23 @@ void stop_logging (void)
 {
 	g_mutex_lock (&logging_mutex);
 
-	logging = FALSE;
+	if (logging) {
+		logging = FALSE;
+
+		fclose (main_log_file);
+
+		g_free (log_buffer);
+	}
 
 	if (log_free_d) fclose (free_d_log_file);
 	if (log_ultimatte) fclose (ultimatte_log_file);
 	if (log_tsl_umd_v5) fclose (tsl_umd_v5_log_file);
+	if (log_osc) fclose (osc_log_file);
 	if (log_sw_p_08) fclose (sw_p_08_log_file);
 	if (log_panasonic) {
 		fclose (panasonic_errors_log_file);
 		fclose (panasonic_log_file);
 	}
-
-	fclose (main_log_file);
-
-	g_free (log_buffer);
 
 	g_mutex_unlock (&logging_mutex);
 }
@@ -836,6 +954,17 @@ void stop_tsl_umd_v5_log (void)
 	log_tsl_umd_v5 = FALSE;
 
 	if (logging) fclose (tsl_umd_v5_log_file);
+
+	g_mutex_unlock (&logging_mutex);
+}
+
+void stop_osc_log (void)
+{
+	g_mutex_lock (&logging_mutex);
+
+	log_osc = FALSE;
+
+	if (logging) fclose (osc_log_file);
 
 	g_mutex_unlock (&logging_mutex);
 }

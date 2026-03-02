@@ -49,6 +49,7 @@ void device_added_to_seat (GdkSeat *seat, GdkDevice *device)
 
 	if ((trackball_name_len > 0) && (memcmp (gdk_device_get_name (device), trackball_name, trackball_name_len) == 0)) {
 		trackball = device;
+
 		trackball_is_back = TRUE;
 	} else trackball_is_back = FALSE;
 
@@ -129,6 +130,7 @@ void pointing_devices_changed (void)
 		for (glist = pointing_devices; glist != NULL; glist = glist->next) {
 			if (memcmp (gdk_device_get_name (glist->data), trackball_name, trackball_name_len) == 0) {
 				trackball = glist->data;
+
 				break;
 			}
 		}
@@ -136,6 +138,7 @@ void pointing_devices_changed (void)
 		gtk_widget_set_sensitive (trackball_buttons, TRUE);
 	} else {
 		trackball = NULL;
+
 		gtk_widget_set_sensitive (trackball_buttons, FALSE);
 	}
 
@@ -174,10 +177,12 @@ gboolean combo_box_outline_top_draw (GtkWidget *widget, cairo_t *cr, gpointer in
 
 		cairo_rectangle (cr, 3.0, 2.0, width - 6.0, 1.0);
 		cairo_fill (cr);
+
 		cairo_rectangle (cr, 2.0, 3.0, width - 4.0, 2.0);
 		cairo_fill (cr);
 	} else {
 		cairo_set_source_rgb (cr, 0.2, 0.223529412, 0.231372549);
+
 		cairo_paint (cr);
 	}
 
@@ -197,6 +202,7 @@ gboolean combo_box_outline_left_draw (GtkWidget *widget, cairo_t *cr, gpointer i
 		cairo_fill (cr);
 	} else {
 		cairo_set_source_rgb (cr, 0.2, 0.223529412, 0.231372549);
+
 		cairo_paint (cr);
 	}
 
@@ -216,6 +222,7 @@ gboolean combo_box_outline_right_draw (GtkWidget *widget, cairo_t *cr, gpointer 
 		cairo_fill (cr);
 	} else {
 		cairo_set_source_rgb (cr, 0.2, 0.223529412, 0.231372549);
+
 		cairo_paint (cr);
 	}
 
@@ -233,10 +240,12 @@ gboolean combo_box_outline_bottom_draw (GtkWidget *widget, cairo_t *cr, gpointer
 
 		cairo_rectangle (cr, 2.0, 0.0, width - 4.0, 2.0);
 		cairo_fill (cr);
+
 		cairo_rectangle (cr, 3.0, 2.0, width - 6.0, 1.0);
 		cairo_fill (cr);
 	} else {
 		cairo_set_source_rgb (cr, 0.2, 0.223529412, 0.231372549);
+
 		cairo_paint (cr);
 	}
 

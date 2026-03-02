@@ -1,5 +1,5 @@
 /*
- * copyright (c) 2020 2021 2025 Thomas Paillet <thomas.paillet@net-c.fr>
+ * copyright (c) 2020 2021 2025 2026 Thomas Paillet <thomas.paillet@net-c.fr>
 
  * This file is part of PTZ-Memory.
 
@@ -34,9 +34,10 @@
 		ptz = slist_itr1->data; \
  \
 		if (ptz->address.sin_addr.s_addr == src_in_addr->s_addr) { \
+			ptz->error_code = c; \
+ \
 			LOG_PTZ_ERROR(s); \
  \
-			ptz->error_code = c; \
 			gtk_widget_queue_draw (ptz->error_drawing_area); \
 			gtk_widget_set_tooltip_text (ptz->error_drawing_area, s); \
  \
@@ -101,16 +102,12 @@ gboolean clear_ptz_error (struct in_addr *src_in_addr)
 		ptz = slist_itr1->data;
 
 		if (ptz->address.sin_addr.s_addr == src_in_addr->s_addr) {
+			ptz->error_code = 0x00;
+
 			LOG_PTZ_STRING("Normal");
 
-			ptz->error_code = 0x00;
 			gtk_widget_queue_draw (ptz->error_drawing_area);
 			gtk_widget_set_tooltip_text (ptz->error_drawing_area, NULL);
-
-			if (ptz->error_drawing_area_tooltip != NULL ) {
-				g_free (ptz->error_drawing_area_tooltip);
-				ptz->error_drawing_area_tooltip = NULL;
-			}
 
 			g_mutex_lock (&ptz->other_ptz_mutex);
 
@@ -120,11 +117,6 @@ gboolean clear_ptz_error (struct in_addr *src_in_addr)
 				other_ptz->error_code = 0x00;
 				gtk_widget_queue_draw (other_ptz->error_drawing_area);
 				gtk_widget_set_tooltip_text (other_ptz->error_drawing_area, NULL);
-
-				if (other_ptz->error_drawing_area_tooltip != NULL ) {
-					g_free (other_ptz->error_drawing_area_tooltip);
-					other_ptz->error_drawing_area_tooltip = NULL;
-				}
 			}
 
 			g_mutex_unlock (&ptz->other_ptz_mutex);

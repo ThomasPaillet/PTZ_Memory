@@ -1,5 +1,5 @@
 /*
- * copyright (c) 2020 2021 2025 Thomas Paillet <thomas.paillet@net-c.fr>
+ * copyright (c) 2020 2021 2025 2026 Thomas Paillet <thomas.paillet@net-c.fr>
 
  * This file is part of PTZ-Memory.
 
@@ -27,15 +27,16 @@
 #include "interface.h"
 #include "logging.h"
 #include "main_window.h"
+#include "osc.h"
 #include "protocol.h"
 #include "sw_p_08.h"
 #include "tally.h"
 #include "trackball.h"
 #include "update_notification.h"
 
-#include <string.h>
-#include <stdio.h>
 #include "f_sync.h"
+#include <stdio.h>
+#include <string.h>
 
 
 #ifdef _WIN32
@@ -103,7 +104,7 @@ void show_about_window (void)
 		gtk_label_set_markup (GTK_LABEL (widget), "<b>Mémoires Pan Tilt Zoom pour caméras PTZ Panasonic</b>");
 		gtk_box_pack_start (GTK_BOX (box), widget, FALSE, FALSE, 0);
 
-		widget = gtk_label_new ("Version 2.3");
+		widget = gtk_label_new ("Version 2.4");
 		gtk_box_pack_start (GTK_BOX (box), widget, FALSE, FALSE, 0);
 #ifdef _WIN32
 		widget = gtk_image_new_from_pixbuf (pixbuf_logo);
@@ -121,6 +122,9 @@ void show_about_window (void)
 		gtk_box_pack_start (GTK_BOX (box), widget, FALSE, FALSE, 0);
 
 		widget = gtk_label_new ("TSL UMD Protocol V5.0");
+		gtk_box_pack_start (GTK_BOX (box), widget, FALSE, FALSE, 0);
+
+		widget = gtk_label_new ("OpenSoundControl Specification 1.0");
 		gtk_box_pack_start (GTK_BOX (box), widget, FALSE, FALSE, 0);
 
 		widget = gtk_label_new (NULL);
@@ -143,7 +147,7 @@ void show_about_window (void)
 		widget = gtk_separator_new (GTK_ORIENTATION_HORIZONTAL);
 		gtk_box_pack_start (GTK_BOX (box), widget, FALSE, FALSE, 0);
 
-		widget = gtk_label_new ("Copyright (c) 2020 2021 2025 Thomas Paillet");
+		widget = gtk_label_new ("Copyright (c) 2020 2021 2025 2026 Thomas Paillet");
 		gtk_box_pack_start (GTK_BOX (box), widget, FALSE, FALSE, 0);
 
 		widget = gtk_label_new ("GNU General Public License version 3");
@@ -384,12 +388,32 @@ void tsl_umd_v5_udp_port_entry_activate (GtkEntry *entry, GtkEntryBuffer *entry_
 	sscanf (gtk_entry_buffer_get_text (entry_buffer), "%d", &port_sscanf);
 	port = (guint16)port_sscanf;
 
-	if ((port_sscanf < 1024) || (port_sscanf > 65535)) {
+	if ((port_sscanf < 1024) || (port_sscanf > 65535) || (port == ntohs (osc_address.sin_port)) || (port == ntohs (free_d_input_address.sin_port))) {
 		tsl_umd_v5_address.sin_port = htons (TSL_UMD_V5_UDP_PORT);
 		gtk_entry_buffer_set_text (entry_buffer, "8900", 5);
 	} else tsl_umd_v5_address.sin_port = htons (port);
 
 	start_tally ();
+
+	backup_needed = TRUE;
+}
+
+void osc_udp_port_entry_activate (GtkEntry *entry, GtkEntryBuffer *entry_buffer)
+{
+	int port_sscanf;
+	guint16 port;
+
+	stop_osc ();
+
+	sscanf (gtk_entry_buffer_get_text (entry_buffer), "%d", &port_sscanf);
+	port = (guint16)port_sscanf;
+
+	if ((port_sscanf < 1024) || (port_sscanf > 65535) || (port == ntohs (tsl_umd_v5_address.sin_port)) || (port == ntohs (free_d_input_address.sin_port))) {
+		osc_address.sin_port = htons (OSC_UDP_PORT);
+		gtk_entry_buffer_set_text (entry_buffer, "9000", 5);
+	} else osc_address.sin_port = htons (port);
+
+	start_osc ();
 
 	backup_needed = TRUE;
 }
@@ -450,7 +474,7 @@ void free_d_input_udp_port_entry_activate (GtkEntry *entry, GtkEntryBuffer *entr
 	sscanf (gtk_entry_buffer_get_text (entry_buffer), "%d", &port_sscanf);
 	port = (guint16)port_sscanf;
 
-	if ((port_sscanf < 1024) || (port_sscanf > 65535)) {
+	if ((port_sscanf < 1024) || (port_sscanf > 65535) || (port == ntohs (tsl_umd_v5_address.sin_port)) || (port == ntohs (osc_address.sin_port))) {
 		free_d_input_address.sin_port = htons (FREE_D_UDP_PORT);
 		gtk_entry_buffer_set_text (entry_buffer, "2000", 5);
 	} else free_d_input_address.sin_port = htons (port);
@@ -476,6 +500,7 @@ void flush_log_check_button_toggled (GtkToggleButton *togglebutton)
 		if (log_panasonic) F_SYNC (panasonic_log_file);
 		if (log_sw_p_08) F_SYNC (sw_p_08_log_file);
 		if (log_tsl_umd_v5) F_SYNC (tsl_umd_v5_log_file);
+		if (log_osc) F_SYNC (osc_log_file);
 		if (log_ultimatte) F_SYNC (ultimatte_log_file);
 		if (log_free_d) F_SYNC (free_d_log_file);
 	}
@@ -503,6 +528,14 @@ void log_tsl_umd_v5_check_button_toggled (GtkToggleButton *togglebutton)
 {
 	if (gtk_toggle_button_get_active (togglebutton)) start_tsl_umd_v5_log ();
 	else stop_tsl_umd_v5_log ();
+
+	backup_needed = TRUE;
+}
+
+void log_osc_check_button_toggled (GtkToggleButton *togglebutton)
+{
+	if (gtk_toggle_button_get_active (togglebutton)) start_osc_log ();
+	else stop_osc_log ();
 
 	backup_needed = TRUE;
 }
@@ -693,7 +726,6 @@ void show_settings_window (void)
 			box2 = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
 			gtk_container_set_border_width (GTK_CONTAINER (box2), MARGIN_VALUE);;
 				widget = gtk_label_new ("Adresse IP :");
-//				gtk_widget_set_margin_end (widget, MARGIN_VALUE);
 			gtk_box_pack_start (GTK_BOX (box2), widget, FALSE, FALSE, 0);
 
 				if (controller_ip_address_is_valid) {
@@ -813,6 +845,22 @@ void show_settings_window (void)
 					gtk_entry_set_alignment (GTK_ENTRY (widget), 0.5);
 					g_signal_connect (G_OBJECT (widget), "key-press-event", G_CALLBACK (digit_key_press), NULL);
 					g_signal_connect (G_OBJECT (widget), "activate", G_CALLBACK (tsl_umd_v5_udp_port_entry_activate), entry_buffer);
+				gtk_box_pack_end (GTK_BOX (box3), widget, FALSE, FALSE, 0);
+			gtk_box_pack_start (GTK_BOX (box2), box3, FALSE, FALSE, 0);
+
+				box3 = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
+				gtk_widget_set_margin_top (box3, MARGIN_VALUE);
+					widget =  gtk_label_new ("OSC Port UDP :");
+				gtk_box_pack_start (GTK_BOX (box3), widget, FALSE, FALSE, 0);
+
+					entry_buffer = gtk_entry_buffer_new (label, sprintf (label, "%hu", ntohs (osc_address.sin_port)));
+					widget = gtk_entry_new_with_buffer (GTK_ENTRY_BUFFER (entry_buffer));
+					gtk_entry_set_input_purpose (GTK_ENTRY (widget), GTK_INPUT_PURPOSE_DIGITS);
+					gtk_entry_set_max_length (GTK_ENTRY (widget), 5);
+					gtk_entry_set_width_chars (GTK_ENTRY (widget), 5);
+					gtk_entry_set_alignment (GTK_ENTRY (widget), 0.5);
+					g_signal_connect (G_OBJECT (widget), "key-press-event", G_CALLBACK (digit_key_press), NULL);
+					g_signal_connect (G_OBJECT (widget), "activate", G_CALLBACK (osc_udp_port_entry_activate), entry_buffer);
 				gtk_box_pack_end (GTK_BOX (box3), widget, FALSE, FALSE, 0);
 			gtk_box_pack_start (GTK_BOX (box2), box3, FALSE, FALSE, 0);
 		gtk_container_add (GTK_CONTAINER (frame), box2);
@@ -952,13 +1000,33 @@ void show_settings_window (void)
 					g_signal_connect (G_OBJECT (widget), "toggled", G_CALLBACK (logging_off_radio_button_toggled), NULL);
 				gtk_box_pack_start (GTK_BOX (box3), widget, FALSE, FALSE, 0);
 
-					widget =  gtk_label_new ("fsync");
+					widget =  gtk_label_new ("TSL UMD V5");
 					gtk_widget_set_margin_start (widget, MARGIN_VALUE);
 				gtk_box_pack_end (GTK_BOX (box3), widget, FALSE, FALSE, 0);
 
 					widget = gtk_check_button_new ();
-					gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (widget), fsync_log);
-					g_signal_connect (G_OBJECT (widget), "toggled", G_CALLBACK (flush_log_check_button_toggled), NULL);
+					gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (widget), log_tsl_umd_v5);
+					g_signal_connect (G_OBJECT (widget), "toggled", G_CALLBACK (log_tsl_umd_v5_check_button_toggled), NULL);
+				gtk_box_pack_end (GTK_BOX (box3), widget, FALSE, FALSE, 0);
+
+					widget =  gtk_label_new ("SW-P-08");
+					gtk_widget_set_margin_start (widget, MARGIN_VALUE);
+					gtk_widget_set_margin_end (widget, MARGIN_VALUE * 3);
+				gtk_box_pack_end (GTK_BOX (box3), widget, FALSE, FALSE, 0);
+
+					widget = gtk_check_button_new ();
+					gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (widget), log_sw_p_08);
+					g_signal_connect (G_OBJECT (widget), "toggled", G_CALLBACK (log_sw_p_08_check_button_toggled), NULL);
+				gtk_box_pack_end (GTK_BOX (box3), widget, FALSE, FALSE, 0);
+
+					widget =  gtk_label_new ("Panasonic");
+					gtk_widget_set_margin_start (widget, MARGIN_VALUE);
+					gtk_widget_set_margin_end (widget, MARGIN_VALUE * 3);
+				gtk_box_pack_end (GTK_BOX (box3), widget, FALSE, FALSE, 0);
+
+					widget = gtk_check_button_new ();
+					gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (widget), log_panasonic);
+					g_signal_connect (G_OBJECT (widget), "toggled", G_CALLBACK (log_panasonic_check_button_toggled), NULL);
 				gtk_box_pack_end (GTK_BOX (box3), widget, FALSE, FALSE, 0);
 			gtk_box_pack_start (GTK_BOX (box2), box3, FALSE, FALSE, 0);
 
@@ -966,53 +1034,42 @@ void show_settings_window (void)
 				gtk_widget_set_margin_top (box3, MARGIN_VALUE);
 				gtk_widget_set_margin_start (box3, MARGIN_VALUE);
 					widget = gtk_check_button_new ();
-					gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (widget), log_panasonic);
-					g_signal_connect (G_OBJECT (widget), "toggled", G_CALLBACK (log_panasonic_check_button_toggled), NULL);
+					gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (widget), fsync_log);
+					g_signal_connect (G_OBJECT (widget), "toggled", G_CALLBACK (flush_log_check_button_toggled), NULL);
 				gtk_box_pack_start (GTK_BOX (box3), widget, FALSE, FALSE, 0);
 
-					widget =  gtk_label_new ("Panasonic");
+					widget =  gtk_label_new ("fsync");
 					gtk_widget_set_margin_start (widget, MARGIN_VALUE);
-					gtk_widget_set_margin_end (widget, MARGIN_VALUE * 3);
-				gtk_box_pack_start (GTK_BOX (box3), widget, FALSE, FALSE, 0);
-
-					widget = gtk_check_button_new ();
-					gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (widget), log_sw_p_08);
-					g_signal_connect (G_OBJECT (widget), "toggled", G_CALLBACK (log_sw_p_08_check_button_toggled), NULL);
-				gtk_box_pack_start (GTK_BOX (box3), widget, FALSE, FALSE, 0);
-
-					widget =  gtk_label_new ("SW-P-08");
-					gtk_widget_set_margin_start (widget, MARGIN_VALUE);
-					gtk_widget_set_margin_end (widget, MARGIN_VALUE * 3);
-				gtk_box_pack_start (GTK_BOX (box3), widget, FALSE, FALSE, 0);
-
-					widget = gtk_check_button_new ();
-					gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (widget), log_tsl_umd_v5);
-					g_signal_connect (G_OBJECT (widget), "toggled", G_CALLBACK (log_tsl_umd_v5_check_button_toggled), NULL);
-				gtk_box_pack_start (GTK_BOX (box3), widget, FALSE, FALSE, 0);
-
-					widget =  gtk_label_new ("TSL UMD V5");
-					gtk_widget_set_margin_start (widget, MARGIN_VALUE);
-					gtk_widget_set_margin_end (widget, MARGIN_VALUE * 3);
-				gtk_box_pack_start (GTK_BOX (box3), widget, FALSE, FALSE, 0);
-
-					widget = gtk_check_button_new ();
-					gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (widget), log_ultimatte);
-					g_signal_connect (G_OBJECT (widget), "toggled", G_CALLBACK (log_ultimatte_check_button_toggled), NULL);
-				gtk_box_pack_start (GTK_BOX (box3), widget, FALSE, FALSE, 0);
-
-					widget =  gtk_label_new ("Ultimatte");
-					gtk_widget_set_margin_start (widget, MARGIN_VALUE);
-					gtk_widget_set_margin_end (widget, MARGIN_VALUE * 3);
-				gtk_box_pack_start (GTK_BOX (box3), widget, FALSE, FALSE, 0);
-
-					widget = gtk_check_button_new ();
-					gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (widget), log_free_d);
-					g_signal_connect (G_OBJECT (widget), "toggled", G_CALLBACK (log_free_d_check_button_toggled), NULL);
 				gtk_box_pack_start (GTK_BOX (box3), widget, FALSE, FALSE, 0);
 
 					widget =  gtk_label_new ("Free-d");
 					gtk_widget_set_margin_start (widget, MARGIN_VALUE);
-				gtk_box_pack_start (GTK_BOX (box3), widget, FALSE, FALSE, 0);
+				gtk_box_pack_end (GTK_BOX (box3), widget, FALSE, FALSE, 0);
+
+					widget = gtk_check_button_new ();
+					gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (widget), log_free_d);
+					g_signal_connect (G_OBJECT (widget), "toggled", G_CALLBACK (log_free_d_check_button_toggled), NULL);
+				gtk_box_pack_end (GTK_BOX (box3), widget, FALSE, FALSE, 0);
+
+					widget =  gtk_label_new ("Ultimatte");
+					gtk_widget_set_margin_start (widget, MARGIN_VALUE);
+					gtk_widget_set_margin_end (widget, MARGIN_VALUE * 3);
+				gtk_box_pack_end (GTK_BOX (box3), widget, FALSE, FALSE, 0);
+
+					widget = gtk_check_button_new ();
+					gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (widget), log_ultimatte);
+					g_signal_connect (G_OBJECT (widget), "toggled", G_CALLBACK (log_ultimatte_check_button_toggled), NULL);
+				gtk_box_pack_end (GTK_BOX (box3), widget, FALSE, FALSE, 0);
+
+					widget =  gtk_label_new ("OSC");
+					gtk_widget_set_margin_start (widget, MARGIN_VALUE);
+					gtk_widget_set_margin_end (widget, MARGIN_VALUE * 3);
+				gtk_box_pack_end (GTK_BOX (box3), widget, FALSE, FALSE, 0);
+
+					widget = gtk_check_button_new ();
+					gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (widget), log_osc);
+					g_signal_connect (G_OBJECT (widget), "toggled", G_CALLBACK (log_osc_check_button_toggled), NULL);
+				gtk_box_pack_end (GTK_BOX (box3), widget, FALSE, FALSE, 0);
 			gtk_box_pack_start (GTK_BOX (box2), box3, FALSE, FALSE, 0);
 
 		gtk_container_add (GTK_CONTAINER (frame), box2);
@@ -1302,6 +1359,10 @@ void load_config_file (void)
 	fread (&tsl_umd_v5_address.sin_port, sizeof (guint16), 1, config_file);
 	if (ntohs (tsl_umd_v5_address.sin_port) < 1024) tsl_umd_v5_address.sin_port = htons (TSL_UMD_V5_UDP_PORT);
 
+	fread (&osc_address.sin_port, sizeof (guint16), 1, config_file);
+	if ((ntohs (osc_address.sin_port) < 1024) || (osc_address.sin_port == tsl_umd_v5_address.sin_port))
+		osc_address.sin_port = htons (OSC_UDP_PORT);
+
 	fread (free_d_output_ip_address, sizeof (char), 16, config_file);
 	free_d_output_ip_address[15] = '\0';
 
@@ -1316,7 +1377,8 @@ void load_config_file (void)
 	if (ntohs (free_d_output_address.sin_port) < 1024) free_d_output_address.sin_port = htons (FREE_D_UDP_PORT);
 
 	fread (&free_d_input_address.sin_port, sizeof (guint16), 1, config_file);
-	if (ntohs (free_d_input_address.sin_port) < 1024) free_d_input_address.sin_port = htons (FREE_D_UDP_PORT);
+	if ((ntohs (free_d_input_address.sin_port) < 1024) || (free_d_input_address.sin_port == tsl_umd_v5_address.sin_port) || (free_d_input_address.sin_port == osc_address.sin_port))
+		free_d_input_address.sin_port = htons (FREE_D_UDP_PORT);
 
 	fread (&trackball_name_len, sizeof (size_t), 1, config_file);
 	if (trackball_name_len > 100) trackball_name_len = 0;
@@ -1354,6 +1416,8 @@ void load_config_file (void)
 	fread (&log_sw_p_08, sizeof (gboolean), 1, config_file);
 
 	fread (&log_tsl_umd_v5, sizeof (gboolean), 1, config_file);
+
+	fread (&log_osc, sizeof (gboolean), 1, config_file);
 
 	fread (&log_ultimatte, sizeof (gboolean), 1, config_file);
 
@@ -1445,6 +1509,8 @@ void save_config_file (void)
 
 	fwrite (&tsl_umd_v5_address.sin_port, sizeof (guint16), 1, config_file);
 
+	fwrite (&osc_address.sin_port, sizeof (guint16), 1, config_file);
+
 	fwrite (free_d_output_ip_address, sizeof (char), 16, config_file);
 
 	fwrite (&free_d_output_address.sin_port, sizeof (guint16), 1, config_file);
@@ -1470,6 +1536,8 @@ void save_config_file (void)
 	fwrite (&log_sw_p_08, sizeof (gboolean), 1, config_file);
 
 	fwrite (&log_tsl_umd_v5, sizeof (gboolean), 1, config_file);
+
+	fwrite (&log_osc, sizeof (gboolean), 1, config_file);
 
 	fwrite (&log_ultimatte, sizeof (gboolean), 1, config_file);
 
