@@ -35,7 +35,7 @@ main_window.o: cameras_set.h control_window.h controller.h free_d.h interface.h 
 
 memory.o: cameras_set.h controller.h interface.h main_window.h memory.h protocol.h settings.h sw_p_08.h ultimatte.h
 
-osc.o: cameras_set.h main_window.h network_header.h protocol.h
+osc.o: cameras_set.h control_window.h main_window.h network_header.h protocol.h
 
 protocol.o: error.h network_header.h update_notification.h
 

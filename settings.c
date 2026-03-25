@@ -290,17 +290,15 @@ void send_ip_tally_check_button_toggled (GtkToggleButton *togglebutton)
 
 void update_notification_tcp_port_entry_activate (GtkEntry *entry, GtkEntryBuffer *entry_buffer)
 {
-	int port_sscanf;
 	guint16 port;
 	GSList *slist_itr;
 	ptz_t *ptz;
 
 	stop_update_notification ();
 
-	sscanf (gtk_entry_buffer_get_text (entry_buffer), "%d", &port_sscanf);
-	port = (guint16)port_sscanf;
+	sscanf (gtk_entry_buffer_get_text (entry_buffer), "%hu", &port);
 
-	if ((port_sscanf < 1024) || (port_sscanf > 65535) || (port == ntohs (sw_p_08_address.sin_port))) {
+	if ((port < 1024) || (port == ntohs (sw_p_08_address.sin_port))) {
 		update_notification_address.sin_port = htons (UPDATE_NOTIFICATION_TCP_PORT);
 		gtk_entry_buffer_set_text (entry_buffer, "31004", 5);
 	} else update_notification_address.sin_port = htons (port);
@@ -360,15 +358,13 @@ void check_controller_ip_address (void)
 
 void sw_p_08_tcp_port_entry_activate (GtkEntry *entry, GtkEntryBuffer *entry_buffer)
 {
-	int port_sscanf;
 	guint16 port;
 
 	stop_sw_p_08 ();
 
-	sscanf (gtk_entry_buffer_get_text (entry_buffer), "%d", &port_sscanf);
-	port = (guint16)port_sscanf;
+	sscanf (gtk_entry_buffer_get_text (entry_buffer), "%hu", &port);
 
-	if ((port_sscanf < 1024) || (port_sscanf > 65535) || (port == ntohs (update_notification_address.sin_port))) {
+	if ((port < 1024) || (port == ntohs (update_notification_address.sin_port))) {
 		sw_p_08_address.sin_port = htons (SW_P_08_TCP_PORT);
 		gtk_entry_buffer_set_text (entry_buffer, "8000", 5);
 	} else sw_p_08_address.sin_port = htons (port);
@@ -380,15 +376,13 @@ void sw_p_08_tcp_port_entry_activate (GtkEntry *entry, GtkEntryBuffer *entry_buf
 
 void tsl_umd_v5_udp_port_entry_activate (GtkEntry *entry, GtkEntryBuffer *entry_buffer)
 {
-	int port_sscanf;
 	guint16 port;
 
 	stop_tally ();
 
-	sscanf (gtk_entry_buffer_get_text (entry_buffer), "%d", &port_sscanf);
-	port = (guint16)port_sscanf;
+	sscanf (gtk_entry_buffer_get_text (entry_buffer), "%hu", &port);
 
-	if ((port_sscanf < 1024) || (port_sscanf > 65535) || (port == ntohs (osc_address.sin_port)) || (port == ntohs (free_d_input_address.sin_port))) {
+	if ((port < 1024) || (port == ntohs (osc_address.sin_port)) || (port == ntohs (free_d_input_address.sin_port))) {
 		tsl_umd_v5_address.sin_port = htons (TSL_UMD_V5_UDP_PORT);
 		gtk_entry_buffer_set_text (entry_buffer, "8900", 5);
 	} else tsl_umd_v5_address.sin_port = htons (port);
@@ -400,15 +394,13 @@ void tsl_umd_v5_udp_port_entry_activate (GtkEntry *entry, GtkEntryBuffer *entry_
 
 void osc_udp_port_entry_activate (GtkEntry *entry, GtkEntryBuffer *entry_buffer)
 {
-	int port_sscanf;
 	guint16 port;
 
 	stop_osc ();
 
-	sscanf (gtk_entry_buffer_get_text (entry_buffer), "%d", &port_sscanf);
-	port = (guint16)port_sscanf;
+	sscanf (gtk_entry_buffer_get_text (entry_buffer), "%hu", &port);
 
-	if ((port_sscanf < 1024) || (port_sscanf > 65535) || (port == ntohs (tsl_umd_v5_address.sin_port)) || (port == ntohs (free_d_input_address.sin_port))) {
+	if ((port < 1024) || (port == ntohs (tsl_umd_v5_address.sin_port)) || (port == ntohs (free_d_input_address.sin_port))) {
 		osc_address.sin_port = htons (OSC_UDP_PORT);
 		gtk_entry_buffer_set_text (entry_buffer, "9000", 5);
 	} else osc_address.sin_port = htons (port);
@@ -421,15 +413,13 @@ void osc_udp_port_entry_activate (GtkEntry *entry, GtkEntryBuffer *entry_buffer)
 void free_d_output_ip_address_udp_port_entries_activate (void)
 {
 	int i, j, k;
-	int port_sscanf;
 	guint16 port;
 
 	stop_outgoing_freed_d ();
 
-	sscanf (gtk_entry_buffer_get_text (free_d_output_udp_entry_buffer), "%d", &port_sscanf);
-	port = (guint16)port_sscanf;
+	sscanf (gtk_entry_buffer_get_text (free_d_output_udp_entry_buffer), "%hu", &port);
 
-	if ((port_sscanf < 1024) || (port_sscanf > 65535)) {
+	if (port < 1024) {
 		free_d_output_address.sin_port = htons (FREE_D_UDP_PORT);
 		gtk_entry_buffer_set_text (free_d_output_udp_entry_buffer, "2000", 5);
 	} else free_d_output_address.sin_port = htons (port);
@@ -466,15 +456,13 @@ void free_d_output_ip_address_udp_port_entries_activate (void)
 
 void free_d_input_udp_port_entry_activate (GtkEntry *entry, GtkEntryBuffer *entry_buffer)
 {
-	int port_sscanf;
 	guint16 port;
 
 	stop_incomming_free_d ();
 
-	sscanf (gtk_entry_buffer_get_text (entry_buffer), "%d", &port_sscanf);
-	port = (guint16)port_sscanf;
+	sscanf (gtk_entry_buffer_get_text (entry_buffer), "%hu", &port);
 
-	if ((port_sscanf < 1024) || (port_sscanf > 65535) || (port == ntohs (tsl_umd_v5_address.sin_port)) || (port == ntohs (osc_address.sin_port))) {
+	if ((port < 1024) || (port == ntohs (tsl_umd_v5_address.sin_port)) || (port == ntohs (osc_address.sin_port))) {
 		free_d_input_address.sin_port = htons (FREE_D_UDP_PORT);
 		gtk_entry_buffer_set_text (entry_buffer, "2000", 5);
 	} else free_d_input_address.sin_port = htons (port);
@@ -707,7 +695,7 @@ void show_settings_window (void)
 				gtk_box_pack_start (GTK_BOX (box3), widget, FALSE, FALSE, 0);
 
 					entry_buffer = gtk_entry_buffer_new (label, sprintf (label, "%hu", ntohs (update_notification_address.sin_port)));
-					widget = gtk_entry_new_with_buffer (GTK_ENTRY_BUFFER (entry_buffer));
+					widget = gtk_entry_new_with_buffer (entry_buffer);
 					gtk_entry_set_input_purpose (GTK_ENTRY (widget), GTK_INPUT_PURPOSE_DIGITS);
 					gtk_entry_set_max_length (GTK_ENTRY (widget), 5);
 					gtk_entry_set_width_chars (GTK_ENTRY (widget), 5);
@@ -822,7 +810,7 @@ void show_settings_window (void)
 				gtk_box_pack_start (GTK_BOX (box3), box4, TRUE, TRUE, 0);
 
 					entry_buffer = gtk_entry_buffer_new (label, sprintf (label, "%hu", ntohs (sw_p_08_address.sin_port)));
-					widget = gtk_entry_new_with_buffer (GTK_ENTRY_BUFFER (entry_buffer));
+					widget = gtk_entry_new_with_buffer (entry_buffer);
 					gtk_entry_set_input_purpose (GTK_ENTRY (widget), GTK_INPUT_PURPOSE_DIGITS);
 					gtk_entry_set_max_length (GTK_ENTRY (widget), 5);
 					gtk_entry_set_width_chars (GTK_ENTRY (widget), 5);
@@ -838,7 +826,7 @@ void show_settings_window (void)
 				gtk_box_pack_start (GTK_BOX (box3), widget, FALSE, FALSE, 0);
 
 					entry_buffer = gtk_entry_buffer_new (label, sprintf (label, "%hu", ntohs (tsl_umd_v5_address.sin_port)));
-					widget = gtk_entry_new_with_buffer (GTK_ENTRY_BUFFER (entry_buffer));
+					widget = gtk_entry_new_with_buffer (entry_buffer);
 					gtk_entry_set_input_purpose (GTK_ENTRY (widget), GTK_INPUT_PURPOSE_DIGITS);
 					gtk_entry_set_max_length (GTK_ENTRY (widget), 5);
 					gtk_entry_set_width_chars (GTK_ENTRY (widget), 5);
@@ -854,7 +842,7 @@ void show_settings_window (void)
 				gtk_box_pack_start (GTK_BOX (box3), widget, FALSE, FALSE, 0);
 
 					entry_buffer = gtk_entry_buffer_new (label, sprintf (label, "%hu", ntohs (osc_address.sin_port)));
-					widget = gtk_entry_new_with_buffer (GTK_ENTRY_BUFFER (entry_buffer));
+					widget = gtk_entry_new_with_buffer (entry_buffer);
 					gtk_entry_set_input_purpose (GTK_ENTRY (widget), GTK_INPUT_PURPOSE_DIGITS);
 					gtk_entry_set_max_length (GTK_ENTRY (widget), 5);
 					gtk_entry_set_width_chars (GTK_ENTRY (widget), 5);
@@ -876,7 +864,7 @@ void show_settings_window (void)
 				gtk_box_pack_start (GTK_BOX (box3), widget, FALSE, FALSE, 0);
 
 					free_d_output_udp_entry_buffer = gtk_entry_buffer_new (label, sprintf (label, "%hu", ntohs (free_d_output_address.sin_port)));
-					widget = gtk_entry_new_with_buffer (GTK_ENTRY_BUFFER (free_d_output_udp_entry_buffer));
+					widget = gtk_entry_new_with_buffer (free_d_output_udp_entry_buffer);
 					gtk_entry_set_input_purpose (GTK_ENTRY (widget), GTK_INPUT_PURPOSE_DIGITS);
 					gtk_entry_set_max_length (GTK_ENTRY (widget), 5);
 					gtk_entry_set_width_chars (GTK_ENTRY (widget), 5);
@@ -968,7 +956,7 @@ void show_settings_window (void)
 				gtk_box_pack_start (GTK_BOX (box3), widget, FALSE, FALSE, 0);
 
 					entry_buffer = gtk_entry_buffer_new (label, sprintf (label, "%hu", ntohs (free_d_input_address.sin_port)));
-					widget = gtk_entry_new_with_buffer (GTK_ENTRY_BUFFER (entry_buffer));
+					widget = gtk_entry_new_with_buffer (entry_buffer);
 					gtk_entry_set_input_purpose (GTK_ENTRY (widget), GTK_INPUT_PURPOSE_DIGITS);
 					gtk_entry_set_max_length (GTK_ENTRY (widget), 5);
 					gtk_entry_set_width_chars (GTK_ENTRY (widget), 5);

@@ -100,6 +100,8 @@ void fill_cameras_set_page (cameras_set_t *cameras_set);
 
 void add_cameras_set_to_main_window_notebook (cameras_set_t *cameras_set);
 
+gboolean g_source_select_cameras_set_page (gpointer page_num);
+
 void update_current_cameras_set_vertical_margins (void);
 
 void update_current_cameras_set_horizontal_margins (void);

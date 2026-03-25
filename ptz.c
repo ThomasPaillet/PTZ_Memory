@@ -281,7 +281,7 @@ gpointer monitor_ptz_pan_tilt_position (ptz_thread_t *ptz_thread)
 
 		g_mutex_unlock (&ptz->free_d_mutex);
 
-		if (ptz == current_ptz) gtk_widget_queue_draw (control_window_pan_tilt_label);
+		if (ptz == current_ptz) g_idle_add ((GSourceFunc)gtk_widget_queue_draw, control_window_pan_tilt_label);
 
 		g_mutex_lock (&ptz->other_ptz_mutex);
 
@@ -295,7 +295,7 @@ gpointer monitor_ptz_pan_tilt_position (ptz_thread_t *ptz_thread)
 
 			g_mutex_unlock (&other_ptz->free_d_mutex);
 
-			if (other_ptz == current_ptz) gtk_widget_queue_draw (control_window_pan_tilt_label);
+			if (other_ptz == current_ptz) g_idle_add ((GSourceFunc)gtk_widget_queue_draw, control_window_pan_tilt_label);
 		}
 
 		g_mutex_unlock (&ptz->other_ptz_mutex);
@@ -510,7 +510,6 @@ gboolean free_ptz_thread (ptz_thread_t *ptz_thread)
 gboolean name_drawing_area_button_press_event (GtkButton *widget, GdkEventButton *event, ptz_t *ptz)
 {
 	ultimatte_t *ultimatte;
-	ptz_thread_t *ptz_thread;
 
 	if (event->button == GDK_BUTTON_PRIMARY) {
 		ultimatte = ptz->ultimatte;
@@ -523,12 +522,6 @@ gboolean name_drawing_area_button_press_event (GtkButton *widget, GdkEventButton
 			show_control_window (ptz, GTK_WIN_POS_MOUSE);
 
 			ask_to_connect_ptz_to_ctrl_opv (ptz);
-
-			if (controller_is_used) {
-				ptz_thread = g_malloc (sizeof (ptz_thread_t));
-				ptz_thread->pointer = ptz;
-				ptz_thread->thread = g_thread_new (NULL, (GThreadFunc)controller_switch_ptz, ptz_thread);
-			}
 		}
 	}
 

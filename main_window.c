@@ -319,7 +319,6 @@ gboolean main_window_key_press (GtkWidget *widget, GdkEventKey *event)
 	ptz_t *ptz;
 	gdouble adjustment_value;
 	ptz_thread_t *ptz_thread;
-	ptz_thread_t *controller_thread;
 
 	if (event->keyval == GDK_KEY_Escape) {
 		ask_to_connect_pgm_to_ctrl_opv ();
@@ -332,15 +331,7 @@ gboolean main_window_key_press (GtkWidget *widget, GdkEventKey *event)
 			if (i < current_cameras_set->number_of_cameras) {
 				ptz = current_cameras_set->cameras[i];
 
-				if (ptz->active && gtk_widget_get_sensitive (ptz->name_grid)) {
-					show_control_window (ptz, GTK_WIN_POS_CENTER);
-
-					if (controller_is_used) {
-						controller_thread = g_malloc (sizeof (ptz_thread_t));
-						controller_thread->pointer = ptz;
-						controller_thread->thread = g_thread_new (NULL, (GThreadFunc)controller_switch_ptz, controller_thread);
-					}
-				}
+				if (ptz->active && gtk_widget_get_sensitive (ptz->name_grid)) show_control_window (ptz, GTK_WIN_POS_CENTER);
 
 				ask_to_connect_ptz_to_ctrl_opv (ptz);
 			}

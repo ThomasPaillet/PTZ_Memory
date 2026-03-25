@@ -20,6 +20,7 @@
 #include "osc.h"
 
 #include "cameras_set.h"
+#include "control_window.h"
 #include "logging.h"
 #include "main_window.h"
 #include "protocol.h"
@@ -35,54 +36,22 @@ GThread *osc_thread = NULL;
 void parse_osc_memory (memory_t *memory, char *buffer)
 {
 	ptz_thread_t *ptz_thread;
-	cameras_set_t *cameras_set;
-	int i;
-	ptz_t *ptz;
-	memory_t *other_memory;
 
 	LOG_OSC_STRING_INT("parse_osc_memory ",memory->index)
 	LOG_OSC_2_STRINGS("parse_osc_memory ",buffer)
 
 	if (strcmp (buffer, "Store") == 0) {
-		if (((ptz_t *)memory->ptz)->is_on) {
-			g_signal_handler_block (memory->button, memory->button_handler_id);
+		g_signal_handler_block (memory->button, memory->button_handler_id);
 
-			ptz_thread = g_malloc (sizeof (ptz_thread_t));
-			ptz_thread->pointer = memory;
-			ptz_thread->thread = g_thread_new (NULL, (GThreadFunc)save_memory, ptz_thread);
-		}
+		ptz_thread = g_malloc (sizeof (ptz_thread_t));
+		ptz_thread->pointer = memory;
+		ptz_thread->thread = g_thread_new (NULL, (GThreadFunc)save_memory, ptz_thread);
 	} else if (!memory->empty) {
 		if (strcmp (buffer, "Recall") == 0) {
-			if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (link_toggle_button))) {
-				cameras_set = ((ptz_t *)memory->ptz)->cameras_set;
-
-				for (i = 0; i < cameras_set->number_of_cameras; i++) {
-					ptz = cameras_set->cameras[i];
-
-					if (ptz->is_on) {
-						other_memory = ptz->memories + memory->index;
-
-						if (!other_memory->empty) {
-							g_signal_handler_block (other_memory->button, other_memory->button_handler_id);
-
-							ptz_thread = g_malloc (sizeof (ptz_thread_t));
-							ptz_thread->pointer = other_memory;
-							ptz_thread->thread = g_thread_new (NULL, (GThreadFunc)load_other_memory, ptz_thread);
-						}
-					}
-				}
-			} else {
-				if (((ptz_t *)memory->ptz)->is_on) {
-					g_signal_handler_block (memory->button, memory->button_handler_id);
-
-					ptz_thread = g_malloc (sizeof (ptz_thread_t));
-					ptz_thread->pointer = memory;
-					ptz_thread->thread = g_thread_new (NULL, (GThreadFunc)load_other_memory, ptz_thread);
-				}
-			}
+			g_idle_add ((GSourceFunc)g_source_recall_memory, memory);
 
 			tell_memory_is_selected (memory->index);
-		} else if ((strcmp (buffer, "Delete") == 0) && (((ptz_t *)memory->ptz)->is_on)) delete_memory (memory);
+		} else if (strcmp (buffer, "Delete") == 0) delete_memory (memory);
 	}
 }
 
@@ -99,10 +68,12 @@ void parse_osc_ptz (ptz_t *ptz, char *buffer)
 		while ((buffer[i] != '/') && (buffer[i] != '\0')) i++;
 
 		if (buffer[i] == '/') {
-			if ((i == 1) && ('0' < buffer[0]) && (buffer[0] <= '9')) parse_osc_memory (ptz->memories + buffer[0] - '1', buffer + 2);
-			else if (i == 2) {
-				if ((buffer[0] == '0') && ('0' < buffer[1]) && (buffer[1] <= '9')) parse_osc_memory (ptz->memories + buffer[1] - '1', buffer + 3);
-				else if ((buffer[0] == '1') && ('0' <= buffer[1]) && (buffer[1] <= '9')) parse_osc_memory (ptz->memories + 10 + buffer[1] - '1', buffer + 3);
+			if (ptz->is_on) {
+				if ((i == 1) && ('0' < buffer[0]) && (buffer[0] <= '9')) parse_osc_memory (ptz->memories + buffer[0] - '1', buffer + 2);
+				else if (i == 2) {
+					if ((buffer[0] == '0') && ('0' < buffer[1]) && (buffer[1] <= '9')) parse_osc_memory (ptz->memories + buffer[1] - '1', buffer + 3);
+					else if ((buffer[0] == '1') && ('0' <= buffer[1]) && (buffer[1] <= '9')) parse_osc_memory (ptz->memories + 10 + buffer[1] - '1', buffer + 3);
+				}
 			}
 		} else {
 			if (strcmp (buffer, "Power_On") == 0) {
@@ -113,16 +84,15 @@ void parse_osc_ptz (ptz_t *ptz, char *buffer)
 				ptz_thread = g_malloc (sizeof (ptz_thread_t));
 				ptz_thread->pointer = ptz;
 				ptz_thread->thread = g_thread_new (NULL, (GThreadFunc)switch_ptz_off, ptz_thread);
+			} else if (strcmp (buffer, "Select") == 0) {
+				if (ptz->active && gtk_widget_get_sensitive (ptz->name_grid)) {
+					g_idle_add ((GSourceFunc)g_source_show_control_window, ptz);
+
+					ask_to_connect_ptz_to_ctrl_opv (ptz);
+				}
 			}
 		}
 	}
-}
-
-gboolean select_cameras_set (gpointer page_num)
-{
-	gtk_notebook_set_current_page (GTK_NOTEBOOK (main_window_notebook), GPOINTER_TO_INT (page_num));
-
-	return G_SOURCE_REMOVE;
 }
 
 void parse_osc_cameras_set (cameras_set_t *cameras_set, char *buffer)
@@ -159,7 +129,7 @@ void parse_osc_cameras_set (cameras_set_t *cameras_set, char *buffer)
 	} else {
 		if (strcmp (buffer, "Group_On") == 0) switch_cameras_set_on (cameras_set);
 		else if (strcmp (buffer, "Group_Off") == 0) switch_cameras_set_off (cameras_set);
-		else if (strcmp (buffer, "Select") == 0) g_idle_add ((GSourceFunc)select_cameras_set, GINT_TO_POINTER (cameras_set->page_num));
+		else if (strcmp (buffer, "Select") == 0) g_idle_add ((GSourceFunc)g_source_select_cameras_set_page, GINT_TO_POINTER (cameras_set->page_num));
 	}
 }
 

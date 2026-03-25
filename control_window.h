@@ -52,6 +52,8 @@ void update_control_window_tally (void);
 
 void show_control_window (ptz_t *ptz, GtkWindowPosition position);
 
+gboolean g_source_show_control_window (ptz_t *ptz);
+
 gboolean hide_control_window (void);
 
 void create_control_window (void);

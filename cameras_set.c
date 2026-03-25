@@ -1936,6 +1936,13 @@ void add_cameras_set_to_main_window_notebook (cameras_set_t *cameras_set)
 	}
 }
 
+gboolean g_source_select_cameras_set_page (gpointer page_num)
+{
+	gtk_notebook_set_current_page (GTK_NOTEBOOK (main_window_notebook), GPOINTER_TO_INT (page_num));
+
+	return G_SOURCE_REMOVE;
+}
+
 void update_current_cameras_set_vertical_margins (void)
 {
 	int i, j;

@@ -79,47 +79,6 @@ char tally_ptz = MAX_MEMORIES + 1;
 char tally_memory = MAX_MEMORIES + 1;
 
 
-gboolean g_source_select_cameras_set_page (gpointer page_num)
-{
-	cameras_set_t *cameras_set_itr;
-
-	g_mutex_lock (&cameras_sets_mutex);
-
-	for (cameras_set_itr = cameras_sets; cameras_set_itr != NULL; cameras_set_itr = cameras_set_itr->next) {
-		if (cameras_set_itr->page_num == GPOINTER_TO_INT (page_num)) {
-			gtk_notebook_set_current_page (GTK_NOTEBOOK (main_window_notebook), cameras_set_itr->page_num);
-
-			break;
-		}
-	}
-
-	g_mutex_unlock (&cameras_sets_mutex);
-
-	return G_SOURCE_REMOVE;
-}
-
-gboolean g_source_show_control_window (ptz_t *ptz)
-{
-	show_control_window (ptz, GTK_WIN_POS_CENTER);
-
-	return G_SOURCE_REMOVE;
-}
-
-gboolean g_source_recall_memory (memory_t *memory)
-{
-	ptz_thread_t *ptz_thread;
-
-	if (!memory->empty) {
-		g_signal_handler_block (memory->button, memory->button_handler_id);
-
-		ptz_thread = g_malloc (sizeof (ptz_thread_t));
-		ptz_thread->pointer = memory;
-		ptz_thread->thread = g_thread_new (NULL, (GThreadFunc)load_memory, ptz_thread);
-	}
-
-	return G_SOURCE_REMOVE;
-}
-
 gboolean destroy_matrix_window (GtkWidget *window)
 {
 	remote_devices[0].connected_label = NULL;

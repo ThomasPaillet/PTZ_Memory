@@ -58,13 +58,15 @@ typedef struct ptz_thread_s {
 } ptz_thread_t;
 
 
+void delete_memory (memory_t *memory);
+
 gpointer save_memory (ptz_thread_t *ptz_thread);
 
 gpointer load_memory (ptz_thread_t *ptz_thread);
 
 gpointer load_other_memory (ptz_thread_t *ptz_thread);
 
-void delete_memory (memory_t *memory);
+gboolean g_source_recall_memory (memory_t *memory);
 
 gboolean memory_button_button_press_event (GtkButton *button, GdkEventButton *event, memory_t *memory);
 

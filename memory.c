@@ -35,11 +35,49 @@ GtkWidget *memory_name_window;
 GtkEntryBuffer *memory_name_entry_buffer;
 
 
+void delete_memory (memory_t *memory)
+{
+	ptz_t *ptz = memory->ptz;
+	char buf[128];
+	int len;
+
+	LOG_PTZ_STRING_INT("Delete memory ",memory->index + 1)
+
+	memory->empty = TRUE;
+	ptz->number_of_memories--;
+
+	memory->name[0] = '\0';
+	memory->name_len = 0;
+
+	g_idle_add ((GSourceFunc)gtk_widget_destroy, memory->image);
+	memory->image = NULL;
+
+	if (ptz->previous_loaded_memory == memory) {
+		ptz->previous_loaded_memory = NULL;
+		memory->is_loaded = FALSE;
+
+		g_idle_add ((GSourceFunc)gtk_widget_queue_draw, memory->button);
+	}
+
+	g_object_unref (G_OBJECT (memory->full_pixbuf));
+	if (interface_default.thumbnail_width != 320) g_object_unref (G_OBJECT (memory->scaled_pixbuf));
+
+	if ((ptz->ultimatte != NULL) && ptz->ultimatte->connected) {
+		len = sprintf (buf, "FILE:\nDelete: %s %s %d\n\n", ((cameras_set_t *)ptz->cameras_set)->name, ptz->name, memory->index + 1);
+		send (ptz->ultimatte->socket, buf, len, 0);
+
+		LOG_ULTIMATE_COMMAND(ptz->ultimatte->ip_address,buf,len)
+	}
+
+	backup_needed = TRUE;
+}
+
 gboolean update_button (memory_t *memory)
 {
 	if (memory->image == NULL) {
 		if (interface_default.thumbnail_width == 320) memory->image = gtk_image_new_from_pixbuf (memory->full_pixbuf);
 		else memory->image = gtk_image_new_from_pixbuf (memory->scaled_pixbuf);
+
 		gtk_button_set_image (GTK_BUTTON (memory->button), memory->image);
 	} else {
 		if (interface_default.thumbnail_width == 320) gtk_image_set_from_pixbuf (GTK_IMAGE (memory->image), memory->full_pixbuf);
@@ -97,7 +135,8 @@ gpointer save_memory (ptz_thread_t *ptz_thread)
 	if (ptz->previous_loaded_memory != NULL) {
 		if (ptz->previous_loaded_memory != memory) {
 			ptz->previous_loaded_memory->is_loaded = FALSE;
-			gtk_widget_queue_draw (ptz->previous_loaded_memory->button);
+
+			g_idle_add ((GSourceFunc)gtk_widget_queue_draw, ptz->previous_loaded_memory->button);
 		}
 
 		ptz->previous_loaded_memory = NULL;
@@ -147,13 +186,14 @@ gpointer load_memory (ptz_thread_t *ptz_thread)
 	}
 
 	if (memory != ptz->previous_loaded_memory) {
-		memory->is_loaded = TRUE;
-		gtk_widget_queue_draw (memory->button);
-
 		if (ptz->previous_loaded_memory != NULL) {
 			ptz->previous_loaded_memory->is_loaded = FALSE;
-			gtk_widget_queue_draw (ptz->previous_loaded_memory->button);
+
+			g_idle_add ((GSourceFunc)gtk_widget_queue_draw, ptz->previous_loaded_memory->button);
 		}
+
+		memory->is_loaded = TRUE;
+		g_idle_add ((GSourceFunc)gtk_widget_queue_draw, memory->button);
 
 		ptz->previous_loaded_memory = memory;
 	}
@@ -215,13 +255,14 @@ gpointer load_other_memory (ptz_thread_t *ptz_thread)
 	send_ptz_control_command (ptz, memory->pan_tilt_position_cmd, TRUE);
 
 	if (memory != ptz->previous_loaded_memory) {
-		memory->is_loaded = TRUE;
-		gtk_widget_queue_draw (memory->button);
-
 		if (ptz->previous_loaded_memory != NULL) {
 			ptz->previous_loaded_memory->is_loaded = FALSE;
-			gtk_widget_queue_draw (ptz->previous_loaded_memory->button);
+
+			g_idle_add ((GSourceFunc)gtk_widget_queue_draw, ptz->previous_loaded_memory->button);
 		}
+
+		memory->is_loaded = TRUE;
+		g_idle_add ((GSourceFunc)gtk_widget_queue_draw, memory->button);
 
 		ptz->previous_loaded_memory = memory;
 	}
@@ -261,38 +302,42 @@ gpointer load_other_memory (ptz_thread_t *ptz_thread)
 	return NULL;
 }
 
-void delete_memory (memory_t *memory)
+gboolean g_source_recall_memory (memory_t *memory)
 {
-	ptz_t *ptz = memory->ptz;
-	char buf[128];
-	int len;
+	cameras_set_t *cameras_set;
+	int i;
+	memory_t *other_memory;
+	ptz_thread_t *ptz_thread;
 
-	memory->empty = TRUE;
-	ptz->number_of_memories--;
+	if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (link_toggle_button))) {
+		cameras_set = ((ptz_t *)memory->ptz)->cameras_set;
 
-	memory->name[0] = '\0';
-	memory->name_len = 0;
+		for (i = 0; i < cameras_set->number_of_cameras; i++) {
+			if (cameras_set->cameras[i]->is_on) {
+				other_memory = cameras_set->cameras[i]->memories + memory->index;
 
-	gtk_widget_destroy (memory->image);
-	memory->image = NULL;
+				if (!other_memory->empty) {
+					gtk_widget_set_state_flags (other_memory->button, GTK_STATE_FLAG_PRELIGHT, FALSE);
+					g_signal_handler_block (other_memory->button, other_memory->button_handler_id);
 
-	if (ptz->previous_loaded_memory == memory) {
-		ptz->previous_loaded_memory = NULL;
-		memory->is_loaded = FALSE;
-		gtk_widget_queue_draw (memory->button);
+					ptz_thread = g_malloc (sizeof (ptz_thread_t));
+					ptz_thread->pointer = other_memory;
+					ptz_thread->thread = g_thread_new (NULL, (GThreadFunc)load_other_memory, ptz_thread);
+				}
+			}
+		}
+	} else {
+		if (!memory->empty) {
+			gtk_widget_set_state_flags (memory->button, GTK_STATE_FLAG_PRELIGHT, FALSE);
+			g_signal_handler_block (memory->button, memory->button_handler_id);
+
+			ptz_thread = g_malloc (sizeof (ptz_thread_t));
+			ptz_thread->pointer = memory;
+			ptz_thread->thread = g_thread_new (NULL, (GThreadFunc)load_other_memory, ptz_thread);
+		}
 	}
 
-	g_object_unref (G_OBJECT (memory->full_pixbuf));
-	if (interface_default.thumbnail_width != 320) g_object_unref (G_OBJECT (memory->scaled_pixbuf));
-
-	if ((ptz->ultimatte != NULL) && ptz->ultimatte->connected) {
-		len = sprintf (buf, "FILE:\nDelete: %s %s %d\n\n", ((cameras_set_t *)ptz->cameras_set)->name, ptz->name, memory->index + 1);
-		send (ptz->ultimatte->socket, buf, len, 0);
-
-		LOG_ULTIMATE_COMMAND(ptz->ultimatte->ip_address,buf,len)
-	}
-
-	backup_needed = TRUE;
+	return G_SOURCE_REMOVE;
 }
 
 gboolean memory_button_button_press_event (GtkButton *button, GdkEventButton *event, memory_t *memory)

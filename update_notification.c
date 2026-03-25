@@ -116,7 +116,7 @@ gpointer receive_update_notification (void)
 
 						g_mutex_unlock (&ptz->free_d_mutex);
 
-						if (ptz == current_ptz) gtk_widget_queue_draw (control_window_zoom_level_bar_drawing_area);
+						if (ptz == current_ptz) g_idle_add ((GSourceFunc)gtk_widget_queue_draw, control_window_zoom_level_bar_drawing_area);
 					}
 
 					if ((ptz->focus_position_cmd[4] != buffer[36]) || (ptz->focus_position_cmd[5] != buffer[37]) || (ptz->focus_position_cmd[6] != buffer[38])) {
@@ -137,7 +137,7 @@ gpointer receive_update_notification (void)
 
 						g_mutex_unlock (&ptz->free_d_mutex);
 
-						if (ptz == current_ptz) gtk_widget_queue_draw (control_window_focus_level_bar_drawing_area);
+						if (ptz == current_ptz) g_idle_add ((GSourceFunc)gtk_widget_queue_draw, control_window_focus_level_bar_drawing_area);
 					}
 
 					g_mutex_unlock (&ptz->lens_information_mutex);
@@ -161,7 +161,7 @@ gpointer receive_update_notification (void)
 
 							g_mutex_unlock (&other_ptz->free_d_mutex);
 
-							if (other_ptz == current_ptz) gtk_widget_queue_draw (control_window_zoom_level_bar_drawing_area);
+							if (other_ptz == current_ptz) g_idle_add ((GSourceFunc)gtk_widget_queue_draw, control_window_zoom_level_bar_drawing_area);
 						}
 
 						if (other_ptz->focus_position != focus) {
@@ -176,7 +176,7 @@ gpointer receive_update_notification (void)
 
 							g_mutex_unlock (&other_ptz->free_d_mutex);
 
-							if (other_ptz == current_ptz) gtk_widget_queue_draw (control_window_focus_level_bar_drawing_area);
+							if (other_ptz == current_ptz) g_idle_add ((GSourceFunc)gtk_widget_queue_draw, control_window_focus_level_bar_drawing_area);
 						}
 
 						g_mutex_unlock (&other_ptz->lens_information_mutex);
@@ -212,7 +212,7 @@ gpointer receive_update_notification (void)
 
 					g_mutex_unlock (&ptz->free_d_mutex);
 
-					if (ptz == current_ptz) gtk_widget_queue_draw (control_window_pan_tilt_label);
+					if (ptz == current_ptz) g_idle_add ((GSourceFunc)gtk_widget_queue_draw, control_window_pan_tilt_label);
 
 					g_mutex_lock (&ptz->other_ptz_mutex);
 
@@ -226,7 +226,7 @@ gpointer receive_update_notification (void)
 
 						g_mutex_unlock (&other_ptz->free_d_mutex);
 
-						if (other_ptz == current_ptz) gtk_widget_queue_draw (control_window_pan_tilt_label);
+						if (other_ptz == current_ptz) g_idle_add ((GSourceFunc)gtk_widget_queue_draw, control_window_pan_tilt_label);
 					}
 
 					g_mutex_unlock (&ptz->other_ptz_mutex);
